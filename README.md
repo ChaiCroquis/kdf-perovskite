@@ -7,11 +7,121 @@
 [![Spec frozen](https://img.shields.io/badge/Spec-FROZEN-brightgreen)](docs/patent/SPEC.md)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19651035.svg)](https://doi.org/10.5281/zenodo.19651035)
 
+> **Note on language / 言語について** — The author is a Japanese native speaker, so most in-repository documentation is originally written in Japanese. The English sections of this README (and the preprint paper) are either written in English first or translated from Japanese. If there is any discrepancy between the English translation and the Japanese original, the **Japanese text is authoritative** unless the document explicitly states it is English-first (the preprint paper on Zenodo is English-first).
+>
+> 本リポジトリの著者は日本語話者のため、内部ドキュメントの多くが日本語で書かれています。本 README 冒頭の English summary は日本語版の翻訳を含み、プレプリント論文は英語版を正としています。翻訳と日本語原典で齟齬があれば、明示されない限り **日本語原典が優先** です。
+>
+> **[English summary ↓](#english-summary)** | **[日本語版 ↓](#日本語版)**
+
+---
+
+## English Summary
+
+**KDF (Knowledge Decay Framework)** is a Rust implementation of a **deterministic graph-compression technique for finite-resource information preservation**. Given a graph and a retention budget, selected nodes are preserved verbatim while unselected ones are discarded, **distinguishing KDF from content-transforming methods such as LLM-based fact extraction**.
+
+- **Preprint paper (Zenodo)**: https://doi.org/10.5281/zenodo.19651035 (31 pages, English)
+- **Patent**: JP 2026-027032 (filed 2026-02-24; JPO auto-publication expected ~2027-08-24)
+- **Reference implementation**: [`crates/cgb-kdf/`](crates/cgb-kdf/) — 50 patent claims, 56 dedicated tests
+- **Verified findings**: [`docs/VERIFIED_FINDINGS.md`](docs/VERIFIED_FINDINGS.md) — 67 F-xxx records, failures and self-refutations included
+
+### Three pillars
+
+1. **Metabolic control** — edge-based continuous-time exponential decay $w \leftarrow w \cdot \exp(-\lambda(C) \cdot dt)$ (Claim 14)
+2. **Rarity protection** — absolute threshold $\deg_E(v) \le 1$ unconditionally excludes rare nodes from metabolism (Claim 15)
+3. **Integrity discovery** — graph-Laplacian eigenvalue fingerprints $\phi(v) \in \mathbb{R}^{32}$ + sandwich 2-threshold acceptance $\theta_L \le S_\text{outer} \le \theta_U$ (Claims 44–48)
+
+### Headline empirical results
+
+| Task | Result | Comparison |
+|---|---|---|
+| LongMemEval (ICLR 2025) | Recall = 0.821 | **×7.7 over industry-standard TTL (=0.107)** |
+| Obsidian vault (2,182 notes) | F1 = 0.747 | Wilcoxon p = 0.006 vs. Random / OrphanOnly / TextSim |
+| NASA HTTP log (static) | Recall = 0.237 at keep=10% | **×2.3 over Random**, without labels |
+| NASA HTTP log (streaming replay) | Claim 14 decay **+3.06 pt** over static baseline | First empirical anchor for the narrowed "streaming is the true use case" thesis |
+| LoCoMo temporal 321 Q × 2 models | **+10.6 pt / +23.4 pt vs. Mem0** | p = 1.4 × 10⁻³ / 1.6 × 10⁻¹⁴ |
+
+### Honest negative results (self-refutation)
+
+- **OSS issue generalization ×1.00** across 3 repos (rust-lang +15%, tokio +3%, golang −15% → average null)
+- **Paper rediscovery ×0.83** (KDF loses to Random on concept-sharing graphs)
+- **Gaussian-Process inducing-point selection** fails (density ≠ rareness)
+- **Patent canonical values** $(\theta_L, \theta_U) = (0.70, 0.80)$ **empirically refuted across four benchmarks** (F-041 / F-068 / F-070 Part A / F-070 Part B); the 2-threshold *mechanism* is supported, but specific values require domain-specific calibration
+
+The paper preserves this **four-benchmark self-refutation of the author's own patent canonical values** as the centerpiece of a **honesty-first epistemic stance**.
+
+### License at a glance
+
+- **Research / education / personal use / noncommercial organizations**: **Free** (PolyForm Noncommercial 1.0.0)
+- **Commercial use** (integration, production, SaaS, resale): **Requires a separate commercial license** — see [COMMERCIAL.md](COMMERCIAL.md)
+- **Patent license**: For noncommercial use, granted via PolyForm NC's patent clause. Commercial patent license is issued together with the commercial software license.
+- **Contact**: `garden.of.knowledge.chai@gmail.com`
+
+See the [LICENSE](LICENSE) file for full PolyForm NC 1.0.0 text and [COMMERCIAL.md](COMMERCIAL.md) for an FAQ clarifying the noncommercial / commercial boundary.
+
+### Quick start
+
+```bash
+cargo test  --release -p cgb-kdf                  # 50 patent claims, 342 tests
+cargo run   --release -p sota-comparison          # SOTA benchmarks
+cargo run   --release -p demo-d2-nasa-log         # NASA HTTP log demo
+```
+
+See the [日本語版](#日本語版) section below for the full Japanese documentation (architecture, detailed results, reproduction steps, math specification).
+
+### Citation
+
+```bibtex
+@misc{kuroki2026kdf,
+  author       = {Kuroki, Yasuhiro},
+  title        = {{KDF: A Deterministic Architecture for Finite-Resource
+                   Information Preservation---Cross-Domain Evidence and
+                   Self-Refutation of Canonical Values}},
+  year         = {2026},
+  publisher    = {Zenodo},
+  version      = {v0.3},
+  doi          = {10.5281/zenodo.19651035},
+  url          = {https://doi.org/10.5281/zenodo.19651035},
+  note         = {Preprint. Patent: JP 2026-027032 (filed 2026-02-24).}
+}
+```
+
+GitHub's "Cite this repository" button also provides citation output via [CITATION.cff](CITATION.cff).
+
+### Applicability predictor
+
+> **KDF decisively outperforms Random and baseline heuristics only when structural rareness correlates with task importance.**
+
+| Task family | KDF effective? | Evidence |
+|---|:-:|---|
+| LLM long-conversation temporal recall | ✅ | LoCoMo +23.4 pt across 2 models |
+| Path-based algorithms (APSP) on ER / SBM / WS | ✅ | F-061 |
+| Integration-point preservation (git merges, merge rate < 10%) | ✅ | F-062, F-065 |
+| Orphan-note detection (PKM, deg = 0) | ✅ | F-012, F-017 |
+| GP / kernel-regression inducing points (density center) | ❌ | F-063 |
+| Python call-graph API preservation (high in-degree) | ❌ | F-064 |
+| General semantic retrieval (BEIR SciFact) | ❌ | F-045 |
+
+A zero-dependency Rust crate [`crates/bias-detector/`](crates/bias-detector/) computes this predictor a priori on any input graph (bias_score = 0.3 · I₁ + 0.7 · I₄), correctly predicting applicability on 4 of 5 benchmarks in F-030 / F-036.
+
+### Further reading
+
+- [Preprint paper (Zenodo, 31 pages)](https://doi.org/10.5281/zenodo.19651035)
+- [`docs/VERIFIED_FINDINGS.md`](docs/VERIFIED_FINDINGS.md) — 67 F-xxx verified findings (Japanese)
+- [`docs/PUBLIC_SUMMARY.md`](docs/PUBLIC_SUMMARY.md) — public summary (Japanese)
+- [`docs/patent/SPEC.md`](docs/patent/SPEC.md) — authoritative specification overview (Japanese)
+- [`docs/arxiv_submission/paper.md`](docs/arxiv_submission/paper.md) — paper source (English)
+
+---
+
+<a id="日本語版"></a>
+
+## 日本語版
+
 **KDF** は、長期運用される情報ネットワーク(知識グラフ、ログ、学習データ等)を、**代謝的に削減しつつ希少情報を構造的に保護**する Rust 実装フレームワークです。
 
 本実装は、特願 **2026-027032** の請求項1–50 を参照仕様として厳密に実装しています。特許出願書類 5 点(特許願 / 特許請求の範囲 / 明細書 / 要約書 / 図面)は **日本特許庁による自動公開(出願から 18 ヶ月、2027-08-24 頃)** まで本リポジトリには含めていません。それまでの間は、権威仕様の要約を [docs/patent/SPEC.md](docs/patent/SPEC.md)、請求項 × 実装の対応を [docs/patent/COMPLIANCE.md](docs/patent/COMPLIANCE.md) と [docs/patent/TRACEABILITY.md](docs/patent/TRACEABILITY.md) に記載しています。発明の理論・手法の詳細は **プレプリント論文(Zenodo DOI: [10.5281/zenodo.19651035](https://doi.org/10.5281/zenodo.19651035))** または [`docs/arxiv_submission/paper.pdf`](docs/arxiv_submission/paper.pdf) を参照してください。
 
-## 引用(Citation)
+### 引用(Citation)
 
 ```bibtex
 @misc{kuroki2026kdf,
@@ -32,7 +142,7 @@
 
 ---
 
-## 主張できる性質(統計的裏付けあり)
+### 主張できる性質(統計的裏付けあり)
 
 [Phase 4 ベンチマーク](benchmarks/REPORT.md)(合成データ n∈{200,500,1000}, 10試行):
 
@@ -51,7 +161,7 @@
 
 ---
 
-## アーキテクチャ
+### アーキテクチャ
 
 ```
 kdf-perovskite/
@@ -72,7 +182,7 @@ kdf-perovskite/
     └── REPORT.md        結果・誠実な制限
 ```
 
-## クレート別対応請求項
+### クレート別対応請求項
 
 | クレート | 請求項 | コンプライアンス |
 |---|---|---|
@@ -81,9 +191,9 @@ kdf-perovskite/
 
 ---
 
-## クイックスタート
+### クイックスタート
 
-### Rust API(cgb-kdf, 請求項1対応の参照実装)
+#### Rust API(cgb-kdf, 請求項1対応の参照実装)
 
 ```rust
 use cgb_kdf::{KdfProcessorRev12, NodeClassifier, Layer};
@@ -112,14 +222,14 @@ let mc = MetaController::default();
 assert!(mc.check_lyapunov_stability());  // Claim 28/29 の数理安定性
 ```
 
-### ベンチマーク再現
+#### ベンチマーク再現
 
 ```bash
 cargo run --release -p sota-comparison
 # → benchmarks/results/sota_comparison.json に書き出し
 ```
 
-### テスト
+#### テスト
 
 ```bash
 cargo test --release -p cgb-kdf
@@ -129,7 +239,7 @@ cargo test --release -p cgb-kdf
 
 ---
 
-## 実データ実験の再現手順
+### 実データ実験の再現手順
 
 外部ネットから取得するデータ(workspace 内にはコミットしていない):
 
@@ -145,7 +255,7 @@ cargo test --release -p cgb-kdf
 
 ---
 
-## 数理仕様(抜粋)
+### 数理仕様(抜粋)
 
 - **減衰方程式(Claim 14)**: $\lambda(C) = \beta(1 + \gamma C^\alpha)$, $w \leftarrow w \cdot e^{-\lambda\Delta t}$
 - **4乗則(Claim 29)**: $\Delta\alpha \propto (\max(0, \langle k\rangle - k_{opt}))^4$
@@ -156,7 +266,7 @@ cargo test --release -p cgb-kdf
 
 ---
 
-## 開発・品質保証
+### 開発・品質保証
 
 | カテゴリ | 状態 |
 |---|---|
@@ -168,7 +278,7 @@ cargo test --release -p cgb-kdf
 
 ---
 
-## 仕様根拠の優先順位
+### 仕様根拠の優先順位
 
 1. KDF の仕様根拠は **特許出願書類(特願 2026-027032 の filed/ 5 書類)**。本公開リポジトリには JPO 自動公開(2027-08 頃)まで現物は含めず、要約として [docs/patent/SPEC.md](docs/patent/SPEC.md) を提供
 2. `docs/patent/` 配下は特許庁提出物に対する参照資料であり、**実装と仕様の齟齬は実装がバグ**
@@ -176,7 +286,7 @@ cargo test --release -p cgb-kdf
 
 ---
 
-## ライセンス
+### ライセンス
 
 本実装コードは **[PolyForm Noncommercial 1.0.0](LICENSE)** のもとで提供されます。
 
