@@ -1,0 +1,10 @@
+[package]
+name = "kdf-noise-robustness"
+version = "0.1.0"
+edition = "2021"
+description = "Noise robustness verification for KDF"
+
+[workspace]
+
+[dependencies]
+rand = "0.8"

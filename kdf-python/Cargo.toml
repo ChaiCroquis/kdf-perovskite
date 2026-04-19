@@ -1,0 +1,14 @@
+[package]
+name = "kdf-python"
+version = "0.1.0"
+edition = "2021"
+description = "Python bindings for KDF (Knowledge Decay Framework)"
+license = "MIT"
+
+[lib]
+name = "kdf_rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.22", features = ["extension-module"] }
+kdf = { path = "../kdf-lib", default-features = false }

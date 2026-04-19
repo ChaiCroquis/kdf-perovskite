@@ -1,0 +1,18 @@
+[package]
+name = "demo-d4-movielens"
+version = "0.1.0"
+edition = "2021"
+license-file = "../../LICENSE"
+description = "KDF Showcase D4 — Long-tail recommendation: preserve niche items"
+
+[[bin]]
+name = "demo-d4-movielens"
+path = "src/main.rs"
+
+[dependencies]
+kdf-demos-common = { path = "../common" }
+cgb-kdf = { path = "../../crates/cgb-kdf" }
+real-data-bench = { path = "../../benchmarks/real_data" }
+rand = { version = "0.8", features = ["small_rng"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

@@ -1,0 +1,43 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "kdf-perovskite"
+version = "0.1.0"
+description = "KDF (Knowledge Decay Framework) — deterministic graph-compression for finite-resource information preservation"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Rust",
+    "License :: Other/Proprietary License",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "numpy>=1.20.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-benchmark>=4.0.0",
+]
+ml = [
+    "scikit-learn>=1.0.0",
+]
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+python-source = "."
+module-name = "kdf_perovskite_rs"
+manifest-path = "crates/kdf-perovskite-py/Cargo.toml"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v"

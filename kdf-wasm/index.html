@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KDF Demo - Knowledge Decay Framework</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .description {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .input-section, .result-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            font-family: monospace;
+            font-size: 14px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+        }
+        .controls {
+            margin: 15px 0;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        label {
+            font-weight: 500;
+        }
+        input[type="range"] {
+            width: 150px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        .layer-section {
+            margin-bottom: 15px;
+        }
+        .layer-title {
+            font-weight: bold;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        .layer-core { background: #bbdefb; color: #1565c0; }
+        .layer-edge { background: #fff9c4; color: #f9a825; }
+        .layer-rare { background: #c8e6c9; color: #2e7d32; }
+        .item {
+            padding: 8px 12px;
+            background: #fafafa;
+            margin: 4px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+            word-break: break-all;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        #threshold-value {
+            font-weight: bold;
+            min-width: 40px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <h1>KDF Demo</h1>
+
+    <div class="description">
+        <strong>Knowledge Decay Framework</strong> - Reduce redundancy, preserve rare items
+        <ul>
+            <li><strong>Core</strong>: High redundancy (many similar items)</li>
+            <li><strong>Edge</strong>: Moderate connectivity</li>
+            <li><strong>Rare</strong>: Isolated items (preserved due to uncertainty)</li>
+        </ul>
+    </div>
+
+    <div class="input-section">
+        <h3>Input Data</h3>
+        <textarea id="input" placeholder="Enter text data, one item per line...">INFO: User login successful
+INFO: User login successful
+INFO: User login successful
+INFO: Request processed in 50ms
+INFO: Request processed in 52ms
+INFO: Request processed in 48ms
+INFO: Database query completed
+INFO: Database query completed
+WARN: High memory usage detected
+ERROR: Connection timeout to external API
+CRITICAL: Security breach attempt detected</textarea>
+
+        <div class="controls">
+            <div>
+                <label>Threshold: <span id="threshold-value">0.7</span></label>
+                <input type="range" id="threshold" min="0.3" max="0.95" step="0.05" value="0.7">
+            </div>
+            <button id="analyze" onclick="analyze()">Analyze</button>
+        </div>
+    </div>
+
+    <div class="result-section" id="results" style="display: none;">
+        <h3>Results</h3>
+        <div class="stats" id="stats"></div>
+        <div id="layers"></div>
+    </div>
+
+    <div class="loading" id="loading" style="display: none;">
+        Loading WASM module...
+    </div>
+
+    <div class="error" id="error" style="display: none;"></div>
+
+    <script type="module">
+        // Import WASM module
+        import init, { KdfWasm } from './pkg/kdf_wasm.js';
+
+        let kdf = null;
+
+        async function initWasm() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                await init();
+                kdf = new KdfWasm();
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('analyze').disabled = false;
+            } catch (e) {
+                document.getElementById('loading').style.display = 'none';
+                showError('Failed to load WASM module: ' + e.message);
+            }
+        }
+
+        window.analyze = function() {
+            if (!kdf) {
+                showError('WASM module not loaded');
+                return;
+            }
+
+            const input = document.getElementById('input').value;
+            const threshold = parseFloat(document.getElementById('threshold').value);
+
+            // Parse input
+            const lines = input.split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0);
+
+            if (lines.length === 0) {
+                showError('Please enter some data');
+                return;
+            }
+
+            try {
+                const result = kdf.process_text(lines, threshold);
+                displayResults(result, lines);
+            } catch (e) {
+                showError('Analysis failed: ' + e);
+            }
+        };
+
+        function displayResults(result, originalData) {
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+
+            // Stats
+            const statsHtml = `
+                <div class="stat-box">
+                    <div class="stat-value">${result.total}</div>
+                    <div class="stat-label">Total Items</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">${result.selected.length}</div>
+                    <div class="stat-label">Selected</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">${(result.compression_rate * 100).toFixed(1)}%</div>
+                    <div class="stat-label">Compression</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">${result.core_count}</div>
+                    <div class="stat-label">Core</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">${result.edge_count}</div>
+                    <div class="stat-label">Edge</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">${result.rare_count}</div>
+                    <div class="stat-label">Rare</div>
+                </div>
+            `;
+            document.getElementById('stats').innerHTML = statsHtml;
+
+            // Group by layer
+            const core = [], edge = [], rare = [];
+            for (let i = 0; i < result.layers.length; i++) {
+                const item = originalData[i];
+                if (result.layers[i] === 'Core') core.push(item);
+                else if (result.layers[i] === 'Edge') edge.push(item);
+                else if (result.layers[i] === 'Rare') rare.push(item);
+            }
+
+            let layersHtml = '';
+
+            if (rare.length > 0) {
+                layersHtml += `
+                    <div class="layer-section">
+                        <div class="layer-title layer-rare">Rare (${rare.length}) - Preserved due to isolation</div>
+                        ${rare.map(item => `<div class="item">${escapeHtml(item)}</div>`).join('')}
+                    </div>
+                `;
+            }
+
+            if (edge.length > 0) {
+                layersHtml += `
+                    <div class="layer-section">
+                        <div class="layer-title layer-edge">Edge (${edge.length}) - Moderate connectivity</div>
+                        ${edge.slice(0, 10).map(item => `<div class="item">${escapeHtml(item)}</div>`).join('')}
+                        ${edge.length > 10 ? `<div class="item">... and ${edge.length - 10} more</div>` : ''}
+                    </div>
+                `;
+            }
+
+            if (core.length > 0) {
+                layersHtml += `
+                    <div class="layer-section">
+                        <div class="layer-title layer-core">Core (${core.length}) - High redundancy</div>
+                        ${core.slice(0, 10).map(item => `<div class="item">${escapeHtml(item)}</div>`).join('')}
+                        ${core.length > 10 ? `<div class="item">... and ${core.length - 10} more</div>` : ''}
+                    </div>
+                `;
+            }
+
+            document.getElementById('layers').innerHTML = layersHtml;
+        }
+
+        function showError(message) {
+            document.getElementById('error').textContent = message;
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Threshold slider
+        document.getElementById('threshold').addEventListener('input', function() {
+            document.getElementById('threshold-value').textContent = this.value;
+        });
+
+        // Disable button until WASM loads
+        document.getElementById('analyze').disabled = true;
+
+        // Initialize
+        initWasm();
+    </script>
+</body>
+</html>

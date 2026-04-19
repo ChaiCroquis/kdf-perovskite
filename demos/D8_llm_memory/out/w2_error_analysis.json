@@ -1,0 +1,379 @@
+{
+  "source": "demos\\D8_llm_memory\\out\\route_a_500q_results.json",
+  "group_summaries": {
+    "both_correct": {
+      "label": "both_correct",
+      "n": 282,
+      "question_types": {
+        "multi-session": 72,
+        "single-session-user": 65,
+        "temporal-reasoning": 45,
+        "knowledge-update": 44,
+        "single-session-assistant": 38,
+        "single-session-preference": 18
+      },
+      "answer_format_types": {
+        "short_fact": 175,
+        "number": 64,
+        "long_explanation": 28,
+        "date": 11,
+        "list": 4
+      },
+      "question_length_chars": {
+        "n": 282,
+        "mean": 83.6,
+        "median": 71.0,
+        "stdev": 52.08,
+        "min": 21,
+        "max": 355
+      },
+      "ground_truth_length_chars": {
+        "n": 282,
+        "mean": 47.22,
+        "median": 10.0,
+        "stdev": 103.74,
+        "min": 1,
+        "max": 604
+      },
+      "kdf_answer_length_chars": {
+        "n": 282,
+        "mean": 117.1,
+        "median": 101.5,
+        "stdev": 64.69,
+        "min": 24,
+        "max": 381
+      },
+      "mem0_answer_length_chars": {
+        "n": 282,
+        "mean": 119.82,
+        "median": 100.0,
+        "stdev": 65.13,
+        "min": 24,
+        "max": 394
+      },
+      "tokens_in": {
+        "n": 282,
+        "mean": 3918.28,
+        "median": 3779.5,
+        "stdev": 1536.73,
+        "min": 1052,
+        "max": 10034
+      },
+      "mem0_retrieval_recall": {
+        "n": 282,
+        "mean": 0.0,
+        "median": 0.0,
+        "stdev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "n_haystack_sessions": {
+        "n": 282,
+        "mean": 1.63,
+        "median": 2.0,
+        "stdev": 0.66,
+        "min": 1,
+        "max": 5
+      }
+    },
+    "kdf_only": {
+      "label": "kdf_only",
+      "n": 66,
+      "question_types": {
+        "multi-session": 19,
+        "single-session-assistant": 17,
+        "temporal-reasoning": 13,
+        "knowledge-update": 11,
+        "single-session-preference": 3,
+        "single-session-user": 3
+      },
+      "answer_format_types": {
+        "short_fact": 35,
+        "number": 15,
+        "long_explanation": 9,
+        "date": 4,
+        "list": 3
+      },
+      "question_length_chars": {
+        "n": 66,
+        "mean": 96.18,
+        "median": 71.0,
+        "stdev": 57.8,
+        "min": 21,
+        "max": 265
+      },
+      "ground_truth_length_chars": {
+        "n": 66,
+        "mean": 44.39,
+        "median": 11.5,
+        "stdev": 77.72,
+        "min": 1,
+        "max": 450
+      },
+      "kdf_answer_length_chars": {
+        "n": 66,
+        "mean": 119.98,
+        "median": 115.5,
+        "stdev": 55.13,
+        "min": 41,
+        "max": 250
+      },
+      "mem0_answer_length_chars": {
+        "n": 66,
+        "mean": 136.82,
+        "median": 132.5,
+        "stdev": 56.97,
+        "min": 45,
+        "max": 262
+      },
+      "tokens_in": {
+        "n": 66,
+        "mean": 4165.23,
+        "median": 4020.0,
+        "stdev": 2149.56,
+        "min": 931,
+        "max": 11784
+      },
+      "mem0_retrieval_recall": {
+        "n": 66,
+        "mean": 0.0,
+        "median": 0.0,
+        "stdev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "n_haystack_sessions": {
+        "n": 66,
+        "mean": 1.95,
+        "median": 2.0,
+        "stdev": 1.01,
+        "min": 1,
+        "max": 5
+      }
+    },
+    "mem0_only": {
+      "label": "mem0_only",
+      "n": 54,
+      "question_types": {
+        "multi-session": 18,
+        "temporal-reasoning": 17,
+        "knowledge-update": 13,
+        "single-session-preference": 4,
+        "single-session-user": 2
+      },
+      "answer_format_types": {
+        "short_fact": 31,
+        "number": 12,
+        "long_explanation": 8,
+        "date": 2,
+        "list": 1
+      },
+      "question_length_chars": {
+        "n": 54,
+        "mean": 72.22,
+        "median": 72.0,
+        "stdev": 19.47,
+        "min": 33,
+        "max": 113
+      },
+      "ground_truth_length_chars": {
+        "n": 54,
+        "mean": 58.63,
+        "median": 10.5,
+        "stdev": 112.01,
+        "min": 1,
+        "max": 583
+      },
+      "kdf_answer_length_chars": {
+        "n": 54,
+        "mean": 139.26,
+        "median": 133.0,
+        "stdev": 76.37,
+        "min": 41,
+        "max": 394
+      },
+      "mem0_answer_length_chars": {
+        "n": 54,
+        "mean": 149.13,
+        "median": 130.0,
+        "stdev": 74.73,
+        "min": 43,
+        "max": 354
+      },
+      "tokens_in": {
+        "n": 54,
+        "mean": 5472.5,
+        "median": 4932.0,
+        "stdev": 2230.46,
+        "min": 1696,
+        "max": 12367
+      },
+      "mem0_retrieval_recall": {
+        "n": 54,
+        "mean": 0.0,
+        "median": 0.0,
+        "stdev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "n_haystack_sessions": {
+        "n": 54,
+        "mean": 2.31,
+        "median": 2.0,
+        "stdev": 0.93,
+        "min": 1,
+        "max": 5
+      }
+    },
+    "both_wrong": {
+      "label": "both_wrong",
+      "n": 98,
+      "question_types": {
+        "temporal-reasoning": 58,
+        "multi-session": 24,
+        "knowledge-update": 10,
+        "single-session-preference": 5,
+        "single-session-assistant": 1
+      },
+      "answer_format_types": {
+        "short_fact": 50,
+        "number": 26,
+        "long_explanation": 10,
+        "list": 8,
+        "date": 4
+      },
+      "question_length_chars": {
+        "n": 98,
+        "mean": 88.57,
+        "median": 80.5,
+        "stdev": 41.35,
+        "min": 34,
+        "max": 243
+      },
+      "ground_truth_length_chars": {
+        "n": 98,
+        "mean": 66.67,
+        "median": 34.0,
+        "stdev": 94.57,
+        "min": 1,
+        "max": 449
+      },
+      "kdf_answer_length_chars": {
+        "n": 98,
+        "mean": 152.12,
+        "median": 146.5,
+        "stdev": 70.62,
+        "min": 26,
+        "max": 439
+      },
+      "mem0_answer_length_chars": {
+        "n": 98,
+        "mean": 167.53,
+        "median": 164.0,
+        "stdev": 68.73,
+        "min": 52,
+        "max": 327
+      },
+      "tokens_in": {
+        "n": 98,
+        "mean": 5522.31,
+        "median": 5268.5,
+        "stdev": 2287.31,
+        "min": 1386,
+        "max": 14931
+      },
+      "mem0_retrieval_recall": {
+        "n": 98,
+        "mean": 0.0,
+        "median": 0.0,
+        "stdev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "n_haystack_sessions": {
+        "n": 98,
+        "mean": 2.38,
+        "median": 2.0,
+        "stdev": 1.23,
+        "min": 1,
+        "max": 6
+      }
+    }
+  },
+  "per_category_outcome": {
+    "temporal-reasoning": {
+      "both_correct": 45,
+      "kdf_only": 13,
+      "mem0_only": 17,
+      "both_wrong": 58
+    },
+    "multi-session": {
+      "both_correct": 72,
+      "kdf_only": 19,
+      "mem0_only": 18,
+      "both_wrong": 24
+    },
+    "knowledge-update": {
+      "both_correct": 44,
+      "kdf_only": 11,
+      "mem0_only": 13,
+      "both_wrong": 10
+    },
+    "single-session-user": {
+      "both_correct": 65,
+      "kdf_only": 3,
+      "mem0_only": 2,
+      "both_wrong": 0
+    },
+    "single-session-assistant": {
+      "both_correct": 38,
+      "kdf_only": 17,
+      "mem0_only": 0,
+      "both_wrong": 1
+    },
+    "single-session-preference": {
+      "both_correct": 18,
+      "kdf_only": 3,
+      "mem0_only": 4,
+      "both_wrong": 5
+    }
+  },
+  "per_answer_type_outcome": {
+    "short_fact": {
+      "both_correct": 175,
+      "kdf_only": 35,
+      "mem0_only": 31,
+      "both_wrong": 50
+    },
+    "long_explanation": {
+      "both_correct": 28,
+      "kdf_only": 9,
+      "mem0_only": 8,
+      "both_wrong": 10
+    },
+    "date": {
+      "both_correct": 11,
+      "kdf_only": 4,
+      "mem0_only": 2,
+      "both_wrong": 4
+    },
+    "number": {
+      "both_correct": 64,
+      "kdf_only": 15,
+      "mem0_only": 12,
+      "both_wrong": 26
+    },
+    "list": {
+      "both_correct": 4,
+      "kdf_only": 3,
+      "mem0_only": 1,
+      "both_wrong": 8
+    },
+    "empty": {
+      "both_correct": 0,
+      "kdf_only": 0,
+      "mem0_only": 0,
+      "both_wrong": 0
+    }
+  }
+}

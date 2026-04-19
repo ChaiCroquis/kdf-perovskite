@@ -1,0 +1,9 @@
+[package]
+name = "kdf-comparison-benchmark"
+version = "0.1.0"
+edition = "2021"
+description = "Benchmark comparing KDF vs existing technologies"
+
+[workspace]
+
+[dependencies]

@@ -1,0 +1,9 @@
+[package]
+name = "kdf-text-verification"
+version = "0.1.0"
+edition = "2021"
+description = "KDF verification for text/document redundancy reduction"
+
+[workspace]
+
+[dependencies]

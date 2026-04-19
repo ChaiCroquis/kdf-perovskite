@@ -1,0 +1,10 @@
+[package]
+name = "kdf-large-scale-test"
+version = "0.1.0"
+edition = "2021"
+description = "Large scale verification for KDF (10K, 100K items)"
+
+[workspace]
+
+[dependencies]
+rand = "0.8"

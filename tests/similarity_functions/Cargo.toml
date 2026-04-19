@@ -1,0 +1,9 @@
+[package]
+name = "kdf-similarity-functions"
+version = "0.1.0"
+edition = "2021"
+description = "Similarity function verification for KDF"
+
+[workspace]
+
+[dependencies]

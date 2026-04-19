@@ -1,0 +1,55 @@
+{
+  "description": "KDF検証用テストデータ: テキスト・文書の冗長性削減と孤立保持",
+  "categories": {
+    "redundant_tech": {
+      "description": "冗長なテック記事群（類似内容が多い）",
+      "documents": [
+        {"id": "tech_001", "content": "Rustは高速で安全なシステムプログラミング言語です。メモリ安全性を保証します。"},
+        {"id": "tech_002", "content": "Rust言語は高速かつ安全なシステム開発向け言語。メモリの安全性が特徴です。"},
+        {"id": "tech_003", "content": "Rustはシステムプログラミングのための高速で安全な言語。メモリ安全を実現。"},
+        {"id": "tech_004", "content": "高速で安全なRust言語はシステム開発に最適。メモリ安全性を提供します。"},
+        {"id": "tech_005", "content": "Rustプログラミング言語は高速性と安全性を両立。メモリ管理が安全。"},
+        {"id": "tech_006", "content": "システム言語Rustは高速で安全。メモリ安全性がRustの強み。"},
+        {"id": "tech_007", "content": "Rustは安全で高速なシステム言語。メモリ安全を言語レベルで保証。"},
+        {"id": "tech_008", "content": "高速・安全なRust言語でシステム開発。メモリ安全性が売り。"},
+        {"id": "tech_009", "content": "Rust言語の特徴は高速性と安全性。メモリ安全をコンパイル時に検証。"},
+        {"id": "tech_010", "content": "システムプログラミング言語Rustは高速で安全。メモリ管理も安全。"}
+      ],
+      "expected_behavior": "高い冗長性 → Decay対象 → 代表的な数件に減少すべき"
+    },
+    "redundant_news": {
+      "description": "冗長なニュース群（同じ事件の報道）",
+      "documents": [
+        {"id": "news_001", "content": "本日、東京で大規模なITカンファレンスが開催された。多くの参加者が集まった。"},
+        {"id": "news_002", "content": "東京にて本日、大規模ITカンファレンス開催。多数の参加者。"},
+        {"id": "news_003", "content": "大規模ITカンファレンスが東京で本日開催された。参加者多数。"},
+        {"id": "news_004", "content": "本日東京で開催の大規模ITカンファレンスに多くの参加者。"},
+        {"id": "news_005", "content": "東京の大規模ITカンファレンス、本日開催。参加者は多数。"}
+      ],
+      "expected_behavior": "高い冗長性 → Decay対象"
+    },
+    "isolated_unique": {
+      "description": "孤立したユニークな文書（他と類似しない）",
+      "documents": [
+        {"id": "unique_001", "content": "量子コンピューティングの新しいアルゴリズムが発表された。従来の100倍の速度。"},
+        {"id": "unique_002", "content": "深海で新種の発光生物が発見された。水深8000メートルの環境に適応。"},
+        {"id": "unique_003", "content": "古代エジプトの未発見の墓が砂漠で見つかった。3000年前の遺物を含む。"}
+      ],
+      "expected_behavior": "低い冗長性 → RARE層 → 判断保留 → 保持されるべき"
+    },
+    "mixed": {
+      "description": "混合パターン（一部冗長、一部ユニーク）",
+      "documents": [
+        {"id": "mix_001", "content": "AIの進歩が医療分野に革命を起こしている。診断精度が向上。"},
+        {"id": "mix_002", "content": "医療分野でAIが革命的進歩。診断の精度向上に貢献。"},
+        {"id": "mix_003", "content": "宇宙探査機が火星の地下に水の痕跡を発見。生命存在の可能性。"}
+      ],
+      "expected_behavior": "mix_001とmix_002は冗長（Decay）、mix_003は孤立（保持）"
+    }
+  },
+  "verification_criteria": {
+    "redundancy_reduction": "冗長な文書群のサイズが減少すること",
+    "isolated_preservation": "孤立した文書が保持されること",
+    "similarity_threshold": "類似度0.7以上を冗長とみなす"
+  }
+}

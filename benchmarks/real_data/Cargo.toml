@@ -1,0 +1,21 @@
+[package]
+name = "real-data-bench"
+version = "0.1.0"
+edition = "2021"
+license-file = "../../LICENSE"
+
+[[bin]]
+name = "real-data-bench"
+path = "src/main.rs"
+
+[lib]
+name = "real_data_bench"
+path = "src/lib.rs"
+
+[dependencies]
+cgb-kdf = { path = "../../crates/cgb-kdf" }
+rand = { version = "0.8", features = ["small_rng"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+regex = "1"
+walkdir = "2"

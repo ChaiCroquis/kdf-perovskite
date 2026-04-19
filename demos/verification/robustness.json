@@ -1,0 +1,602 @@
+[
+  {
+    "condition": "A_deg1",
+    "method": "Random",
+    "dataset_seed": 42,
+    "recall_mean": 0.32,
+    "recall_stderr": 0.032659863237109045,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "A_deg1",
+    "method": "KDF",
+    "dataset_seed": 42,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6799999999999999
+  },
+  {
+    "condition": "A_deg1",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 42,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6799999999999999
+  },
+  {
+    "condition": "A_deg1",
+    "method": "Random",
+    "dataset_seed": 100,
+    "recall_mean": 0.3866666666666667,
+    "recall_stderr": 0.03925227051701265,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "A_deg1",
+    "method": "KDF",
+    "dataset_seed": 100,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6133333333333333
+  },
+  {
+    "condition": "A_deg1",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 100,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6133333333333333
+  },
+  {
+    "condition": "A_deg1",
+    "method": "Random",
+    "dataset_seed": 500,
+    "recall_mean": 0.27999999999999997,
+    "recall_stderr": 0.06531972647421808,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "A_deg1",
+    "method": "KDF",
+    "dataset_seed": 500,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.72
+  },
+  {
+    "condition": "A_deg1",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 500,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.72
+  },
+  {
+    "condition": "A_deg1",
+    "method": "Random",
+    "dataset_seed": 1000,
+    "recall_mean": 0.27999999999999997,
+    "recall_stderr": 0.06531972647421808,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "A_deg1",
+    "method": "KDF",
+    "dataset_seed": 1000,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.72
+  },
+  {
+    "condition": "A_deg1",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 1000,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.72
+  },
+  {
+    "condition": "A_deg1",
+    "method": "Random",
+    "dataset_seed": 7777,
+    "recall_mean": 0.32,
+    "recall_stderr": 0.06798692684790378,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "A_deg1",
+    "method": "KDF",
+    "dataset_seed": 7777,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6799999999999999
+  },
+  {
+    "condition": "A_deg1",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 7777,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6799999999999999
+  },
+  {
+    "condition": "A_deg3",
+    "method": "Random",
+    "dataset_seed": 42,
+    "recall_mean": 0.32,
+    "recall_stderr": 0.032659863237109045,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "A_deg3",
+    "method": "KDF",
+    "dataset_seed": 42,
+    "recall_mean": 0.3466666666666667,
+    "recall_stderr": 0.04745368112013917,
+    "advantage_over_random": 0.026666666666666672
+  },
+  {
+    "condition": "A_deg3",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 42,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6799999999999999
+  },
+  {
+    "condition": "A_deg3",
+    "method": "Random",
+    "dataset_seed": 100,
+    "recall_mean": 0.3866666666666667,
+    "recall_stderr": 0.03925227051701265,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "A_deg3",
+    "method": "KDF",
+    "dataset_seed": 100,
+    "recall_mean": 0.26666666666666666,
+    "recall_stderr": 0.05760658398584765,
+    "advantage_over_random": -0.12000000000000005
+  },
+  {
+    "condition": "A_deg3",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 100,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6133333333333333
+  },
+  {
+    "condition": "A_deg3",
+    "method": "Random",
+    "dataset_seed": 500,
+    "recall_mean": 0.27999999999999997,
+    "recall_stderr": 0.06531972647421808,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "A_deg3",
+    "method": "KDF",
+    "dataset_seed": 500,
+    "recall_mean": 0.3333333333333333,
+    "recall_stderr": 0.02177324215807268,
+    "advantage_over_random": 0.053333333333333344
+  },
+  {
+    "condition": "A_deg3",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 500,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.72
+  },
+  {
+    "condition": "A_deg3",
+    "method": "Random",
+    "dataset_seed": 1000,
+    "recall_mean": 0.27999999999999997,
+    "recall_stderr": 0.06531972647421808,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "A_deg3",
+    "method": "KDF",
+    "dataset_seed": 1000,
+    "recall_mean": 0.3466666666666667,
+    "recall_stderr": 0.01088662107903634,
+    "advantage_over_random": 0.06666666666666671
+  },
+  {
+    "condition": "A_deg3",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 1000,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.72
+  },
+  {
+    "condition": "A_deg3",
+    "method": "Random",
+    "dataset_seed": 7777,
+    "recall_mean": 0.32,
+    "recall_stderr": 0.06798692684790378,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "A_deg3",
+    "method": "KDF",
+    "dataset_seed": 7777,
+    "recall_mean": 0.36000000000000004,
+    "recall_stderr": 0.037712361663282526,
+    "advantage_over_random": 0.040000000000000036
+  },
+  {
+    "condition": "A_deg3",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 7777,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6799999999999999
+  },
+  {
+    "condition": "B_deg2",
+    "method": "Random",
+    "dataset_seed": 42,
+    "recall_mean": 0.32,
+    "recall_stderr": 0.032659863237109045,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "B_deg2",
+    "method": "KDF",
+    "dataset_seed": 42,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6799999999999999
+  },
+  {
+    "condition": "B_deg2",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 42,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6799999999999999
+  },
+  {
+    "condition": "B_deg2",
+    "method": "Random",
+    "dataset_seed": 100,
+    "recall_mean": 0.3866666666666667,
+    "recall_stderr": 0.03925227051701265,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "B_deg2",
+    "method": "KDF",
+    "dataset_seed": 100,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6133333333333333
+  },
+  {
+    "condition": "B_deg2",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 100,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6133333333333333
+  },
+  {
+    "condition": "B_deg2",
+    "method": "Random",
+    "dataset_seed": 500,
+    "recall_mean": 0.27999999999999997,
+    "recall_stderr": 0.06531972647421808,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "B_deg2",
+    "method": "KDF",
+    "dataset_seed": 500,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.72
+  },
+  {
+    "condition": "B_deg2",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 500,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.72
+  },
+  {
+    "condition": "B_deg2",
+    "method": "Random",
+    "dataset_seed": 1000,
+    "recall_mean": 0.27999999999999997,
+    "recall_stderr": 0.06531972647421808,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "B_deg2",
+    "method": "KDF",
+    "dataset_seed": 1000,
+    "recall_mean": 0.96,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6799999999999999
+  },
+  {
+    "condition": "B_deg2",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 1000,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.72
+  },
+  {
+    "condition": "B_deg2",
+    "method": "Random",
+    "dataset_seed": 7777,
+    "recall_mean": 0.32,
+    "recall_stderr": 0.06798692684790378,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "B_deg2",
+    "method": "KDF",
+    "dataset_seed": 7777,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6799999999999999
+  },
+  {
+    "condition": "B_deg2",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 7777,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6799999999999999
+  },
+  {
+    "condition": "C",
+    "method": "Random",
+    "dataset_seed": 42,
+    "recall_mean": 0.28947368421052627,
+    "recall_stderr": 0.021486752129677,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "C",
+    "method": "KDF",
+    "dataset_seed": 42,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.7105263157894737
+  },
+  {
+    "condition": "C",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 42,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.7105263157894737
+  },
+  {
+    "condition": "C",
+    "method": "Random",
+    "dataset_seed": 100,
+    "recall_mean": 0.26126126126126126,
+    "recall_stderr": 0.029423300213611753,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "C",
+    "method": "KDF",
+    "dataset_seed": 100,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.7387387387387387
+  },
+  {
+    "condition": "C",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 100,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.7387387387387387
+  },
+  {
+    "condition": "C",
+    "method": "Random",
+    "dataset_seed": 500,
+    "recall_mean": 0.28125,
+    "recall_stderr": 0.03897559777889522,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "C",
+    "method": "KDF",
+    "dataset_seed": 500,
+    "recall_mean": 0.9375,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.65625
+  },
+  {
+    "condition": "C",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 500,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.71875
+  },
+  {
+    "condition": "C",
+    "method": "Random",
+    "dataset_seed": 1000,
+    "recall_mean": 0.23423423423423426,
+    "recall_stderr": 0.03206329805414808,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "C",
+    "method": "KDF",
+    "dataset_seed": 1000,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.7657657657657657
+  },
+  {
+    "condition": "C",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 1000,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.7657657657657657
+  },
+  {
+    "condition": "C",
+    "method": "Random",
+    "dataset_seed": 7777,
+    "recall_mean": 0.32575757575757575,
+    "recall_stderr": 0.022302426430120828,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "C",
+    "method": "KDF",
+    "dataset_seed": 7777,
+    "recall_mean": 0.8636363636363636,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.5378787878787878
+  },
+  {
+    "condition": "C",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 7777,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6742424242424243
+  },
+  {
+    "condition": "D_noise10",
+    "method": "Random",
+    "dataset_seed": 42,
+    "recall_mean": 0.32,
+    "recall_stderr": 0.032659863237109045,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "D_noise10",
+    "method": "KDF",
+    "dataset_seed": 42,
+    "recall_mean": 0.9866666666666667,
+    "recall_stderr": 0.010886621079036356,
+    "advantage_over_random": 0.6666666666666667
+  },
+  {
+    "condition": "D_noise10",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 42,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6799999999999999
+  },
+  {
+    "condition": "D_noise10",
+    "method": "Random",
+    "dataset_seed": 100,
+    "recall_mean": 0.3866666666666667,
+    "recall_stderr": 0.03925227051701265,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "D_noise10",
+    "method": "KDF",
+    "dataset_seed": 100,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6133333333333333
+  },
+  {
+    "condition": "D_noise10",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 100,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6133333333333333
+  },
+  {
+    "condition": "D_noise10",
+    "method": "Random",
+    "dataset_seed": 500,
+    "recall_mean": 0.27999999999999997,
+    "recall_stderr": 0.06531972647421808,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "D_noise10",
+    "method": "KDF",
+    "dataset_seed": 500,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.72
+  },
+  {
+    "condition": "D_noise10",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 500,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.72
+  },
+  {
+    "condition": "D_noise10",
+    "method": "Random",
+    "dataset_seed": 1000,
+    "recall_mean": 0.27999999999999997,
+    "recall_stderr": 0.06531972647421808,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "D_noise10",
+    "method": "KDF",
+    "dataset_seed": 1000,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.72
+  },
+  {
+    "condition": "D_noise10",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 1000,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.72
+  },
+  {
+    "condition": "D_noise10",
+    "method": "Random",
+    "dataset_seed": 7777,
+    "recall_mean": 0.32,
+    "recall_stderr": 0.06798692684790378,
+    "advantage_over_random": 0.0
+  },
+  {
+    "condition": "D_noise10",
+    "method": "KDF",
+    "dataset_seed": 7777,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6799999999999999
+  },
+  {
+    "condition": "D_noise10",
+    "method": "KDF+RelDensity",
+    "dataset_seed": 7777,
+    "recall_mean": 1.0,
+    "recall_stderr": 0.0,
+    "advantage_over_random": 0.6799999999999999
+  }
+]

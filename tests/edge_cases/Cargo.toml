@@ -1,0 +1,9 @@
+[package]
+name = "kdf-edge-cases"
+version = "0.1.0"
+edition = "2021"
+description = "Edge case verification for KDF Rev.12"
+
+[workspace]
+
+[dependencies]

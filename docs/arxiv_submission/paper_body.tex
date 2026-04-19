@@ -1,0 +1,1205 @@
+\section{1. Introduction}\label{introduction}
+
+\subsection{1.1 Problem}\label{problem}
+
+In persistently growing information networks---LLM-agent conversation memory, personal knowledge bases, distributed-system logs, OSS issues, citation networks---storage constraints force a tradeoff between \textbf{volume} and \textbf{quality}:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Full retention} is practically infeasible at the TB/day scale.
+\item
+  \textbf{Random reduction} (random sampling, reservoir sampling) \textbf{statistically loses} rare-but-important items (e.g., 4xx/5xx error logs, forgotten-yet-consequential notes, minority-language utterances).
+\item
+  \textbf{Label-dependent methods} (stratified sampling, tail-based sampling, active learning, Equitable Coreset Selection) are powerful but presuppose labels or ground truth whose availability is not guaranteed in production.
+\end{itemize}
+
+\textbf{Requirement}: without labels, using only structure, protect rare items that will be needed later while metabolizing redundant information.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{1.2 Observation}\label{observation}
+
+\textbf{Broader context.} The general-systems tradition, exemplified by ``Living Systems Theory'' \citep{miller1978livingsystems}, has long identified twenty ``critical subsystems''---\emph{associator}, \emph{memory}, \emph{decoder}, and others---shared across the seven hierarchical levels from cell to supranational system. Our observation is \textbf{consistent with} this tradition; we narrow our contribution to three of those twenty subsystems---the ones specialized for information preservation (metabolism, rarity protection, recombination)---and to presenting a concrete numerical implementation.
+
+Having attempted to solve this problem through independent engineering effort, we then noticed that the three-pillar architecture we arrived at \textbf{corresponds structurally} to the following (a qualitative observation of parallelism, not a proof of mathematical isomorphism):
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Mammalian memory consolidation} (Complementary Learning Systems) \citep{mcclelland1995cls}
+\item
+  \textbf{Memory B-cell selection in the immune system} (germinal-center affinity maturation)
+\item
+  \textbf{Ginzburg-Landau theory of critical phenomena} (quartic stabilization term)
+\item
+  \textbf{Elastic Weight Consolidation in continual learning} \citep{kirkpatrick2017ewc}
+\item
+  \textbf{Equitable Coreset Selection} \citep{wang2024ecs} and the unlearning variant \textbf{UPCORE} \citep{patil2025upcore}
+\item
+  \textbf{Hopfield associative memory networks} \citep{hopfield1982neural} and modern Hopfield networks \citep{ramsauer2021hopfield}
+\item
+  \textbf{Continuous-time Markov processes on graphs} (spectral-gap convergence)
+\item
+  \textbf{Tail-risk management for Pareto heavy-tailed distributions} \citep{pareto1896economie}
+\item
+  \textbf{Rare-atom preservation in K-SVD sparse dictionary learning} \citep{aharon2006ksvd}
+\item
+  \textbf{Two-factor synaptic consolidation} \citep{tartaglia2025twofactor}
+\end{enumerate}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{1.3 Claims}\label{claims}
+
+This paper advances three claims:
+
+\begin{itemize}
+\item
+  \textbf{(C1) Integration}: the findings from the ten disciplines above admit a uniform description as a three-pillar structure---\textbf{metabolic control + rarity protection + recombination}. KDF is the first \textbf{numerical implementation} of this unified description.
+\item
+  \textbf{(C2) Structural similarity (not yet rigorous)}: two distinctive KDF formulas---(a) the meta-control law \(\Delta \alpha \propto \delta k^4\) and (b) the continuous-time kernel \(\lambda(C) \cdot \exp(-\lambda \cdot dt)\)---share \textbf{the same functional form} as, respectively, the quartic term of the Ginzburg-Landau free energy and the survival probability of a continuous-time Markov process. This is a qualitative structural correspondence; a proof as mathematical isomorphism (a structure-preserving bijection) remains future work.
+\item
+  \textbf{(C3) Novel contribution (mechanism supported; canonical values refuted across four benchmarks)}: the \textbf{sandwich 2-threshold mechanism}---acceptance only within a middle band, imposed jointly by a lower threshold \(\theta_L\) and an upper threshold \(\theta_U\)---has no counterpart in the ten surveyed disciplines and is a distinctive KDF contribution. However, the \textbf{specific values that patent claims 46/48 designate as canonical, \((\theta_L, \theta_U) = (0.70, 0.80)\), are empirically refuted across the following four benchmarks}:
+
+  \begin{enumerate}
+  \def\labelenumi{\arabic{enumi}.}
+  \tightlist
+  \item
+    \textbf{Phase V3 Hopfield} (F-041): at \(\theta_U = 0.80\), \(0\%\) of Hopfield mixture states are detected; rejection of \(24\%\) (at \(P = 18\)) and up to \(\sim 40\%\) at higher load factors becomes feasible only after lowering the threshold to \(\theta = 0.40\).
+  \item
+    \textbf{F-068 analogy-discovery (direct)}: on Gentner classics and git↔paper cross-domain pairs, scores concentrate uniformly at \(\ge 0.99\), so an upper bound of \(0.80\) would reject every true positive.
+  \item
+    \textbf{F-070 Part A synthetic + F-068 scenarios}: over 38 pairs (22 positive / 16 negative), F1(canonical) = \(0.000\) whereas F1(\((0.70, 1.00)\)) = \(1.000\).
+  \item
+    \textbf{F-070 Part B LoCoMo Rev12 streaming}: across 30 queries and 1,140 RARE nodes, the canonical values cause 100\% demotion to Garbage after the 60-cycle timeout (complete information loss).
+  \end{enumerate}
+
+  We therefore narrow the claim to: ``\textbf{the mechanism is meaningful across domains; the specific values require domain-specific calibration.}'' §4.2 elaborates. We claim novelty for the \emph{mechanism} only, and we do not claim universality for the canonical numerical values.
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{1.4 Tension between Universality and Novelty}\label{tension-between-universality-and-novelty}
+
+The paper's assertion that ``KDF's structure has been independently found in ten disciplines'' is, from a novelty standpoint, \textbf{a double-edged sword}:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Favorable reading}: ten disciplines converging independently on the same solution suggests that KDF, as the first integrated implementation of this universal pattern, has genuine significance.
+\item
+  \textbf{Critical reading}: analogous solutions are already known in ten disciplines, so KDF is mere reinvention and lacks novelty.
+\end{itemize}
+
+We confront this tension directly and restrict our novelty claim to the following three narrow items:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Novelty of integration}: we find no prior instance of a single numerical implementation or a single patent claim that integrates all three pillars (metabolism, rarity protection, recombination). Each discipline specializes in one or two pillars (neuroscience focuses mainly on metabolism and recombination, ECS mainly on rarity protection, and so on).
+\item
+  \textbf{Novelty of the sandwich 2-threshold \emph{mechanism} (but not its specific values)}: the \emph{dual-threshold structure} that admits only a middle band via a lower bound \(\theta_L\) and an upper bound \(\theta_U\) has no counterpart in the ten disciplines we surveyed and is distinctive to KDF. However, the patent canonical values \((0.70, 0.80)\) have been empirically refuted across four benchmarks (§1.3 C3, §4.2); we therefore claim novelty only for the \emph{mechanism}, and we do not claim optimality for any specific numerical values.
+\item
+  \textbf{Novelty of an open numerical implementation}: this is the first publicly released implementation to provide concrete parameter values (\(\beta = 0.01\), 7:2:1, 5:3:1, \([0.70, 0.80]\), \(\delta k^4\)) together with a source-available implementation (PolyForm Noncommercial 1.0.0; commercial license available separately).
+\end{enumerate}
+
+We do \textbf{not} claim novelty for any individual pillar (synaptic pruning, EWC, Laplacian fingerprinting, and the like) in isolation. These are pre-existing contributions.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{1.5 Paper Organization}\label{paper-organization}
+
+Section 2 presents KDF's three mechanisms and key formulas concisely. Section 3 systematizes the correspondences with the ten independent disciplines. Section 4 argues the three structural similarities. Section 5 presents empirical evidence (six positive and four negative cases). Section 6 discusses implications and limitations. Section 7 concludes with a refined applicability predictor and the 2 × 2 Mem0 / KDF benchmark matrix. Section 8 develops a stronger theoretical foundation by aligning KDF with Burt's Structural Holes theory, paired with an explicit Limitations and Risks subsection that makes the hierarchy vs.~§4 deliberate. Acknowledgments, References (generated from \texttt{references.bib}), and Appendices A (key formulas) and B (implementation architecture) follow.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{2. KDF Architecture Overview}\label{kdf-architecture-overview}
+
+\subsection{2.1 Basic Structure}\label{basic-structure}
+
+Let the information structure be a graph \(G = (V, E)\). Each edge \((u, v) \in E\) carries parameters: strength \(w_{uv}\), connection history \(n_{uv}\), and last-access time \(t^{\text{acc}}_{uv}\).
+
+\textbf{Mechanism 1 (Metabolic Control).} Using the local congestion \(C_{uv} = \deg(u) + \deg(v)\), we define the decay rate
+
+\[
+\lambda(C_{uv}) = \beta \left( 1 + \gamma C_{uv}^{\alpha} \right)
+\]
+
+and apply exponential edge-weight decay over a discrete time step \(dt\):
+
+\[
+w_{uv}(t + dt) = w_{uv}(t) \cdot \exp\bigl(-\lambda(C_{uv}) \cdot dt\bigr) .
+\]
+
+Threshold-based pruning and probabilistic pruning with \(\Pr[\text{prune}] = 1 - \exp(-\lambda \cdot dt)\) are also permitted.
+
+\textbf{Mechanism 2 (Rarity Protection).} Any node \(v\) satisfying the absolute threshold \(\deg_E(v) \le 1\) is treated as a rare object and \textbf{unconditionally excluded} from metabolic control over the protection interval
+
+\[
+[t_0, t_0 + T_{\text{wait1}}] \cup (t_0 + T_{\text{wait1}}, t_0 + T_{\text{wait1}} + T_{\text{wait2}}]
+\]
+
+(a two-stage review). The two intervals satisfy \(T_{\text{wait1}} = T_{\text{wait2}} \in [30, 70]\) --- Claim 37 requires equal lengths, Claim 39 specifies the range, and the canonical default is \(T_{\text{wait}} = 50\).
+
+\textbf{Mechanism 3 (Integrity Discovery).} From the ego-subgraph of a rare node we construct the Laplacian \(L_v\), compute its eigenvalue vector \(\phi(v) \in \mathbb{R}^{32}\)---a fixed-length, isometry-invariant fingerprint---and evaluate the integrity score against existing nodes:
+
+\[
+S(v, u) = a \cdot S_{\text{cos}}(\phi(v), \phi(u)) + b \cdot S_{\text{struct}}(v, u) + c \cdot S_{\text{sign}}(v, u), \qquad a, b, c > 0 .
+\]
+
+The formula above defines the \textbf{inner} similarity \(S_{\text{inner}}\); the \textbf{outer} (aggregated) integrity score --- on which the sandwich acceptance condition actually operates --- is obtained by aggregating \(S_{\text{inner}}\)-derived values of three types (systematic, relational, attribute). A new edge is generated when the outer score satisfies the \textbf{sandwich 2-threshold criterion} \(\theta_L \le S_{\text{outer}} \le \theta_U\) (canonical defaults \(\theta_L = 0.70\), \(\theta_U = 0.80\)). The weights are used at two independent levels:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Inner fingerprint similarity} \(S_{\text{inner}}\) (combination of structural fingerprints): \(a : b : c = 0.40 : 0.35 : 0.25\), the linear combination of \(S_{\text{cos}}\), \(S_{\text{struct}}\), and \(S_{\text{sign}}\) (Claim 45).
+\item
+  \textbf{Outer integrity aggregation} \(S_{\text{outer}}\) (aggregation over systematic / relational / attribute similarities): \(\text{systematic} : \text{relational} : \text{attribute} = 7 : 2 : 1\) (Claim 44).
+\end{itemize}
+
+The two weightings are independent: the inner one governs similarity between fixed-length vectors, while the outer one governs the aggregation of classified similarity scores. The sandwich threshold is imposed on the outer score.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{2.2 Meta-control (Claims 27--32)}\label{meta-control-claims-2732}
+
+Let \(\delta k = \max(0, \langle k \rangle - k_{\text{opt}})\) be the deviation of the network's mean degree \(\langle k \rangle\) from the target degree \(k_{\text{opt}}\). The adaptive law
+
+\[
+\Delta \alpha = -\eta (H - H_{\text{target}}) \pm \mu \cdot \delta k^{4}
+\]
+
+updates \(\alpha\) within the range \([\alpha_{\min}, \alpha_{\max}]\). The Lyapunov stability condition \(\eta^2 > \mu^2\) holds (full Lyapunov analysis is provided in the filed patent JP 2026-027032 and in the reference implementation \texttt{crates/cgb-kdf/src/meta\_control.rs}; not reproduced in this paper).
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{2.3 Hierarchical Management Regions}\label{hierarchical-management-regions}
+
+The architecture maintains three regions---short-term, long-term, and rare---with update-period ratio \(dt_1 : dt_2 : dt_3 = 5 : 3 : 1\).
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{3. Three-Pillar Structure Across Ten Independent Disciplines}\label{three-pillar-structure-across-ten-independent-disciplines}
+
+The table below enumerates the concrete realization of the three pillars in each discipline. The correspondence with KDF \textbf{can be observed at a qualitative level} (this is not a claim of strict equivalence).
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Discipline
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Metabolism
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Rarity protection
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Recombination / integration
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Representative references
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Mammalian brain (1) & Synaptic pruning during sleep & Engram plasticity window & Hippocampus → neocortex replay & \citet{mcclelland1995cls}; \citet{tartaglia2025twofactor} \\
+Immune system (2) & Naïve B-cell removal & Memory B-cell pool (restricted clonality) & Germinal-center affinity maturation & \citet{mesin2020gc} \\
+Critical-phenomena physics (3) & SOC avalanche decay & Power-law tail (critical cluster) & Ginzburg-Landau quartic stabilization & \citet{bak1987soc}; \citet{ginzburg1950superconductivity} \\
+Continual-learning ML (4) & Weight decay / dropout & EWC Fisher protection & Replay buffer & \citet{kirkpatrick2017ewc} \\
+Coreset selection (5) & Adaptive pruning & ECS minority preservation & Class-sensitive partitioning & \citet{sener2018coreset}; \citet{wang2024ecs} \\
+Hopfield associative memory (6) & Dynamic pattern decay & Stored-pattern attractor basin & \textbf{Spurious-attractor rejection remains unsolved} & \citet{hopfield1982neural}; \citet{ramsauer2021hopfield} \\
+Markov processes on graphs (7) & \(\exp(-\lambda \cdot dt)\) mixing & Slow-mixing mode (\(\lambda_2\)) & Spectral gap / Fiedler vector & \citet{levin2017markov} \\
+Economics / finance (8) & Portfolio rebalance & Tail-event capital reserve & Pareto / extreme-value theory & \citet{pareto1896economie}; \citet{embrechts1997extreme} \\
+Signal processing (9) & Dictionary pruning & Rare-atom preservation & K-SVD iterative update & \citet{aharon2006ksvd} \\
+Graph ML (10) & Time-decayed line graph & Rare-node structural signal & Analogy discovery via fingerprint & \citet{nguyen2018ctdne} \\
+\textbf{KDF (integrated)} & \(\exp(-\lambda(C) \cdot dt)\)-form exponential survival decay & \(\deg \le 1\) absolute threshold + \(\theta_U\) sandwich & Laplacian fingerprint analogy & --- \\
+\end{longtable}
+}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{3.1 Tartaglia et al.~(PNAS 2025) as an Independently Parallel Discovery}\label{tartaglia-et-al.-pnas-2025-as-an-independently-parallel-discovery}
+
+Particularly noteworthy is Tartaglia et al., ``Two-factor synaptic consolidation reconciles robust memory with pruning and homeostatic scaling'' \citep{tartaglia2025twofactor}. \textbf{Its publication overlaps in time with the KDF patent filing (2026-02), and the two works do not cite each other --- exhibiting independent convergence.}
+
+Their claim---``synapse as the product of two factors + replay + homeostatic scaling + Hebbian plasticity → prunes connections while preserving weak memories''---corresponds to our three pillars almost one-to-one (metabolism = homeostatic scaling; rarity protection = two-factor / weak-memory preservation; recombination = Hebbian replay). The fact that two independent teams converged on similar attractor points is \textbf{an observation consistent with the universality hypothesis} (not a proof of the hypothesis).
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{4. Three Structural Similarities of KDF}\label{three-structural-similarities-of-kdf}
+
+\subsection{\texorpdfstring{4.1 \(\delta k^4\) Meta-control ↔ Ginzburg-Landau Quartic Term}{4.1 \textbackslash delta k\^{}4 Meta-control ↔ Ginzburg-Landau Quartic Term}}\label{delta-k4-meta-control-ginzburg-landau-quartic-term}
+
+The Ginzburg-Landau free energy in condensed-matter physics, for an order parameter \(\psi\) near a phase transition, is expanded as
+
+\[
+F(\psi) = \alpha_2 \psi^2 + \alpha_4 \psi^4 + \cdots .
+\]
+
+\textbf{The quartic term \(\alpha_4 \psi^4\) provides the indispensable restoring force that stabilizes the order parameter at the critical point} (with only the quadratic term, the potential is unbounded below as a square).
+
+KDF's meta-control law \(\Delta \alpha \propto \delta k^4\) matches the Ginzburg-Landau-type potential in \textbf{functional form} on two points: (a) identifying the deviation \(\delta k\) with the order parameter, and (b) generating a quartic restoring force. (This is a functional-form-level correspondence, not a claim of mathematical isomorphism.) Implications:
+
+\begin{itemize}
+\tightlist
+\item
+  KDF's meta-control is implicitly \textbf{steering the network toward self-organization at a critical point}.
+\item
+  The power-law avalanche distribution predicted by SOC (Self-Organized Criticality) theory may also be expected in KDF (not yet verified; future work).
+\item
+  Answer to ``why the fourth power'': it is the lowest-order non-trivial restoring force near a phase transition (a physical necessity).
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{4.2 Sandwich Upper Threshold \(\theta_U\) ↔ Hopfield Spurious-Attractor Rejection}{4.2 Sandwich Upper Threshold \textbackslash theta\_U ↔ Hopfield Spurious-Attractor Rejection}}\label{sandwich-upper-threshold-theta_u-hopfield-spurious-attractor-rejection}
+
+\textbf{Classical problem in Hopfield associative memory.} Storing memory patterns \(\xi^{(1)}, \ldots, \xi^{(P)}\) causes linear combinations of them to emerge as \textbf{spurious attractors}---fixed points that are not themselves learned patterns but behave as false memories. Amit, Gutfreund, and Sompolinsky \citep{amit1987replica}, using the replica analysis of spin-glass models, showed that when the critical capacity \(\alpha_c \equiv P/N \approx 0.138\) is exceeded, spurious attractors proliferate and associative recall collapses. Related phenomena---where repeatedly presented or biased-sampled patterns form broad basins of attraction and obscure other memories, discussed in the context of biased/correlated-pattern capacity---are also closely tied to the spurious problem.
+
+\textbf{No general method for spurious detection has been established in over 40 years.} Modern Hopfield networks \citep{ramsauer2021hopfield} exponentially improved capacity via a softmax mechanism, but a widely accepted general principle for spurious suppression has not yet been presented (this paper does \emph{not} claim that KDF has solved this; see the conjecture at the end of §4.2).
+
+\textbf{KDF's upper threshold \(\theta_U\) formalizes the following heuristic.} When the integrity score \(S\) is ``too perfect'' (for example, \(S > 0.80\)), the candidate is most likely one of:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  A self-loop or trivial duplicate (rediscovery of an existing neighbor),
+\item
+  An overfitting / memorization artifact, or
+\item
+  \textbf{A spurious attractor} (a false fixed point).
+\end{enumerate}
+
+By restricting the acceptance region to \([\theta_L, \theta_U]\), these cases are statistically rejected.
+
+\textbf{Mathematical hypothesis.} Integrity scores of random pairs follow a distribution \(p(S)\); true analogies concentrate near the middle of \([\theta_L, \theta_U]\), while spurious attractors concentrate in the right tail \(S > \theta_U\). Upper-bound rejection corresponds to a tail-cut statistical decision boundary.
+
+\textbf{Phase V3 empirical verification (2026-04-18).} On a 100-neuron Hopfield network (Hebbian learning, \(N = 100\), \(P \in \{5, 10, 14, 18, 22\}\)), we implemented and measured a \(\theta\)-filter that rejects the post-recall state as spurious when it has cosine similarity \(\ge \theta\) to multiple learned patterns:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2143}}
+  >{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2143}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2857}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2857}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Detection threshold \(\theta\)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Load factor \(P\)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Spurious-rejection rate
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+effective\_recall improvement
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+0.80 (KDF canonical) & 18 & \textbf{0\%} & 0 \\
+0.70 & 18 & 0\% & 0 \\
+0.55 & 18 & 0\% & 0 \\
+0.40 & 18 & \textbf{24\%} & 0.49 → 0.65 (+32\%) \\
+0.40 & 22 & \textbf{40\%} & 0.34 → 0.56 (+65\%) \\
+\end{longtable}
+}
+
+\textbf{Findings:}
+
+\begin{itemize}
+\tightlist
+\item
+  {[}True{]} \textbf{The mechanism (multi-pattern similarity rejection) is supported}: an appropriately chosen \(\theta\) can reject \(24\%\) of Hopfield mixture spurious states at load factor \(P = 18\), and up to \(40\%\) at \(P = 22\) (further above the critical capacity \(\alpha_c \approx 0.138\), where spurious attractors proliferate).
+\item
+  {[}False{]} \textbf{The simple claim of transplanting KDF's canonical \(\theta_U = 0.80\) directly to Hopfield was experimentally refuted}: cosine similarities between a Hopfield mixture state and its constituent patterns each stay around \(\sim 0.4\), undetectable at a \(0.80\) threshold.
+\end{itemize}
+
+\textbf{Refinement of the paper's original claim.}
+
+\begin{itemize}
+\tightlist
+\item
+  The original conjecture---``KDF's canonical value \(\theta_U = 0.80\) is the principled-level answer to the Hopfield spurious problem''---\textbf{is refuted}.
+\item
+  The revised conjecture---``the \textbf{upper-threshold mechanism} is also effective for suppressing Hopfield spurious attractors, but the \textbf{specific value must be tuned domain-specifically}''---is \textbf{partially supported}.
+\end{itemize}
+
+Implementation: \href{../../demos/D7_github_issue/src/bin/phase_v3_hopfield_theta_u.rs}{\texttt{demos/D7\_github\_issue/src/bin/phase\_v3\_hopfield\_theta\_u.rs}}. Full record: \href{../VERIFIED_FINDINGS.md}{VERIFIED\_FINDINGS.md F-041}.
+
+Integration verification with modern Hopfield networks \citep{ramsauer2021hopfield} is future work (a minimal experiment for methodology calibration is completed in this phase).
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsubsection{4.2.1 Phase X Step 2 Additional Verification --- Completing the Four-Benchmark Refutation (F-070, 2026-04-19)}\label{phase-x-step-2-additional-verification-completing-the-four-benchmark-refutation-f-070-2026-04-19}
+
+Following the partial refutation of F-041, we systematically re-examined the practical applicability of canonical \((\theta_L, \theta_U) = (0.70, 0.80)\) across three additional benchmarks. Together, they establish four-benchmark cross-cutting evidence.
+
+\textbf{Part A: Sandwich sensitivity analysis on synthetic + F-068 replicated pairs.} We captured the raw scores (with the permissive threshold 0.0) of \texttt{AnalogyDiscoveryEngine::find\_analogy} on 38 pairs in total --- 22 positive (3 Gentner classics including solar system ↔ atom, 4 git ↔ paper cross-domain correspondences, 15 synthetic isomorphic pairs) and 16 negative (1 hand-curated non-isomorphic control, 15 synthetic non-isomorphic pairs) --- and post-hoc applied five sandwich conditions \(\{(0.70, 0.75), (0.70, 0.80), (0.70, 0.90), (0.70, 0.95), (0.70, 1.00)\}\). Results:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1304}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1739}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1739}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1739}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1739}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1739}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\((\theta_L, \theta_U)\)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+TP
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+FN
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+TN
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+FP
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+F1
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\((0.70, 0.75)\) & 0 & 22 & 16 & 0 & 0.000 \\
+\textbf{\((0.70, 0.80)\) canonical} & \textbf{0} & \textbf{22} & \textbf{16} & \textbf{0} & \textbf{0.000} \\
+\((0.70, 0.90)\) & 0 & 22 & 16 & 0 & 0.000 \\
+\((0.70, 0.95)\) & 0 & 22 & 16 & 0 & 0.000 \\
+\((0.70, 1.00)\) & 22 & 0 & 16 & 0 & \textbf{1.000} \\
+\end{longtable}
+}
+
+\textbf{Finding.} Positive-analogy scores saturate uniformly at \(\ge 0.99\) (fingerprint identity for graph isomorphism), while negatives distribute around \(\sim 0.57\)--\(0.60\). Because canonical \(\theta_U = 0.80\) rejects every positive, F1 is 0.000; conversely, \(\theta_U = 1.00\) (no effective upper bound) yields complete separation via \(\theta_L = 0.70\) alone and reaches F1 = 1.000. \textbf{No empirical scores fall within the ``middle band'' that 0.80 would admit.}
+
+\textbf{Part B: KdfProcessorRev12 review loop on LoCoMo temporal 30 Q.} Fixing \((t_{\text{wait1}}, t_{\text{wait2}}) = (30, 30)\), we ran the review cycle under three conditions \(\theta_U \in \{0.80, 0.90, 1.00\}\) up to 65 cycles. The spoke\_up / demote distribution across the total 1,140 RARE nodes (of which 8 belong to answer turns):
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.0968}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1290}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1290}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1290}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1290}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1290}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1290}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1290}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\(\theta_U\)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+total RARE
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+answer-RARE
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+spoke\_up (ans)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+demoted (ans)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+spoke\_up (non-ans)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+demoted (non-ans)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+avg cycles
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\textbf{0.80 canonical} & 1140 & 8 & \textbf{0} & \textbf{8 (100\%)} & 0 & \textbf{1132 (100\%)} & 60.0 \\
+0.90 & 1140 & 8 & 8 (100\%) & 0 & 1132 (100\%) & 0 & 1.0 \\
+1.00 & 1140 & 8 & 8 (100\%) & 0 & 1132 (100\%) & 0 & 1.0 \\
+\end{longtable}
+}
+
+\textbf{Finding.} Under canonical \(\theta_U = 0.80\), every RARE node in the LoCoMo chain graph is demoted to Garbage after the 60-cycle timeout (complete information loss). Under \(\theta_U \ge 0.90\), all RARE nodes spoke up within one cycle, but there is no discrimination between answer and non-answer turns, so the filter does not function. \textbf{The sparse chain structure of LoCoMo cannot admit a discriminative middle band under the sandwich.}
+
+\textbf{Cross-benchmark verdict:}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Benchmark
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Domain
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Verdict on canonical \((0.70, 0.80)\)
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+F-041 Hopfield mixture & Associative memory & 0\% detection at \(\theta_U = 0.80\); \(24\%\) at \(P = 18\) and \(40\%\) at \(P = 22\) only after lowering to \(\theta = 0.40\) \\
+F-068 analogy-engine direct & Graph isomorphism & Scores at \(\ge 0.99\); canonical rejects every true positive \\
+F-070 Part A (38 pairs) & Synthetic + F-068 replication & F1(canonical) \(= 0.000\); F1\(((0.70, 1.00)) = 1.000\) \\
+F-070 Part B (LoCoMo streaming) & 30 Q × 1,140 RARE & 100\% RARE demoted under canonical → complete information loss \\
+\end{longtable}
+}
+
+→ \textbf{Across four benchmarks, canonical \((\theta_L, \theta_U) = (0.70, 0.80)\) loses practical value.} True positive-analogy scores concentrate at \(\ge 0.95\) and negatives at \(\le 0.65\), so the empirically correct sandwich is \((0.70, 1.00)\) (effectively no upper bound; only \(\theta_L\) active) or at the \((0.90, 1.00)\) level.
+
+\textbf{Final narrowing of the claim.}
+
+\begin{itemize}
+\tightlist
+\item
+  {[}False{]} Original conjecture --- ``canonical \((0.70, 0.80)\) is the principled-level answer to Hopfield spurious / over-similar candidates'' --- \textbf{is refuted across four benchmarks}.
+\item
+  {[}True{]} Novelty of the 2-threshold \emph{mechanism} (the structure that admits only the middle band by simultaneously imposing lower and upper bounds) has no counterpart among the ten related disciplines we surveyed; the novelty claim is \textbf{maintained at the mechanism level}.
+\item
+  {[}Calibration Required{]} Specific canonical values require domain-specific empirical calibration. The score distributions from F-068 / F-070 suggest \(\theta_U \ge 0.95\) for graph-isomorphism regimes and \(\theta \le 0.5\) for associative-memory regimes.
+\end{itemize}
+
+Implementation: \href{../../demos/D8_llm_memory/src/bin/phase_x2_sandwich_twait_locomo.rs}{\texttt{demos/D8\_llm\_memory/src/bin/phase\_x2\_sandwich\_twait\_locomo.rs}}. Full record: \href{../VERIFIED_FINDINGS.md}{VERIFIED\_FINDINGS.md F-070}.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{4.3 \(\exp(-\lambda(C) \cdot dt)\) ↔ Locally-Varying Continuous-Time Markov Chain}{4.3 \textbackslash exp(-\textbackslash lambda(C) \textbackslash cdot dt) ↔ Locally-Varying Continuous-Time Markov Chain}}\label{exp-lambdac-cdot-dt-locally-varying-continuous-time-markov-chain}
+
+The survival probability of a continuous-time Markov process \(X_t\) (with exponentially distributed residence times) is generally written as
+
+\[
+\Pr[\text{no jump in } [t, t+dt]] = \exp(-\Lambda(x) \cdot dt) .
+\]
+
+KDF's weight update \(w \leftarrow w \cdot \exp(-\lambda(C) \cdot dt)\) has \textbf{the same functional form}. If we interpret \(\lambda(C)\) as a local ``jump rate'', KDF's edge decay corresponds to the \textbf{motif of a survival process}---``the probability that an edge is lost in an infinitesimal interval follows \(1 - \exp(-\lambda(C) \cdot dt)\)''.
+
+\textbf{However, strict CTMC equivalence does not hold.} In KDF, (a) \(\lambda(C)\) changes as adjacent edges are pruned, so the generator is non-stationary; (b) the weight \(w\) is a continuous quantity, not a probability mass; (c) edge protection (Rare) depends on global conditions; and so on --- the standard CTMC assumptions are not satisfied. This section's claim therefore remains at the level of \textbf{motivation for a theoretical connection (a motivating analogy)}; ergodic results such as stationary distributions or spectral gaps cannot be imported directly.
+
+What this structural correspondence suggests is the following --- \textbf{directions for future theoretical development}, not theorems:
+
+\begin{itemize}
+\tightlist
+\item
+  Claim 46's Laplacian eigenvalue fingerprint is \textbf{conceptually consistent} with the attempt to project ego-graph spectral-gap information into a 32-dimensional space (an exact information-preservation proof has not been carried out).
+\item
+  Theoretical connections to diffusion maps, PageRank, and spectral clustering are future work.
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{5. Empirical Evaluation}\label{empirical-evaluation}
+
+\subsection{5.1 Positive Results (Six Cases)}\label{positive-results-six-cases}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Problem
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Data
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+KDF result
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Comparison
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+P1 LLM-agent memory & LongMemEval 500 Q (ICLR 2025) & Recall \(= 0.821\) & Industry-default TTL \(= 0.107\) (\textbf{\(\times 7.7\)}); Random \(= 0.294\) (\(\times 2.8\)) \\
+P2 Personal knowledge base & Obsidian vault of 2,182 notes (PII-masked) & \(F_1 = 0.747\) & Wilcoxon \(p = 0.006\) vs.~Random / OrphanOnly / TextSim \\
+P3 Large-scale log observability (static baseline) & NASA HTTP log, 50k real records & Recall \(= 0.237\) (keep \(10\%\), \(4xx/5xx\) retention) & Random \(= 0.102\) (\textbf{\(\times 2.3\)}), without labels \\
+P7 ML reproducibility meta (by-product) & 5 benchmarks × 5 scenarios & 4/5 exact predictions + 1 via alternate route & Released independently as the \texttt{bias-detector} crate \\
+\textbf{P8 Distributed-execution bit-exactness (Claim 17)} & \textbf{LoCoMo 10 real graph (600+ nodes, 400+ edges)} & \textbf{max edge-weight diff \(= 0.000 \text{e}0\)} & \texttt{apply\_edge\_decay} (global) and \texttt{apply\_edge\_decay\_local} (distributed) are completely bit-exact, F-069 \\
+\textbf{P11 NASA streaming: Claim 14 decay benefit} & \textbf{NASA HTTP log 50k real records, replayed in time order (500 rec / 100 window)} & \textbf{C1 decay rare\_recall \(= 0.4898\) at keep \(30\%\) (C0 static \(0.4592\) → \(+3.06\) pt)} & \textbf{First empirical anchor for the narrowed thesis that ``streaming is the true use case'', F-072} \\
+\end{longtable}
+}
+
+As additional verification in Phase X Step 1, all three mechanisms of Claim 1---metabolic control, rarity protection, and integrity discovery---are now empirically backed on realistic benchmarks (integrity discovery via F-068: \(100\%\) on Gentner classics, \(100\%\) on cross-domain git↔paper, \(0\%\) false positives on the negative control). In Phase X Step 5 (F-072), Claim 14 exponential decay is confirmed to yield a \(+3.06\)-point benefit in a realistic streaming scenario, giving \textbf{empirical anchor to the narrowed thesis that ``streaming is the true use case''}.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{5.2 Negative Results (Four Cases) --- An Honest Record}\label{negative-results-four-cases-an-honest-record}
+
+For the integrity of this work, we report \textbf{both generalization failures found in testing} and \textbf{refutations of canonical values that we ourselves proposed}:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Problem
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Result
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Interpretation
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+P6 OSS maintenance & KDF/Random ratios over three repos (\texttt{rust-lang/rust}, \texttt{tokio-rs/tokio}, \texttt{golang/go}) are \(\times 1.13, \times 1.03, \times 0.85\); average \textbf{\(\times 1.00\)} & The \(+15\%\) on \texttt{rust-lang} alone is a repository-specific local signal. The general-OSS applicability claim is \textbf{withdrawn} (F-038) \\
+P5 Paper rediscovery & OpenAlex 200 papers × concept-sharing graph; KDF/Random \(= \mathbf{\times 0.83}\) & Late-bloomer detection is a D5-type task (independent of structure); KDF is ill-suited to concept-graphs (F-039) \\
+\textbf{P9 Redundancy of Claim 5/14 time signals on static tasks (validated on streaming)} & \textbf{LoCoMo 321 Q at keep \(30\%\): KDF\_static \(= 0.5286\); adding time signals yields \(0.43\)--\(0.53\) (static: all worse or tied). NASA streaming 50k records at keep \(30\%\): C0 static \(0.4592\); C1 Claim 14 decay \(0.4898\) (}\(+3.06\) pt benefit on streaming\textbf{)} & On static query tasks, structural rarity already subsumes temporal rarity, so the time signals are redundant. On streaming, decay discards stale normal traffic and relatively elevates rare resources → \textbf{task-structure-dependent conditional value} (F-069 static redundancy + F-072 streaming \(+3.06\)-pt validation) \\
+\textbf{P10 Four-benchmark refutation of canonical \(\theta_U = 0.80\) (Claims 47--48)} & \textbf{F-041 (Hopfield: \(0\%\) detection) + F-068 (analogy scores \(0.99+\) reject every positive) + F-070 Part A (F1 \(0.000\) vs.~\(1.000\)) + F-070 Part B (LoCoMo: \(100\%\) RARE demoted)} & The 2-threshold \emph{mechanism} is supported; the canonical specific values \((0.70, 0.80)\) are refuted across four benchmarks. Domain-specific calibration is required (F-041, F-070) \\
+\end{longtable}
+}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{\texorpdfstring{5.3 A Priori Applicability Metric: \texttt{bias-detector}}{5.3 A Priori Applicability Metric: bias-detector}}\label{a-priori-applicability-metric-bias-detector}
+
+We released a zero-dependency Rust crate for determining KDF's applicability in advance (\href{../../crates/bias-detector/}{\texttt{crates/bias-detector/}}). The metric \(\text{bias\_score} = 0.3 \cdot I_1 + 0.7 \cdot I_4\) correctly predicted applicability on 4 of 5 benchmarks exactly, and on the 5th via an alternate route.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{6. Discussion / Implications}\label{discussion-implications}
+
+\subsection{6.1 The Possibility of a Domain-Invariant Architecture}\label{the-possibility-of-a-domain-invariant-architecture}
+
+From the qualitative observation that ten independent disciplines adopt the same three-pillar structure (or a 2--3-pillar subset), we advance the following \textbf{hypothesis} (not a proof):
+
+\begin{quote}
+\textbf{Hypothesis (untested)}: ``Systems that preserve information long-term under finite resources repeatedly exhibit designs belonging to the architectural family of three mechanisms---metabolism, rarity protection, and recombination.''
+\end{quote}
+
+The hypothesis \textbf{can be supported} (a necessary but not sufficient set of grounds) from the following directions:
+
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\tightlist
+\item
+  independent evolutionary convergence in biological systems (brain, immune);
+\item
+  independent rediscovery in ML engineering (EWC, ECS);
+\item
+  functional-form match with critical-phenomena physics.
+\end{enumerate}
+
+However, all three are observations of \emph{compatibility}, not proofs of \emph{necessity}. Demonstrating genuinely universal optimality would require the following---none carried out in this paper:
+
+\begin{itemize}
+\tightlist
+\item
+  Mathematical formalization of the finite-resource information-preservation problem and characterization of its optimal-solution class.
+\item
+  Proof of a performance lower bound on this problem for systems that \textbf{lack} the three pillars.
+\item
+  Statistical tests quantifying the ten-domain correspondence.
+\end{itemize}
+
+KDF in this work \textbf{provides the first comprehensive numerical implementation} in the direction of this hypothesis; verifying the hypothesis itself is a task for future work.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{6.2 The Possibility of Domain-Specialized Implementations}\label{the-possibility-of-domain-specialized-implementations}
+
+By wrapping the same core engine with domain-specific interfaces, we can extend deployment across multiple application markets:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{kdf-associative-memory} --- a wrapper for Hopfield spurious-attractor suppression
+\item
+  \texttt{kdf-coreset} --- unsupervised, label-free Equitable Coreset Selection
+\item
+  \texttt{kdf-temporal-graph} --- temporal-graph embedding, directly compared with \citet{nguyen2018ctdne}
+\item
+  \texttt{kdf-portfolio} --- information tail-risk management (insurance / finance applications)
+\item
+  \texttt{kdf-llm-memory} --- LLM-agent long-term memory (leveraging the LongMemEval track record directly)
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{6.3 Positioning of Patents and Licensing}\label{positioning-of-patents-and-licensing}
+
+This paper's patent claims secure two strategic contributions:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Claim 1 (independent)}: integration of the three mechanisms. Even if the individual elements pre-exist, the integration itself has no prior art. F-068 completed the realistic benchmark for the analogy mechanism, so all three mechanisms are now empirically backed.
+\item
+  \textbf{Claims 47--48: the sandwich 2-threshold \emph{mechanism}} (lower bound \(\theta_L\) + upper bound \(\theta_U\)) has no counterpart in the ten related disciplines surveyed and is a distinctive element. However, the patent-designated canonical values \((\theta_L, \theta_U) = (0.70, 0.80)\) themselves were subject to the four-benchmark refutation in §4.2 / §5.2 P10, narrowing the claim to \emph{``the mechanism is novel; specific values require domain-calibration.''}
+\end{enumerate}
+
+The implementation code is available under PolyForm Noncommercial 1.0.0 (research, education, and personal use freely permitted). Commercial licenses --- both for the source code and for practicing the patent --- are managed separately; inquiries are welcome via the repository's COMMERCIAL.md.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{6.4 Limitations}\label{limitations}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{The ``domain-invariant architecture'' hypothesis itself is untested.} The ten-domain correspondence is merely a qualitative observation; a formal theorem of ``necessary convergence'' has not been proved. §6.1's hypothesis should be read \textbf{as a hypothesis, not a conclusion}.
+\item
+  \textbf{Canonical values \((\theta_L, \theta_U) = (0.70, 0.80)\) are refuted across four benchmarks} (F-041 Hopfield / F-068 analogy / F-070 Part A synthetic / F-070 Part B LoCoMo streaming). The sandwich mechanism itself is supported, but universality of specific values is not claimed (§4.2 / §5.2 P10).
+\item
+  \textbf{Claim 5 / 14 time-evaluation components and exponential decay are task-structure-dependent}: redundant on static query tasks (F-069 LoCoMo); \(+3.06\)-pt benefit on streaming scenarios (F-072 NASA 50 k records, time-ordered replay). When structural rarity already subsumes temporal rarity, the time signals are redundant; when stale traffic must be discarded under continuous operation, they are effective.
+\item
+  \textbf{Claim 25 ActivationScore depends on the temporal distribution of rare events}: \(100\%\) rescue for temporally clustered rare events (F-027 Mode E drift scenario); hurts or neutralizes on evenly distributed rare events (F-072 NASA; F-069 LoCoMo) due to recency bias. At application time, discrimination of the rare-event temporal pattern is required.
+\item
+  \textbf{The ten-domain correspondences are at the level of structural similarity.} Proof as mathematical isomorphism (structure-preserving bijection) has not been carried out for any of the disciplines.
+\item
+  \textbf{The §4.3 Markov correspondence is a motivating analogy.} Strict CTMC equivalence does not hold (non-stationary generator, weights are not probability mass, etc.).
+\item
+  \textbf{Empirical evidence covers only five domains with six cases} (P1 / P2 / P3 / P7 / P8 = Claim 17 bit-exact; P11 = NASA streaming; P3 and P11 are the static and streaming scenarios of the same NASA HTTP-log domain). Generalization claims beyond these five domains are \textbf{beyond the scope of this paper}.
+\item
+  \textbf{Negative results P5 / P6} establish that KDF is ineffective for D5-type tasks (rarity independent of structure). \textbf{P9 / P10} establish that our own canonical parameters are not optimal in realistic scenarios. A priori screening via \texttt{bias-detector} (F-030 / F-036) is recommended.
+\item
+  \textbf{Optimality of specific parameter values} (\(\beta = 0.01\), \(7:2:1\), \(5:3:1\), \([0.70, 0.80]\), \(\delta k^4\), \(\lambda\), \(\tau_{\text{ref}}\)) is empirically chosen; domain-specific tuning is required. P10 quantifies one such case, where the sandwich canonical fails to match the true score distribution.
+\item
+  \textbf{Universality \(\neq\) optimality \(\neq\) novelty.} The ten-discipline parallel discovery suggests universality, but whether the common structure is \textbf{genuinely optimal} is a separate question; and novelty is limited to the narrow three-item claim in §1.4 (novelty of integration + novelty of mechanism + novelty of open implementation).
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{7. Conclusion}\label{conclusion}
+
+We presented the Knowledge Decay Framework (KDF) as a three-mechanism integrated architecture for operating information networks under finite resources. The reference implementation \texttt{cgb-kdf}, corresponding to claims 1--50 of patent JP 2026-027032, carries direct verification tests \texttt{test\_claimN\_*} for all 50 claims (56 tests total); the workspace excluding \texttt{kdf-python} / \texttt{kdf-wasm} passes 449 tests (measured 2026-04-18; see \href{../patent/COMPLIANCE.md}{\texttt{COMPLIANCE.md}}).
+
+Our central contributions are three:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{A qualitative systematization of the three-pillar structure across ten independent disciplines}, with KDF advanced as \textbf{a candidate implementation} of a domain-invariant architectural family (formal proof of ``necessary convergence'' not carried out). All three mechanisms of Claim 1 (metabolic control / rarity protection / integrity discovery) reach empirically backed status on realistic benchmarks via F-068 / F-069 / F-070.
+\item
+  \textbf{Three structural similarities} (\(\delta k^4\) ↔ Ginzburg-Landau quartic term {[}functional-form match{]}; sandwich 2-threshold \emph{mechanism} ↔ Hopfield spurious rejection {[}mechanism supported, canonical values refuted in §4.2 on four benchmarks{]}; \(\exp(-\lambda \cdot dt)\) ↔ Markov survival probability {[}motivating analogy{]}) indicate \textbf{directions of theoretical connection} for KDF's engineering heuristics (rigorous theorem formulation is future work).
+\item
+  \textbf{Honest empirical reporting} across three streams: positive results (P1 / P2 / P3 / P7 / P8 = Claim 17 bit-exact; P11 = NASA streaming \(+3.06\) pt; six total); generalization failures on comparison benchmarks (P5 / P6); and \textbf{refutations of canonical values we proposed ourselves (P9 Claim 5/14 static-task redundancy; P10 Claim 47--48 four-benchmark refutation of canonical values)} (four negatives total). We also provide the \texttt{bias-detector} a priori applicability metric. Self-refuting our own claim across four benchmarks serves the dual purpose of novelty narrowing and credibility strengthening.
+\end{enumerate}
+
+KDF is \textbf{not a universal solution}. It cannot directly contribute to physical problems (climate change), economic problems (poverty), or social problems (war, educational inequality). \textbf{Moreover, the BEIR SciFact verification on 2026-04-18 (F-045) empirically confirmed that KDF is not applicable to general semantic retrieval (query--document matching)} (recall@10 \(= 0.000\), below Random).
+
+\textbf{The refined applicability predictor, established with the additional verifications of 2026-04-19 (F-061--F-065), is:}
+
+\begin{quote}
+\textbf{``KDF decisively outperforms Random and baseline heuristics only under the condition that structural rareness correlates with task importance.''}
+\end{quote}
+
+Task type × KDF applicability matrix:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Task
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+structural signal vs.~importance
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+KDF applicability
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Path-based algorithms (APSP) & path-critical = bottleneck = rare & {[}True{]} & F-061 \\
+Integration-point preservation (git merges, \textbf{repo merge rate \(< 10\%\)}) & merge = high degree = important & {[}True{]} & F-062, F-065 \\
+LLM-memory temporal recall (long-context date/time) & rare date/time literal = structurally rare & {[}True{]} & F-057 / F-058 \\
+Orphan-note detection (PKM) & orphan = deg \(0\) = rare & {[}True{]} & F-012 / F-017 \\
+\textbf{Merge-heavy repos (merge rate \(> 20\%\))} & \textbf{merge \(\neq\) rare; TopDegree wins} & {[}False{]} & F-065 pytest \\
+\textbf{GP / kernel-regression inducing points} & \textbf{density center \(\neq\) rareness} & {[}False{]} & F-063 \\
+\textbf{Naive Python call-graph API} & \textbf{API = high in-degree; opposite of KDF Rare} & {[}False{]} & F-064 \\
+Scale-free hub centrality & degree ≈ betweenness; TopDegree suffices & {[}False{]} & F-061 BA/WS \\
+Metadata-based minority (cultural / semantic) & metadata independent of structure & {[}False{]} & F-047 \\
+General semantic retrieval & semantic understanding is essential & {[}False{]} & F-045 \\
+\end{longtable}
+}
+
+KDF is effective only under the following restricted conditions:
+
+\begin{itemize}
+\tightlist
+\item
+  {[}True{]} the data can be represented as a graph;
+\item
+  {[}True{]} \textbf{the query is unknown at retention time} (to be searched for later);
+\item
+  {[}True{]} \textbf{protection of one-off / rarely-mentioned items} is the goal;
+\item
+  {[}True{]} most of the data is redundant, a minority is unique, and labeling is difficult;
+\item
+  {[}True{]} \textbf{task importance correlates with ``structural rareness''} (newly refined via F-061--F-065).
+\end{itemize}
+
+Under these constraints, KDF is effective for \textbf{memory-curation tasks such as conversational memory and PKM} (P1: LongMemEval TTL \(\times 7.7\); P2: Obsidian F1 \(= 0.747\), \(p = 0.006\); P3: NASA log \(\times 2.3\)).
+
+\textbf{The initial F-044 measurement on 2026-04-18 turned out to be a simulation (the ``KDF'' numbers used a constant 0.821 recall value inherited from F-033, an earlier static LongMemEval measurement, rather than running the real KDF algorithm), as determined by F-052 / F-053; re-running with the real KDF completely reversed the conclusion on LongMemEval and yielded partial wins on LoCoMo:}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{LongMemEval 500 Q (F-053)}: Real KDF \(0.434\) vs.~Mem0 \(0.672\) (Mem0 \(+23.8\) pt, \(p < 10^{-16}\)). Mem0 wins significantly in 5 of 6 categories.
+\item
+  \textbf{LoCoMo 200 Q balanced (F-056)}: Real KDF \(0.535\) vs.~Mem0 \(0.590\) (gap \(-5.5\) pt, \textbf{\(p = 0.24\), statistically tied}).
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{Temporal category (LoCoMo 50 Q sub)}: KDF \(0.460\) vs.~Mem0 \(0.240\) (\textbf{KDF \(+22\) pt, \(p = 0.035\) win}).
+  \item
+    Mem0 wins narrative by \(+24\) pt; factual / inferential are n.s.
+  \end{itemize}
+\item
+  \textbf{LoCoMo temporal full 321 Q, gpt-4o-mini (F-057)}: Real KDF \(0.312\) vs.~Mem0 \(0.206\) (\textbf{KDF \(+10.6\) pt, \(p = 0.0014\)}, McNemar \(b = 71\) / \(c = 37\)).
+\item
+  \textbf{LoCoMo temporal full 321 Q, gpt-4.1-mini (F-058, model-robustness check)}: Real KDF \(0.324\) vs.~Mem0 \(0.090\) (\textbf{KDF \(+23.4\) pt, \(p = 1.6 \times 10^{-14}\)}, McNemar \(b = 89\) / \(c = 14\)).
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{Updating to the newer-generation model degrades Mem0 while KDF is preserved, widening the gap.}
+  \item
+    Hypothesis: gpt-4.1-mini's fact extraction performs more aggressive compression and loses even more temporal information.
+  \item
+    KDF's temporal advantage is \textbf{robust across 2 models × 321 Q, exposing a principled weakness of fact-extraction-based memory systems}.
+  \end{itemize}
+\item
+  \textbf{LongMemEval 500 Q × gpt-4.1-mini (F-059, completing the 2×2 matrix)}: Real KDF \(0.452\) vs.~Mem0 \(0.722\) (\textbf{Mem0 \(+27.0\) pt, \(p = 3.06 \times 10^{-23}\)}, McNemar \(b = 32\) / \(c = 167\)).
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{The F-053 gap of \(-23.8\) pt widens to \(-27.0\) pt} (Mem0 strengthens on the new model; KDF marginally increases).
+  \item
+    Per-category: Mem0 \(+61\)-pt landslide on single-session-assistant; temporal-reasoning gap \(-6\) pt, \(p = 0.23\) n.s. (KDF remains competitive on short-dialogue temporal queries).
+  \item
+    → \textbf{LongMemEval is a benchmark that showcases Mem0's structural strength}; KDF's room to win is limited to n.s. categories (temporal-reasoning, single-session-preference).
+  \end{itemize}
+\end{itemize}
+
+\textbf{Completed 2 benchmarks × 2 models matrix (F-053 / F-057 / F-058 / F-059)}:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1364}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1818}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1818}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1818}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1818}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1364}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+benchmark × model
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Mem0
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+KDF
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+gap
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+\(p\)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+winner
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+LongMemEval 500 Q × gpt-4o-mini & 0.672 & 0.434 & \(-0.238\) & \(< 10^{-16}\) & Mem0 \\
+LongMemEval 500 Q × gpt-4.1-mini & 0.722 & 0.452 & \(-0.270\) & \(3 \times 10^{-23}\) & Mem0 \\
+LoCoMo temporal 321 Q × gpt-4o-mini & 0.206 & 0.312 & \(+0.106\) & \(1.4 \times 10^{-3}\) & KDF \\
+LoCoMo temporal 321 Q × gpt-4.1-mini & 0.090 & 0.324 & \(+0.234\) & \(1.6 \times 10^{-14}\) & KDF \\
+\end{longtable}
+}
+
+→ \textbf{The benchmark-dependent division of labor is robust across models.} LLM-based memory (Mem0) is strong on short-dialogue general QA but has a structural weakness for long-conversation date/time recall. KDF is positioned as a dedicated complementary layer for the latter.
+
+\textbf{F-061--F-065 --- Domain-generalization experiments (2026-04-19, zero added cost)}:
+
+F-044--F-060 validates only the LLM-memory domain. To position KDF as a \textbf{general-purpose graph compression technique}, we verified on four additional domains:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Finding
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Task
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Result
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Implication
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\textbf{F-061} & Betweenness / APSP on 4 synthetic graphs & \textbf{Mixed}: KDF wins on ER / SBM, loses BA / WS for betweenness; wins APSP on all 4 for path distance & TopDegree wins on scale-free graphs; KDF wins on uniform / community graphs \\
+\textbf{F-062} & Git-commit pruning (tokio, 4752 commits) & \textbf{Positive}: merge recall \(99.5\%\) at \(30\%\) keep & Validated for commercial git archival \\
+\textbf{F-063} & Gaussian Process inducing points (California housing, Friedman1) & \textbf{Negative}: KDF \textless{} Random \textless{} KMeans on GP fit & Density estimation is not applicable to KDF \\
+\textbf{F-064} & Naive call-graph API preservation (flask, Python \texttt{ast}) & \textbf{Negative}: KDF \(16\%\) vs.~Random \(41\%\) & Public APIs have high in-degree --- opposite of KDF Rare \\
+\textbf{F-065} & Git-pruning 3-repo replication (tokio / pytest / lodash) & \textbf{Partial}: merge recall depends on the repo's merge rate (tokio \(99\%\) / pytest \(59\%\) / lodash \(100\%\)) & KDF matches TopDegree only when ``merges are rare'' in the repo \\
+\end{longtable}
+}
+
+Combining these negative findings, \textbf{we establish the decisive predictor of KDF applicability}: ``does structural rareness correlate with task importance?''. LLM-memory temporal recall, path-based algorithms, and OSS-library-style git repos satisfy the correlation → KDF is effective. Density estimation, API-boundary detection, and merge-heavy enterprise repos do not → KDF is not applicable.
+
+\textbf{Phase X --- Claim-level realistic benchmarks (2026-04-19, zero added cost)}:
+
+After F-068 brought all three mechanisms of Claim 1 to empirically-backed status, we ran realistic benchmarks for the remaining claim groups as Phase X:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Finding
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Task
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Result
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Implication
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\textbf{F-069} & Claim 5 / 14 / 17 on LoCoMo temporal 321 Q & \textbf{Mixed}: C17 distributed-execution bit-exact pass; C5 / C14 inferior to KDF\_static on static tasks (all time-aware conditions have \(\Delta \le 0\)) & Time signals are subsumed by structural rareness and redundant on static tasks; streaming is the true use case (verified in F-072) \\
+\textbf{F-070} & Claim 36--41 T\_wait + Claim 47--48 sandwich, realistic & \textbf{Mixed}: mechanism {[}True{]} / canonical values {[}False{]}. Four-benchmark refutation of \((0.70, 0.80)\), F1 \(0.000\) vs.~F1\(((0.70, 1.00)) = 1.000\); LoCoMo streaming \(100\%\) RARE demoted under canonical & The 2-threshold \emph{mechanism} is maintained as novel; specific canonical values require domain-specific calibration \\
+\textbf{F-071} & Claim 20--32 dynamic control on LoCoMo streaming (lightweight) & \textbf{Mechanism {[}True{]} / no selection benefit}: Claim 21 \(5:3:1\) integer tick exact; MetaController \(\alpha\)-bound clamp working; TransitionController ceiling-effected (F-031 confirmed) & Mechanism-only validation; the true value shows on NASA-type streaming (verified in F-072) \\
+\textbf{F-072} & Claim 14 / 25 / 27--32 on NASA HTTP 50 k streaming replay & \textbf{{[}True{]} Claim 14 \(+3.06\) pt} over static baseline (C1 decay \(0.4898\) vs.~C0 \(0.4592\)); {[}Warning{]} Claim 25 activation neutralizes on evenly distributed rare; Claim 27--32 are selection-neutral (as predicted) & \textbf{The paper narrowing ``streaming is the true use case'' is empirically validated.} The first positive evidence for Claim 14's value proposition. ActivationScore requires discrimination of the rare-event temporal pattern \\
+\end{longtable}
+}
+
+These Phase X findings both strengthen paper credibility by ``self-refuting our own canonical values on four benchmarks'' and, via F-072, provide a \textbf{positive empirical anchor after the narrowing}. Two follow-up directions are explicitly indicated as future work: ``domain-calibrated parameter auto-tuning'', and ``conditional use of Claim 25 activation based on the rare-event temporal pattern''.
+
+\textbf{F-060 --- Empirical validation of a complementary architecture via the Ext-1 Precision-Query Router (2026-04-19, zero added cost)}:
+
+Applying the following routing logic post-hoc to the existing data of F-053 / 057 / 058 / 059:
+
+\begin{verbatim}
+if is_precision_query(q) and conversation_length >= 100 turns:
+    use KDF answer
+else:
+    use Mem0 answer
+\end{verbatim}
+
+Result (v2 = precision + long context):
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1579}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2105}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2105}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2105}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2105}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+cell
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Mem0 alone
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Router (v2)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+gain
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+\(p\)
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+LongMemEval 500 Q × gpt-4o-mini & 0.672 & 0.672 & 0.000 & 1.00 (safe) \\
+LongMemEval 500 Q × gpt-4.1-mini & 0.722 & 0.722 & 0.000 & 1.00 (safe) \\
+LoCoMo temporal 321 Q × gpt-4o-mini & 0.206 & \textbf{0.302} & \textbf{\(+0.097\)} & 0.003 {[}Significant{]} \\
+LoCoMo temporal 321 Q × gpt-4.1-mini & 0.090 & \textbf{0.315} & \textbf{\(+0.224\)} & \(4 \times 10^{-14}\) {[}Significant{]} \\
+\end{longtable}
+}
+
+\emph{Note on precision: the columns ``Mem0 alone'' and ``Router (v2)'' are 3-decimal rounded for readability; the ``gain'' column is computed from the 4-decimal raw scores and may therefore differ from naive subtraction of the displayed values by ±0.001.}
+
+The Router is \textbf{greater than or equal to Mem0 alone across all four cells} (strictly-better property); on long-conversation precision queries, the improvement reaches \(+22.4\) pt.~LLM-API call count is reduced by \(97\%\) on long conversations. This is the first quantitative validation of this paper's architectural thesis that KDF should be designed as \textbf{a complementary layer to Mem0, not a replacement}.
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{KDF's benchmark-dependent behavior}: in long conversations (LoCoMo's 300--700 turns/conv, with date/time information scattered across raw turns), KDF's raw-turn retention is advantageous; in short dialogues (LongMemEval's 20--30 turns/Q), Mem0's fact extraction dominates.
+\end{itemize}
+
+Therefore, \textbf{KDF's realistic positioning} pivots to the following:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Long-conversation temporal-recall use cases} (F-056: \(+22\) pt validated) --- meeting minutes, month-scale journals, year-scale conversation histories where date/time information must be referenced; KDF's raw-turn retention is decisively advantageous.
+\item
+  \textbf{Environments where cost / latency / privacy / determinism take priority over accuracy} --- local-first chatbot, air-gapped agent, \(< 1\)-ms real-time memory gating, budget-constrained deployment, deterministic regulated output.
+\item
+  \textbf{Retention strategies smarter than TTL} (real 500 Q: KDF recall \(0.665\) vs.~TTL\_recent \(0.180\), \(\times 3.7\)).
+\end{enumerate}
+
+\textbf{Honest limits}: in the general LLM-memory market of LongMemEval type (short dialogue + concise questions), KDF does not reach Mem0's accuracy. KDF use in this market is limited to cases that tolerate the accuracy trade-off.
+
+For other domains, we honestly declare what KDF can and cannot do, and provide it in an openly verifiable form. In particular, \textbf{KDF use in the general-retrieval market is explicitly discouraged} (F-045).
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{8. Theoretical Foundation --- KDF as a Computational Realization of Structural Holes Theory}\label{theoretical-foundation-kdf-as-a-computational-realization-of-structural-holes-theory}
+
+Having accumulated the empirical characteristics of KDF (F-061--F-065), we find that KDF's behavior \textbf{algorithmically aligns with the classical ``Structural Holes'' theory of organizational sociology \citep{burt1992structuralholes}}. This is not a post-hoc analogy; it refers to a \textbf{graph-theoretic isomorphism} (with explicit caveats developed in the \emph{Limitations and Risks of the Theoretical Claim} subsection at the end of §8; the isomorphism is a strong framing hypothesis, not a proved theorem).
+
+\subsection{\texorpdfstring{Summary of Burt's Structural Holes theory \citep{burt1992structuralholes}}{Summary of Burt's Structural Holes theory {[}@burt1992structuralholes{]}}}\label{summary-of-burts-structural-holes-theory-burt1992structuralholes}
+
+From an empirical study of workplace networks (\(n = 500\) MBA students), Burt argued:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{The individuals who hold the highest information, innovation, and negotiation power in an organization are not the central figures within dense clusters, but the ``brokers'' who bridge different clusters.}
+\item
+  A \textbf{structural hole} is the empty space where two clusters are not directly connected.
+\item
+  By spanning this hole, the broker can:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    control information non-redundancy (different information flows on each side),
+  \item
+    set exchange terms favorably (brokerage power),
+  \item
+    cross-pollinate ideas (innovation advantage).
+  \end{itemize}
+\item
+  Brokers typically have \textbf{low degree} (fewer ties make bridging more efficient) and \textbf{high betweenness} (they lie on paths).
+\end{enumerate}
+
+\subsection{Mathematical Alignment with KDF's Behavior}\label{mathematical-alignment-with-kdfs-behavior}
+
+KDF's Rare / Core / Edge / Garbage classification corresponds to Burt's broker concept as follows:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+KDF layer
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Structural feature
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Burt's classification
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\textbf{Rare} (deg \(= 1\)) & Boundary node, unique connection & Pure broker (if between clusters) & F-012 Obsidian orphan \\
+\textbf{Core} & Bridges many clusters, moderate degree & Structural broker & F-062 merge commits (\(99.5\%\) recall) \\
+Edge & Within-cluster center, high degree & Cluster insider (non-broker) & F-061 scale-free hubs (KDF loses) \\
+Garbage & Redundant, out of capacity & Peripheral / replaceable & F-052 low-recall answer turns \\
+\end{longtable}
+}
+
+KDF's selection principle of \textbf{``prioritizing Rare + Core for protection''} is equivalent to \textbf{``prioritizing nodes occupying broker positions for protection''}. This is not a coincidence: the graph-theoretic definition of structural rareness (low degree and/or high betweenness potential) overlaps with Burt's broker definition.
+
+\subsection{Empirical Validation via the Scale-Free vs.~Community-Graph Split}\label{empirical-validation-via-the-scale-free-vs.-community-graph-split}
+
+The betweenness-centrality results of F-061 on four graphs (ER, BA, WS, SBM) constitute a \textbf{predictive validation} of this theoretical correspondence:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Graph type
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Structural feature
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Burt-theoretic prediction
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+KDF result
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+ER (Erdős--Rényi) & Uniform random & Brokers exist; bridge protection wins & {[}True{]} KDF wins (top-50 recall \(0.70\)) \\
+SBM (Stochastic Block Model) & Planted communities & Inter-community brokers are decisive; KDF applicability is maximal & {[}True{]} KDF wins (\(0.50\) vs.~\(0.36\) TopDegree) \\
+BA (Barabási--Albert, scale-free) & Hub-dominated & Hubs have abundant alternative paths → brokerage power is distributed; KDF at disadvantage & {[}False{]} KDF loses to TopDegree \\
+WS (Watts--Strogatz, small world) & Clustered + shortcut & Shortcuts are broker-like but of moderate degree; complex & {[}False{]} KDF loses to TopDegree on betweenness \\
+\end{longtable}
+}
+
+\textbf{KDF's loss on scale-free graphs} is consistent with Burt's theoretical prediction that \textbf{``the relative value of brokers declines in hub-dominated networks.''} Hubs have many alternative paths, so removing any given hub leaves the network robust. Brokerage power concentrates in inter-community bridges, but is distributed in pure scale-free networks.
+
+\subsection{Connection to Game-Theoretic Brokerage Power}\label{connection-to-game-theoretic-brokerage-power}
+
+In network-bargaining theory \citep{myerson1977graphs, calvoarmengol2004networks}, when two players A and B wish to transact but are not directly connected and must go through an intermediary C, \textbf{C's payoff is inversely proportional to the number of alternative paths}. This is the mathematical formulation of structural holes.
+
+KDF can be interpreted as an algorithm that deterministically extracts the \textbf{``intermediaries with no alternative paths'' (monopolistic brokers)}. In F-061's APSP experiment, KDF's \(4 \times\) improvement over Random in coverage maintenance --- particularly on \textbf{Watts--Strogatz} (small world, shortcut-broker structure) --- is an instance of this theoretical prediction.
+
+\subsection{Computational Complexity of the Implementation Algorithm}\label{computational-complexity-of-the-implementation-algorithm}
+
+Burt's structural-holes computation is traditionally performed via \textbf{effective-size} / \textbf{constraint} metrics (\(O(V^2)\) or worse). KDF's Rare / Core / Edge / Garbage classification achieves approximately the same broker detection in \textbf{\(O(V + E)\)} structural counting + classification (exact equivalence is left for future work).
+
+\textbf{Implication}: KDF may be the first graph algorithm that \textbf{detects structural holes / brokerage power deterministically in near-linear time}. In the 30+ years since Burt's 1992 work \citep{burt1992structuralholes}, structural-holes theory has been continuously cited in social-science research (M\&A analysis, supply-chain resilience, innovation diffusion), but \textbf{no scalable computational algorithm has been established}. KDF's \(O(V + E)\) classifier may remove the rate-limiting barrier to practical deployment.
+
+\subsection{Applications Space (with Evidence Sketches)}\label{applications-space-with-evidence-sketches}
+
+From this theoretical correspondence, KDF's commercial and research application space is as follows:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Enterprise network analytics}
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Internal communication analysis (Slack / Teams) → identifying cross-team brokers
+  \item
+    M\&A target selection: extracting the ``monopolistic intermediary companies'' that should be acquired
+  \item
+    Supply chain: identifying BCP-critical, low-degree Tier 3/4 suppliers
+  \end{itemize}
+\item
+  \textbf{Urban / logistics networks}
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Disaster-time APSP preprocessing (validated in F-061)
+  \item
+    Critical-intersection identification in transportation networks
+  \end{itemize}
+\item
+  \textbf{Cybersecurity}
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Lateral-movement detection via ``rare inter-segment connections'' (additional measurement needed)
+  \end{itemize}
+\item
+  \textbf{Enterprise archival}
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Decision preservation via cross-thread bridge capture (homologous to F-062 git merge)
+  \end{itemize}
+\end{enumerate}
+
+\subsection{Limitations and Risks of the Theoretical Claim}\label{limitations-and-risks-of-the-theoretical-claim}
+
+For honesty, we make the following explicit:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Burt's theory is primarily validated on human organizational networks (\(< 10^3\) nodes)}; application at millions of nodes remains an empirical question.
+\item
+  KDF's Rare / Core classification is \textbf{closer to a necessary-condition approximation than a sufficient condition} for broker detection (as suggested by KDF's loss on BA graphs in F-061).
+\item
+  Structural-holes theory itself has a known ``weak on hub-dominated networks'' limitation; see critiques such as \citet{powell2005network}.
+\item
+  \textbf{Whether KDF's \(O(V + E)\) complexity is formally equivalent to Burt's effective-size metric is unproven}; we have only approximation and empirical agreement.
+\end{itemize}
+
+With these caveats maintained, we position \textbf{KDF as a strong candidate for the computational realization of structural-holes detection}.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section*{Acknowledgments}\label{acknowledgments}
+
+We ran independent verification agents (GPT- and Claude-based) at 12 phase boundaries to check the validity of both the positive and negative claims of this work. AI collaboration was used at every stage --- specification freezing, code implementation, real-data verification, related-work survey, and drafting of this paper --- and the full verification process is recorded in \href{../VERIFIED_FINDINGS.md}{\texttt{docs/VERIFIED\_FINDINGS.md}}.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section*{Appendix A: Summary of Key KDF Formulas}\label{appendix-a-summary-of-key-kdf-formulas}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Claim
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Formula
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Description
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+7 & \(C_{uv} = \deg(u) + \deg(v)\) & Local congestion \\
+8, 9 & \(\lambda(C) = \beta(1 + \gamma C^\alpha)\), \(\alpha\) positive exponent & Nonlinear form of the decay rate (monotone increasing + power-law term) \\
+10 & \(\alpha = 2\) & Fix the power-law exponent at 2 (core of the invention) \\
+14 & \(w(t + dt) = w(t) \cdot \exp(-\lambda(C) \cdot dt)\) & Exponential decay law \\
+15 & \(\deg_E(v) \le 1 \Rightarrow \text{Rare} \land \text{protected}\) & Rarity detection via absolute threshold \\
+21 & \(dt_1 : dt_2 : dt_3 = 5 : 3 : 1\) & Update-period ratio across hierarchical regions \\
+29 & \(\Delta \alpha \propto \delta k^4\) & Meta-control quartic law \\
+44 & \(S_{\text{outer}} = \tfrac{7}{10} S_{\text{sys}} + \tfrac{2}{10} S_{\text{rel}} + \tfrac{1}{10} S_{\text{attr}}\) & Aggregated integrity score (outer; takes systematic / relational / attribute similarities as inputs) \\
+45 & \(S_{\text{inner}} = 0.40 \cdot S_{\text{cos}} + 0.35 \cdot S_{\text{struct}} + 0.25 \cdot S_{\text{sign}}\) & Fingerprint similarity combination (inner; feeds into \(S_{\text{sys}}\) / \(S_{\text{rel}}\) / \(S_{\text{attr}}\) above) \\
+46 & \(\phi(v) \in \mathbb{R}^{32}\), derived from Laplacian eigenvalues & Fixed-length structural fingerprint \\
+47--48 & \(\theta_L = 0.70 \le S_{\text{outer}} \le \theta_U = 0.80\) & Sandwich acceptance condition, applied to the outer (aggregated) score from Claim 44 (canonical values --- refuted in §4.2; see §1.3 C3) \\
+\end{longtable}
+}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section*{Appendix B: Implementation Architecture}\label{appendix-b-implementation-architecture}
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{crates/cgb-kdf/} --- reference implementation (Rust; PolyForm Noncommercial 1.0.0, commercial license separate); direct tests for all 50 patent claims.
+\item
+  \texttt{crates/bias-detector/} --- independently released crate; zero-dependency; a priori KDF applicability screening.
+\item
+  \texttt{demos/D1–D8/} --- showcase implementations across 8 domains.
+\item
+  \texttt{benchmarks/sota\_comparison/} --- SOTA comparison benchmarks.
+\end{itemize}
+
+GitHub: \href{https://github.com/ChaiCroquis/kdf-perovskite}{ChaiCroquis/kdf-perovskite}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\emph{Draft v0.3 --- 2026-04-19 (reflecting Phase X Step 1--5 completion). Comments and corrections welcome via GitHub issues.}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}

@@ -1,0 +1,18 @@
+[package]
+name = "demo-d2-nasa-log"
+version = "0.1.0"
+edition = "2021"
+license-file = "../../LICENSE"
+description = "KDF Showcase D2 — HTTP access log compression with rare-error preservation"
+
+[[bin]]
+name = "demo-d2-nasa-log"
+path = "src/main.rs"
+
+[dependencies]
+kdf-demos-common = { path = "../common" }
+cgb-kdf = { path = "../../crates/cgb-kdf" }
+real-data-bench = { path = "../../benchmarks/real_data" }
+rand = { version = "0.8", features = ["small_rng"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

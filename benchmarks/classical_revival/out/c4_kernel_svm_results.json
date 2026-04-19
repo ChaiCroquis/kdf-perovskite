@@ -1,0 +1,146 @@
+{
+  "results": [
+    {
+      "dataset": "BreastCancer",
+      "n_train": 426,
+      "n_test": 143,
+      "full": {
+        "accuracy": 0.9790209790209791,
+        "train_time_s": 0.0030126571655273438,
+        "n_used": 426,
+        "n_support_vectors": 96
+      },
+      "keep_30pct": {
+        "KDF": {
+          "accuracy": 0.9440559440559441,
+          "train_time_s": 0.0010993480682373047,
+          "n_used": 128,
+          "n_support_vectors": 46,
+          "delta_acc": -0.034965034965035
+        },
+        "Random": {
+          "accuracy": 0.958041958041958,
+          "train_time_s": 0.0009348392486572266,
+          "n_used": 127,
+          "n_support_vectors": 46,
+          "delta_acc": -0.020979020979021046
+        },
+        "KMeans": {
+          "accuracy": 0.9440559440559441,
+          "train_time_s": 0.0009870529174804688,
+          "n_used": 127,
+          "n_support_vectors": 53,
+          "delta_acc": -0.034965034965035
+        },
+        "TopDegree": {
+          "accuracy": 0.9440559440559441,
+          "train_time_s": 0.0008006095886230469,
+          "n_used": 127,
+          "n_support_vectors": 36,
+          "delta_acc": -0.034965034965035
+        }
+      },
+      "keep_50pct": {
+        "KDF": {
+          "accuracy": 0.972027972027972,
+          "train_time_s": 0.0011887550354003906,
+          "n_used": 213,
+          "n_support_vectors": 69,
+          "delta_acc": -0.006993006993007089
+        },
+        "Random": {
+          "accuracy": 0.951048951048951,
+          "train_time_s": 0.0009140968322753906,
+          "n_used": 213,
+          "n_support_vectors": 62,
+          "delta_acc": -0.027972027972028024
+        },
+        "KMeans": {
+          "accuracy": 0.972027972027972,
+          "train_time_s": 0.0009503364562988281,
+          "n_used": 213,
+          "n_support_vectors": 71,
+          "delta_acc": -0.006993006993007089
+        },
+        "TopDegree": {
+          "accuracy": 0.951048951048951,
+          "train_time_s": 0.0008287429809570312,
+          "n_used": 213,
+          "n_support_vectors": 54,
+          "delta_acc": -0.027972027972028024
+        }
+      }
+    },
+    {
+      "dataset": "Digits",
+      "n_train": 1347,
+      "n_test": 450,
+      "full": {
+        "accuracy": 0.98,
+        "train_time_s": 0.04036307334899902,
+        "n_used": 1347,
+        "n_support_vectors": 715
+      },
+      "keep_30pct": {
+        "KDF": {
+          "accuracy": 0.9288888888888889,
+          "train_time_s": 0.0062122344970703125,
+          "n_used": 405,
+          "n_support_vectors": 272,
+          "delta_acc": -0.05111111111111111
+        },
+        "Random": {
+          "accuracy": 0.9533333333333334,
+          "train_time_s": 0.007330179214477539,
+          "n_used": 404,
+          "n_support_vectors": 311,
+          "delta_acc": -0.026666666666666616
+        },
+        "KMeans": {
+          "accuracy": 0.9644444444444444,
+          "train_time_s": 0.006829738616943359,
+          "n_used": 404,
+          "n_support_vectors": 338,
+          "delta_acc": -0.015555555555555545
+        },
+        "TopDegree": {
+          "accuracy": 0.92,
+          "train_time_s": 0.0059528350830078125,
+          "n_used": 404,
+          "n_support_vectors": 270,
+          "delta_acc": -0.05999999999999994
+        }
+      },
+      "keep_50pct": {
+        "KDF": {
+          "accuracy": 0.9688888888888889,
+          "train_time_s": 0.008212566375732422,
+          "n_used": 674,
+          "n_support_vectors": 421,
+          "delta_acc": -0.011111111111111072
+        },
+        "Random": {
+          "accuracy": 0.9688888888888889,
+          "train_time_s": 0.015199422836303711,
+          "n_used": 673,
+          "n_support_vectors": 458,
+          "delta_acc": -0.011111111111111072
+        },
+        "KMeans": {
+          "accuracy": 0.9777777777777777,
+          "train_time_s": 0.015658140182495117,
+          "n_used": 673,
+          "n_support_vectors": 483,
+          "delta_acc": -0.0022222222222222365
+        },
+        "TopDegree": {
+          "accuracy": 0.9555555555555556,
+          "train_time_s": 0.014140129089355469,
+          "n_used": 673,
+          "n_support_vectors": 395,
+          "delta_acc": -0.02444444444444438
+        }
+      }
+    }
+  ]
+}

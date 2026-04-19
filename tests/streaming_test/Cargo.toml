@@ -1,0 +1,9 @@
+[package]
+name = "kdf-streaming-test"
+version = "0.1.0"
+edition = "2021"
+description = "Streaming processing verification for KDF"
+
+[workspace]
+
+[dependencies]

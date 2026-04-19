@@ -1,0 +1,117 @@
+[package]
+name = "kdf"
+version = "0.1.0"
+edition = "2021"
+description = "Knowledge Decay Framework (KDF) - Automatic data redundancy reduction with rare item preservation"
+license = "MIT"
+repository = "https://github.com/example/kdf"
+keywords = ["data", "filtering", "redundancy", "machine-learning"]
+categories = ["data-structures", "algorithms"]
+
+[lib]
+name = "kdf"
+path = "src/lib.rs"
+
+[[example]]
+name = "basic_usage"
+path = "examples/basic_usage.rs"
+
+[[example]]
+name = "custom_similarity"
+path = "examples/custom_similarity.rs"
+
+[[example]]
+name = "incremental"
+path = "examples/incremental.rs"
+
+[[example]]
+name = "benchmark"
+path = "examples/benchmark.rs"
+
+[[example]]
+name = "feature_test"
+path = "examples/feature_test.rs"
+
+[[example]]
+name = "serde_test"
+path = "examples/serde_test.rs"
+
+[[example]]
+name = "kdf_features"
+path = "examples/kdf_features.rs"
+
+[[example]]
+name = "new_features"
+path = "examples/new_features.rs"
+
+[[example]]
+name = "effectiveness_test"
+path = "examples/effectiveness_test.rs"
+
+[[example]]
+name = "temporal_test"
+path = "examples/temporal_test.rs"
+
+[[example]]
+name = "explain_test"
+path = "examples/explain_test.rs"
+
+[[example]]
+name = "info_theory_test"
+path = "examples/info_theory_test.rs"
+
+[[example]]
+name = "kdf_knn_hybrid"
+path = "examples/kdf_knn_hybrid.rs"
+
+[[example]]
+name = "kdf_vs_modern"
+path = "examples/kdf_vs_modern.rs"
+
+[[example]]
+name = "kdf_genetic"
+path = "examples/kdf_genetic.rs"
+
+[[example]]
+name = "kdf_experience_replay"
+path = "examples/kdf_experience_replay.rs"
+
+[[example]]
+name = "kdf_active_learning"
+path = "examples/kdf_active_learning.rs"
+
+[[example]]
+name = "kdf_complexity_reduction"
+path = "examples/kdf_complexity_reduction.rs"
+
+[[example]]
+name = "kdf_kernel_pca"
+path = "examples/kdf_kernel_pca.rs"
+
+[[example]]
+name = "kdf_fast_approximation"
+path = "examples/kdf_fast_approximation.rs"
+
+[[example]]
+name = "kdf_optimization_strategies"
+path = "examples/kdf_optimization_strategies.rs"
+
+[[example]]
+name = "kdf_hidden_values"
+path = "examples/kdf_hidden_values.rs"
+
+[[example]]
+name = "kdf_bridge_proposal"
+path = "examples/kdf_bridge_proposal.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"], optional = true }
+rayon = { version = "1.10", optional = true }
+
+[features]
+default = ["serde"]
+serde = ["dep:serde"]
+parallel = ["dep:rayon"]
+
+[dev-dependencies]
+serde_json = "1.0"

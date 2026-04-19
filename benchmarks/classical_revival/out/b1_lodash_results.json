@@ -1,0 +1,79 @@
+{
+  "repo": "lodash",
+  "n_commits": 8492,
+  "n_edges": 8678,
+  "n_tag_commits": 440,
+  "n_merge_commits": 192,
+  "n_pr_merge_commits": 345,
+  "n_combined_important": 858,
+  "results_by_keep_rate": {
+    "keep_30": {
+      "KDF": {
+        "n_selected": 2548,
+        "keep_rate_actual": 0.30004710315591143,
+        "tag_recall": 0.7840909090909091,
+        "merge_recall": 1.0,
+        "pr_merge_recall": 0.9971014492753624,
+        "combined_importance_recall": 0.8881118881118881
+      },
+      "Random": {
+        "n_selected": 2547,
+        "keep_rate_actual": 0.29992934526613285,
+        "tag_recall": 0.28863636363636364,
+        "merge_recall": 0.2864583333333333,
+        "pr_merge_recall": 0.336231884057971,
+        "combined_importance_recall": 0.3041958041958042
+      },
+      "TTL_recent": {
+        "n_selected": 2547,
+        "keep_rate_actual": 0.29992934526613285,
+        "tag_recall": 0.7863636363636364,
+        "merge_recall": 0.0,
+        "pr_merge_recall": 0.7014492753623188,
+        "combined_importance_recall": 0.6666666666666666
+      },
+      "TopDegree": {
+        "n_selected": 2547,
+        "keep_rate_actual": 0.29992934526613285,
+        "tag_recall": 0.7318181818181818,
+        "merge_recall": 1.0,
+        "pr_merge_recall": 0.9797101449275363,
+        "combined_importance_recall": 0.8601398601398601
+      }
+    },
+    "keep_50": {
+      "KDF": {
+        "n_selected": 4246,
+        "keep_rate_actual": 0.5,
+        "tag_recall": 0.9227272727272727,
+        "merge_recall": 1.0,
+        "pr_merge_recall": 1.0,
+        "combined_importance_recall": 0.9603729603729604
+      },
+      "Random": {
+        "n_selected": 4246,
+        "keep_rate_actual": 0.5,
+        "tag_recall": 0.4818181818181818,
+        "merge_recall": 0.4427083333333333,
+        "pr_merge_recall": 0.5159420289855072,
+        "combined_importance_recall": 0.48717948717948717
+      },
+      "TTL_recent": {
+        "n_selected": 4246,
+        "keep_rate_actual": 0.5,
+        "tag_recall": 0.9295454545454546,
+        "merge_recall": 0.020833333333333332,
+        "pr_merge_recall": 0.7130434782608696,
+        "combined_importance_recall": 0.7447552447552448
+      },
+      "TopDegree": {
+        "n_selected": 4246,
+        "keep_rate_actual": 0.5,
+        "tag_recall": 0.8818181818181818,
+        "merge_recall": 1.0,
+        "pr_merge_recall": 0.9826086956521739,
+        "combined_importance_recall": 0.9382284382284383
+      }
+    }
+  }
+}

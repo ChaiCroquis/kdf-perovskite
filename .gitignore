@@ -1,0 +1,50 @@
+# Rust build artifacts
+target/
+**/*.rs.bk
+Cargo.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+.env
+
+# LaTeX build intermediates (regeneratable via build_arxiv.sh)
+docs/arxiv_submission/paper.aux
+docs/arxiv_submission/paper.bbl
+docs/arxiv_submission/paper.blg
+docs/arxiv_submission/paper.log
+docs/arxiv_submission/paper.out
+docs/arxiv_submission/_body.md
+
+# arxiv submission tarball (regenerate on upload via tar -czf)
+docs/arxiv_submission/arxiv_submission.tar.gz
+
+# Benchmark runtime artifacts
+benchmarks/classical_revival/tmp/
+benchmarks/results/*.json
+demos/**/out/*.png
+demos/**/out/qdrant_*/
+demos/**/out/*_checkpoint.json
+demos/D8_llm_memory/out/qdrant_storage/
+demos/D8_llm_memory/data/locomo/*.json
+demos/D9_corporate_network/out/papers_raw.json
+demos/D9_corporate_network/out/institutions_ranked.json
+demos/D9_corporate_network/out/corporate_graph.db
+demos/D9_corporate_network/out/tmp_*/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Keep data directories visible but without their content
+!demos/**/data/.gitkeep
+!demos/**/data/README.md

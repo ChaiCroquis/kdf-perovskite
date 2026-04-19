@@ -1,0 +1,273 @@
+{
+  "configs": [
+    {
+      "label": "F-053 LongMemEval × gpt-4o-mini",
+      "results": "demos/D8_llm_memory/out/route_a_500q_real_kdf_results.json",
+      "oracle": "demos/D8_llm_memory/data/longmemeval_oracle.json",
+      "mem0_correct_key": "mem0_correct",
+      "kdf_correct_key": "kdf_real_correct"
+    },
+    {
+      "label": "F-059 LongMemEval × gpt-4.1-mini",
+      "results": "demos/D8_llm_memory/out/w4b_longmemeval_41mini_results.json",
+      "oracle": "demos/D8_llm_memory/data/longmemeval_oracle.json",
+      "mem0_correct_key": "mem0_correct",
+      "kdf_correct_key": "kdf_correct"
+    },
+    {
+      "label": "F-057 LoCoMo temporal × gpt-4o-mini",
+      "results": "demos/D8_llm_memory/out/w5b_locomo_temporal_results.json",
+      "oracle": "demos/D8_llm_memory/data/locomo/locomo_oracle_temporal_all.json",
+      "mem0_correct_key": "mem0_correct",
+      "kdf_correct_key": "kdf_correct"
+    },
+    {
+      "label": "F-058 LoCoMo temporal × gpt-4.1-mini",
+      "results": "demos/D8_llm_memory/out/w4_locomo_temporal_41mini_results.json",
+      "oracle": "demos/D8_llm_memory/data/locomo/locomo_oracle_temporal_all.json",
+      "mem0_correct_key": "mem0_correct",
+      "kdf_correct_key": "kdf_correct"
+    }
+  ],
+  "variants": [
+    {
+      "name": "v1_precision_only",
+      "length_threshold": 0,
+      "desc": "Route to KDF if query is precision (no length filter)"
+    },
+    {
+      "name": "v2_precision_and_long_context",
+      "length_threshold": 100,
+      "desc": "Route to KDF only if precision AND conversation >= 100 turns"
+    },
+    {
+      "name": "v3_long_context_only",
+      "length_threshold": 100,
+      "desc": "Route to KDF only if conversation >= 100 turns (precision not required)"
+    }
+  ],
+  "results_by_variant": {
+    "v1_precision_only": [
+      {
+        "label": "F-053 LongMemEval × gpt-4o-mini",
+        "n": 500,
+        "n_routed_to_kdf": 319,
+        "n_routed_to_mem0": 181,
+        "pct_to_kdf": 0.638,
+        "router_accuracy": 0.556,
+        "mem0_alone_accuracy": 0.672,
+        "kdf_alone_accuracy": 0.434,
+        "router_minus_mem0": -0.11599999999999999,
+        "contingency_router_vs_mem0": {
+          "both_correct": 247,
+          "router_only": 31,
+          "mem0_only": 89,
+          "both_wrong": 133
+        },
+        "mcnemar_exact_p": 1.1187721865432878e-07
+      },
+      {
+        "label": "F-059 LongMemEval × gpt-4.1-mini",
+        "n": 500,
+        "n_routed_to_kdf": 319,
+        "n_routed_to_mem0": 181,
+        "pct_to_kdf": 0.638,
+        "router_accuracy": 0.592,
+        "mem0_alone_accuracy": 0.722,
+        "kdf_alone_accuracy": 0.452,
+        "router_minus_mem0": -0.13,
+        "contingency_router_vs_mem0": {
+          "both_correct": 271,
+          "router_only": 25,
+          "mem0_only": 90,
+          "both_wrong": 114
+        },
+        "mcnemar_exact_p": 8.369029836302926e-10
+      },
+      {
+        "label": "F-057 LoCoMo temporal × gpt-4o-mini",
+        "n": 321,
+        "n_routed_to_kdf": 312,
+        "n_routed_to_mem0": 9,
+        "pct_to_kdf": 0.9719626168224299,
+        "router_accuracy": 0.30218068535825543,
+        "mem0_alone_accuracy": 0.205607476635514,
+        "kdf_alone_accuracy": 0.3115264797507788,
+        "router_minus_mem0": 0.09657320872274142,
+        "contingency_router_vs_mem0": {
+          "both_correct": 29,
+          "router_only": 68,
+          "mem0_only": 37,
+          "both_wrong": 187
+        },
+        "mcnemar_exact_p": 0.0032209898687984855
+      },
+      {
+        "label": "F-058 LoCoMo temporal × gpt-4.1-mini",
+        "n": 321,
+        "n_routed_to_kdf": 312,
+        "n_routed_to_mem0": 9,
+        "pct_to_kdf": 0.9719626168224299,
+        "router_accuracy": 0.3146417445482866,
+        "mem0_alone_accuracy": 0.09034267912772585,
+        "kdf_alone_accuracy": 0.32398753894080995,
+        "router_minus_mem0": 0.22429906542056072,
+        "contingency_router_vs_mem0": {
+          "both_correct": 16,
+          "router_only": 85,
+          "mem0_only": 13,
+          "both_wrong": 207
+        },
+        "mcnemar_exact_p": 3.9846743192352626e-14
+      }
+    ],
+    "v2_precision_and_long_context": [
+      {
+        "label": "F-053 LongMemEval × gpt-4o-mini",
+        "n": 500,
+        "n_routed_to_kdf": 0,
+        "n_routed_to_mem0": 500,
+        "pct_to_kdf": 0.0,
+        "router_accuracy": 0.672,
+        "mem0_alone_accuracy": 0.672,
+        "kdf_alone_accuracy": 0.434,
+        "router_minus_mem0": 0.0,
+        "contingency_router_vs_mem0": {
+          "both_correct": 336,
+          "router_only": 0,
+          "mem0_only": 0,
+          "both_wrong": 164
+        },
+        "mcnemar_exact_p": 1.0
+      },
+      {
+        "label": "F-059 LongMemEval × gpt-4.1-mini",
+        "n": 500,
+        "n_routed_to_kdf": 0,
+        "n_routed_to_mem0": 500,
+        "pct_to_kdf": 0.0,
+        "router_accuracy": 0.722,
+        "mem0_alone_accuracy": 0.722,
+        "kdf_alone_accuracy": 0.452,
+        "router_minus_mem0": 0.0,
+        "contingency_router_vs_mem0": {
+          "both_correct": 361,
+          "router_only": 0,
+          "mem0_only": 0,
+          "both_wrong": 139
+        },
+        "mcnemar_exact_p": 1.0
+      },
+      {
+        "label": "F-057 LoCoMo temporal × gpt-4o-mini",
+        "n": 321,
+        "n_routed_to_kdf": 312,
+        "n_routed_to_mem0": 9,
+        "pct_to_kdf": 0.9719626168224299,
+        "router_accuracy": 0.30218068535825543,
+        "mem0_alone_accuracy": 0.205607476635514,
+        "kdf_alone_accuracy": 0.3115264797507788,
+        "router_minus_mem0": 0.09657320872274142,
+        "contingency_router_vs_mem0": {
+          "both_correct": 29,
+          "router_only": 68,
+          "mem0_only": 37,
+          "both_wrong": 187
+        },
+        "mcnemar_exact_p": 0.0032209898687984855
+      },
+      {
+        "label": "F-058 LoCoMo temporal × gpt-4.1-mini",
+        "n": 321,
+        "n_routed_to_kdf": 312,
+        "n_routed_to_mem0": 9,
+        "pct_to_kdf": 0.9719626168224299,
+        "router_accuracy": 0.3146417445482866,
+        "mem0_alone_accuracy": 0.09034267912772585,
+        "kdf_alone_accuracy": 0.32398753894080995,
+        "router_minus_mem0": 0.22429906542056072,
+        "contingency_router_vs_mem0": {
+          "both_correct": 16,
+          "router_only": 85,
+          "mem0_only": 13,
+          "both_wrong": 207
+        },
+        "mcnemar_exact_p": 3.9846743192352626e-14
+      }
+    ],
+    "v3_long_context_only": [
+      {
+        "label": "F-053 LongMemEval × gpt-4o-mini",
+        "n": 500,
+        "n_routed_to_kdf": 0,
+        "n_routed_to_mem0": 500,
+        "pct_to_kdf": 0.0,
+        "router_accuracy": 0.672,
+        "mem0_alone_accuracy": 0.672,
+        "kdf_alone_accuracy": 0.434,
+        "router_minus_mem0": 0.0,
+        "contingency_router_vs_mem0": {
+          "both_correct": 336,
+          "router_only": 0,
+          "mem0_only": 0,
+          "both_wrong": 164
+        },
+        "mcnemar_exact_p": 1.0
+      },
+      {
+        "label": "F-059 LongMemEval × gpt-4.1-mini",
+        "n": 500,
+        "n_routed_to_kdf": 0,
+        "n_routed_to_mem0": 500,
+        "pct_to_kdf": 0.0,
+        "router_accuracy": 0.722,
+        "mem0_alone_accuracy": 0.722,
+        "kdf_alone_accuracy": 0.452,
+        "router_minus_mem0": 0.0,
+        "contingency_router_vs_mem0": {
+          "both_correct": 361,
+          "router_only": 0,
+          "mem0_only": 0,
+          "both_wrong": 139
+        },
+        "mcnemar_exact_p": 1.0
+      },
+      {
+        "label": "F-057 LoCoMo temporal × gpt-4o-mini",
+        "n": 321,
+        "n_routed_to_kdf": 312,
+        "n_routed_to_mem0": 9,
+        "pct_to_kdf": 0.9719626168224299,
+        "router_accuracy": 0.30218068535825543,
+        "mem0_alone_accuracy": 0.205607476635514,
+        "kdf_alone_accuracy": 0.3115264797507788,
+        "router_minus_mem0": 0.09657320872274142,
+        "contingency_router_vs_mem0": {
+          "both_correct": 29,
+          "router_only": 68,
+          "mem0_only": 37,
+          "both_wrong": 187
+        },
+        "mcnemar_exact_p": 0.0032209898687984855
+      },
+      {
+        "label": "F-058 LoCoMo temporal × gpt-4.1-mini",
+        "n": 321,
+        "n_routed_to_kdf": 312,
+        "n_routed_to_mem0": 9,
+        "pct_to_kdf": 0.9719626168224299,
+        "router_accuracy": 0.3146417445482866,
+        "mem0_alone_accuracy": 0.09034267912772585,
+        "kdf_alone_accuracy": 0.32398753894080995,
+        "router_minus_mem0": 0.22429906542056072,
+        "contingency_router_vs_mem0": {
+          "both_correct": 16,
+          "router_only": 85,
+          "mem0_only": 13,
+          "both_wrong": 207
+        },
+        "mcnemar_exact_p": 3.9846743192352626e-14
+      }
+    ]
+  }
+}

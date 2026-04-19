@@ -1,0 +1,26 @@
+{
+  "longmemeval": {
+    "task": "LongMemEval (first 20 questions aggregated)",
+    "n_samples": 20,
+    "mean_deg1_ratio": 0.0,
+    "mean_deg0_ratio": 0.0,
+    "mean_rare_deg1_rate": 0.0,
+    "mean_bias_score": 0.0,
+    "mean_n_nodes": 28.05,
+    "mean_n_edges": 442.25
+  },
+  "scifact": {
+    "task": "SciFact BEIR (first 20 queries, same corpus)",
+    "n_samples": 20,
+    "mean_deg1_ratio": 0.0,
+    "mean_deg0_ratio": 0.0,
+    "mean_rare_deg1_rate": 0.0,
+    "mean_bias_score": 0.0,
+    "mean_n_nodes": 5183.0,
+    "mean_n_edges": 1913518.0
+  },
+  "predicted_correctly": {
+    "longmemeval": false,
+    "scifact": true
+  }
+}

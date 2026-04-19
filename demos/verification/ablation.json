@@ -1,0 +1,202 @@
+{
+  "ablation_table": [
+    {
+      "ablation": "A0_Full",
+      "condition": "A_deg1_D1type",
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "ablation": "A1_NoRarePriority",
+      "condition": "A_deg1_D1type",
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "ablation": "A2_NoCorePriority",
+      "condition": "A_deg1_D1type",
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "ablation": "A3_NoGarbageFilter",
+      "condition": "A_deg1_D1type",
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "ablation": "A4_NoClusterDedup",
+      "condition": "A_deg1_D1type",
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "ablation": "A5_WithRelDensity",
+      "condition": "A_deg1_D1type",
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "ablation": "A0_Full",
+      "condition": "A_deg3_D1.5type",
+      "values": [
+        0.92,
+        1.0,
+        0.84,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "ablation": "A1_NoRarePriority",
+      "condition": "A_deg3_D1.5type",
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "ablation": "A2_NoCorePriority",
+      "condition": "A_deg3_D1.5type",
+      "values": [
+        0.92,
+        1.0,
+        0.84,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "ablation": "A3_NoGarbageFilter",
+      "condition": "A_deg3_D1.5type",
+      "values": [
+        0.92,
+        1.0,
+        0.84,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "ablation": "A4_NoClusterDedup",
+      "condition": "A_deg3_D1.5type",
+      "values": [
+        0.92,
+        1.0,
+        0.84,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "ablation": "A5_WithRelDensity",
+      "condition": "A_deg3_D1.5type",
+      "values": [
+        0.28,
+        0.32,
+        0.32,
+        0.28,
+        0.36
+      ]
+    },
+    {
+      "ablation": "A0_Full",
+      "condition": "B_deg2",
+      "values": [
+        0.92,
+        1.0,
+        0.8,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "ablation": "A1_NoRarePriority",
+      "condition": "B_deg2",
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "ablation": "A2_NoCorePriority",
+      "condition": "B_deg2",
+      "values": [
+        0.92,
+        1.0,
+        0.8,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "ablation": "A3_NoGarbageFilter",
+      "condition": "B_deg2",
+      "values": [
+        0.92,
+        1.0,
+        0.8,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "ablation": "A4_NoClusterDedup",
+      "condition": "B_deg2",
+      "values": [
+        0.92,
+        1.0,
+        0.8,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "ablation": "A5_WithRelDensity",
+      "condition": "B_deg2",
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ]
+}

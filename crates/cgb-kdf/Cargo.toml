@@ -1,0 +1,14 @@
+[package]
+name = "cgb-kdf"
+version = "0.1.0"
+edition = "2021"
+description = "Knowledge Decay Framework - Core components for rare truth protection"
+license-file = "../../LICENSE"
+
+[dependencies]
+# Linear Algebra (固有値計算)
+nalgebra = "0.33"
+
+[dev-dependencies]
+proptest = "1.5"
+rand = { version = "0.8", features = ["small_rng"] }

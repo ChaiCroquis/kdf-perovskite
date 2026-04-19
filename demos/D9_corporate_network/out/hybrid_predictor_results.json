@@ -1,0 +1,97 @@
+{
+  "n_samples": 2805,
+  "n_positives": 127,
+  "base_rate": 0.04527629233511586,
+  "models": [
+    {
+      "name": "M0. Random / base rate",
+      "auc": 0.5,
+      "base_rate": 0.04527629233511586,
+      "precision_at_5pct": 0.04527629233511586,
+      "precision_at_10pct": 0.04527629233511586,
+      "precision_at_20pct": 0.04527629233511586,
+      "lift_at_5pct": 1.0,
+      "lift_at_10pct": 1.0
+    },
+    {
+      "name": "M2. Degree alone (LogReg)",
+      "auc": 0.6966445755146924,
+      "base_rate": 0.04527629233511586,
+      "precision_at_5pct": 0.22142857142857142,
+      "precision_at_10pct": 0.18214285714285713,
+      "precision_at_20pct": 0.11051693404634581,
+      "lift_at_5pct": 4.890607424071991,
+      "lift_at_10pct": 4.022919010123735
+    },
+    {
+      "name": "M3. PageRank alone (LogReg)",
+      "auc": 0.7102917913826865,
+      "base_rate": 0.04527629233511586,
+      "precision_at_5pct": 0.21428571428571427,
+      "precision_at_10pct": 0.18928571428571428,
+      "precision_at_20pct": 0.11764705882352941,
+      "lift_at_5pct": 4.7328458942632174,
+      "lift_at_10pct": 4.180680539932508
+    },
+    {
+      "name": "M4. Betweenness alone (LogReg)",
+      "auc": 0.722129277342946,
+      "base_rate": 0.04527629233511586,
+      "precision_at_5pct": 0.21428571428571427,
+      "precision_at_10pct": 0.18928571428571428,
+      "precision_at_20pct": 0.1354723707664884,
+      "lift_at_5pct": 4.7328458942632174,
+      "lift_at_10pct": 4.180680539932508
+    },
+    {
+      "name": "M5. Degree + n_fields (LogReg)",
+      "auc": 0.7302532151740928,
+      "base_rate": 0.04527629233511586,
+      "precision_at_5pct": 0.25,
+      "precision_at_10pct": 0.17857142857142858,
+      "precision_at_20pct": 0.13012477718360071,
+      "lift_at_5pct": 5.521653543307087,
+      "lift_at_10pct": 3.944038245219348
+    },
+    {
+      "name": "M6. Degree + PageRank (LogReg)",
+      "auc": 0.7095111524054265,
+      "base_rate": 0.04527629233511586,
+      "precision_at_5pct": 0.22142857142857142,
+      "precision_at_10pct": 0.18928571428571428,
+      "precision_at_20pct": 0.12121212121212122,
+      "lift_at_5pct": 4.890607424071991,
+      "lift_at_10pct": 4.180680539932508
+    },
+    {
+      "name": "M7. All features (LogReg)",
+      "auc": 0.7324084256084868,
+      "base_rate": 0.04527629233511586,
+      "precision_at_5pct": 0.2571428571428571,
+      "precision_at_10pct": 0.18571428571428572,
+      "precision_at_20pct": 0.13012477718360071,
+      "lift_at_5pct": 5.679415073115861,
+      "lift_at_10pct": 4.101799775028122
+    },
+    {
+      "name": "M8. All features (GBT)",
+      "auc": 0.75613632220543,
+      "base_rate": 0.04527629233511586,
+      "precision_at_5pct": 0.19285714285714287,
+      "precision_at_10pct": 0.16071428571428573,
+      "precision_at_20pct": 0.13903743315508021,
+      "lift_at_5pct": 4.259561304836896,
+      "lift_at_10pct": 3.5496344206974135
+    },
+    {
+      "name": "M9. All + KDF layer (GBT)",
+      "auc": 0.7557981923282742,
+      "base_rate": 0.04527629233511586,
+      "precision_at_5pct": 0.19285714285714287,
+      "precision_at_10pct": 0.15714285714285714,
+      "precision_at_20pct": 0.13903743315508021,
+      "lift_at_5pct": 4.259561304836896,
+      "lift_at_10pct": 3.470753655793026
+    }
+  ]
+}

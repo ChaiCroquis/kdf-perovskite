@@ -1,0 +1,38 @@
+name: Patent Specification Integrity
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  hash-verification:
+    name: Verify docs/patent/ hash manifest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify patent document SHA-256 manifest
+        run: |
+          cd docs/patent
+          sha256sum -c HASHES.sha256
+      - name: Forbid modification of filed/
+        run: |
+          if git diff origin/main...HEAD --name-only | grep -E '^docs/patent/filed/'; then
+            echo "::error::filed/ contains FROZEN patent documents and must not be modified"
+            exit 1
+          fi
+
+  compliance-docs-present:
+    name: Verify compliance docs present
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check required docs
+        run: |
+          for f in docs/patent/SPEC.md docs/patent/TRACEABILITY.md docs/patent/COMPLIANCE.md docs/patent/HASHES.sha256; do
+            if [ ! -f "$f" ]; then
+              echo "::error::Missing required patent doc: $f"
+              exit 1
+            fi
+          done

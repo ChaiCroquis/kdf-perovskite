@@ -1,0 +1,84 @@
+name: Showcase Demos Smoke Test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'demos/**'
+      - 'crates/cgb-kdf/**'
+      - 'benchmarks/real_data/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'demos/**'
+      - 'crates/cgb-kdf/**'
+      - 'benchmarks/real_data/**'
+
+jobs:
+  smoke-test-demos:
+    name: All 7 demos run without error
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build demos
+        run: cargo build --release --workspace --exclude kdf-wasm --exclude kdf-python
+
+      - name: D1 Obsidian (with fallback for CI — no Obsidian vault)
+        run: |
+          # In CI, OBSIDIAN_VAULT is absent — expect graceful exit message.
+          # For the smoke test we only verify the binary runs without crashing.
+          OBSIDIAN_VAULT=/nonexistent cargo run --release -p demo-d1-obsidian 2>&1 | tee out_d1.log || true
+          grep -q "not found" out_d1.log
+
+      - name: D2 NASA log (synthetic mode)
+        run: cargo run --release -p demo-d2-nasa-log
+
+      - name: D3 ML long-tail
+        run: cargo run --release -p demo-d3-ml-longtail
+
+      - name: D4 MovieLens
+        run: cargo run --release -p demo-d4-movielens
+
+      - name: D5 FB15K-237 (synthetic mode)
+        run: cargo run --release -p demo-d5-fb15k237
+
+      - name: D6 Forum dedup
+        run: cargo run --release -p demo-d6-text-dedup
+
+      - name: D7 GitHub issue
+        run: cargo run --release -p demo-d7-github-issue
+
+      - name: Verify all report.json exist
+        run: |
+          for d in D2_nasa_log D3_ml_longtail D4_movielens D5_fb15k237 D6_text_dedup D7_github_issue; do
+            test -f demos/$d/out/report.json || { echo "missing demos/$d/out/report.json"; exit 1; }
+          done
+
+  python-visualization:
+    name: Python SVG renderer smoke test
+    runs-on: ubuntu-latest
+    needs: smoke-test-demos
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install matplotlib
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Generate reports
+        run: |
+          for demo in demo-d2-nasa-log demo-d3-ml-longtail demo-d4-movielens demo-d5-fb15k237 demo-d6-text-dedup demo-d7-github-issue; do
+            cargo run --release -p "$demo"
+          done
+      - name: Render SVGs
+        run: |
+          for d in D2_nasa_log D3_ml_longtail D4_movielens D5_fb15k237 D6_text_dedup D7_github_issue; do
+            python demos/scripts/render_visualizations.py demos/$d/out/report.json
+            test -f demos/$d/out/bar_comparison.svg
+            test -f demos/$d/out/kdf_axis_diagram.svg
+            test -f demos/$d/out/tradeoff_scatter.svg
+          done

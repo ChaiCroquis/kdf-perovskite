@@ -1,0 +1,9 @@
+[package]
+name = "kdf-parameter-boundary"
+version = "0.1.0"
+edition = "2021"
+description = "Parameter boundary verification for KDF Rev.12 (Sandwich Structure)"
+
+[workspace]
+
+[dependencies]

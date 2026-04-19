@@ -1,0 +1,191 @@
+{
+  "n_questions": 20,
+  "mean_recall_mem0_style": 0.5083333333333333,
+  "mean_recall_bge_raw": 0.8,
+  "kdf_reference": 0.821,
+  "per_question": [
+    {
+      "q_idx": 0,
+      "question_type": "temporal-reasoning",
+      "n_turns": 36,
+      "n_answer": 2,
+      "recall_mem0_style": 1.0,
+      "recall_bge_raw": 1.0,
+      "extract_s": 53.67659091949463
+    },
+    {
+      "q_idx": 1,
+      "question_type": "temporal-reasoning",
+      "n_turns": 24,
+      "n_answer": 2,
+      "recall_mem0_style": 0.5,
+      "recall_bge_raw": 1.0,
+      "extract_s": 30.388147354125977
+    },
+    {
+      "q_idx": 2,
+      "question_type": "temporal-reasoning",
+      "n_turns": 24,
+      "n_answer": 2,
+      "recall_mem0_style": 0.5,
+      "recall_bge_raw": 1.0,
+      "extract_s": 39.76130032539368
+    },
+    {
+      "q_idx": 3,
+      "question_type": "temporal-reasoning",
+      "n_turns": 24,
+      "n_answer": 2,
+      "recall_mem0_style": 0.5,
+      "recall_bge_raw": 1.0,
+      "extract_s": 37.832608461380005
+    },
+    {
+      "q_idx": 4,
+      "question_type": "temporal-reasoning",
+      "n_turns": 24,
+      "n_answer": 2,
+      "recall_mem0_style": 0.5,
+      "recall_bge_raw": 1.0,
+      "extract_s": 34.73894548416138
+    },
+    {
+      "q_idx": 5,
+      "question_type": "temporal-reasoning",
+      "n_turns": 22,
+      "n_answer": 2,
+      "recall_mem0_style": 0.5,
+      "recall_bge_raw": 1.0,
+      "extract_s": 36.42491674423218
+    },
+    {
+      "q_idx": 6,
+      "question_type": "temporal-reasoning",
+      "n_turns": 24,
+      "n_answer": 2,
+      "recall_mem0_style": 0.5,
+      "recall_bge_raw": 0.5,
+      "extract_s": 34.53099322319031
+    },
+    {
+      "q_idx": 7,
+      "question_type": "temporal-reasoning",
+      "n_turns": 19,
+      "n_answer": 2,
+      "recall_mem0_style": 0.0,
+      "recall_bge_raw": 0.5,
+      "extract_s": 31.61620593070984
+    },
+    {
+      "q_idx": 8,
+      "question_type": "temporal-reasoning",
+      "n_turns": 24,
+      "n_answer": 2,
+      "recall_mem0_style": 0.5,
+      "recall_bge_raw": 0.5,
+      "extract_s": 35.234052896499634
+    },
+    {
+      "q_idx": 9,
+      "question_type": "temporal-reasoning",
+      "n_turns": 22,
+      "n_answer": 2,
+      "recall_mem0_style": 0.0,
+      "recall_bge_raw": 0.0,
+      "extract_s": 39.74852728843689
+    },
+    {
+      "q_idx": 10,
+      "question_type": "temporal-reasoning",
+      "n_turns": 58,
+      "n_answer": 1,
+      "recall_mem0_style": 1.0,
+      "recall_bge_raw": 1.0,
+      "extract_s": 87.22930645942688
+    },
+    {
+      "q_idx": 11,
+      "question_type": "temporal-reasoning",
+      "n_turns": 24,
+      "n_answer": 2,
+      "recall_mem0_style": 0.5,
+      "recall_bge_raw": 1.0,
+      "extract_s": 36.862619161605835
+    },
+    {
+      "q_idx": 12,
+      "question_type": "temporal-reasoning",
+      "n_turns": 24,
+      "n_answer": 2,
+      "recall_mem0_style": 0.5,
+      "recall_bge_raw": 0.5,
+      "extract_s": 43.65915560722351
+    },
+    {
+      "q_idx": 13,
+      "question_type": "temporal-reasoning",
+      "n_turns": 24,
+      "n_answer": 2,
+      "recall_mem0_style": 0.5,
+      "recall_bge_raw": 0.5,
+      "extract_s": 42.04633092880249
+    },
+    {
+      "q_idx": 14,
+      "question_type": "temporal-reasoning",
+      "n_turns": 24,
+      "n_answer": 2,
+      "recall_mem0_style": 0.5,
+      "recall_bge_raw": 1.0,
+      "extract_s": 35.85611844062805
+    },
+    {
+      "q_idx": 15,
+      "question_type": "temporal-reasoning",
+      "n_turns": 68,
+      "n_answer": 6,
+      "recall_mem0_style": 0.3333333333333333,
+      "recall_bge_raw": 0.5,
+      "extract_s": 106.6352596282959
+    },
+    {
+      "q_idx": 16,
+      "question_type": "temporal-reasoning",
+      "n_turns": 24,
+      "n_answer": 3,
+      "recall_mem0_style": 1.0,
+      "recall_bge_raw": 1.0,
+      "extract_s": 38.05880784988403
+    },
+    {
+      "q_idx": 17,
+      "question_type": "temporal-reasoning",
+      "n_turns": 24,
+      "n_answer": 2,
+      "recall_mem0_style": 0.5,
+      "recall_bge_raw": 1.0,
+      "extract_s": 38.16335940361023
+    },
+    {
+      "q_idx": 18,
+      "question_type": "temporal-reasoning",
+      "n_turns": 24,
+      "n_answer": 3,
+      "recall_mem0_style": 0.3333333333333333,
+      "recall_bge_raw": 1.0,
+      "extract_s": 35.33074116706848
+    },
+    {
+      "q_idx": 19,
+      "question_type": "temporal-reasoning",
+      "n_turns": 24,
+      "n_answer": 2,
+      "recall_mem0_style": 0.5,
+      "recall_bge_raw": 1.0,
+      "extract_s": 35.12764286994934
+    }
+  ],
+  "llm_model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "embed_model": "BAAI/bge-small-en-v1.5",
+  "caveat": "Local weak LLM is much weaker than Mem0 default GPT-4o-mini; this is a lower bound on Mem0 performance."
+}

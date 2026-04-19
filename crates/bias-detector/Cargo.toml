@@ -1,0 +1,11 @@
+[package]
+name = "bias-detector"
+version = "0.1.0"
+edition = "2021"
+license-file = "../../LICENSE"
+description = "Graph-benchmark bias detector — flags synthetic datasets biased toward structure-based selection methods"
+repository = "https://github.com/ChaiCroquis/kdf-perovskite"
+keywords = ["benchmark", "bias", "reproducibility", "graph"]
+categories = ["science", "development-tools"]
+
+[dependencies]

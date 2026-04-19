@@ -1,0 +1,55 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/cgb-types",
+    "crates/cgb-graph",
+    "crates/bias-detector",
+    "crates/cgb-kdf",
+    "crates/kdf-perovskite-py",
+    "kdf-lib",
+    "kdf-cli",
+    "kdf-python",
+    "kdf-wasm",
+    "tests/edge_vs_node_comparison",
+    "benchmarks/sota_comparison",
+    "benchmarks/real_data",
+    "benchmarks/adversarial",
+    "demos/common",
+    "demos/D1_obsidian",
+    "demos/D2_nasa_log",
+    "demos/D5_fb15k237",
+    "demos/D3_ml_longtail",
+    "demos/D6_text_dedup",
+    "demos/D7_github_issue",
+    "demos/D4_movielens",
+    "demos/D8_llm_memory",
+]
+
+[workspace.package]
+edition = "2021"
+license-file = "LICENSE"
+
+# --- Patent compliance responsibility matrix ---
+#
+# Authoritative spec: patent JP 2026-027032 (filed/ PDFs added to docs/patent/filed/ after JPO auto-publication ~2027-08)
+# Compliance tracking: docs/patent/TRACEABILITY.md, docs/patent/COMPLIANCE.md
+#
+# +-------------------+---------------------------------+---------------------------+
+# | Crate             | Role                            | Compliance Target          |
+# +-------------------+---------------------------------+---------------------------+
+# | cgb-kdf           | Reference impl (Full Rev.12)    | Claim 1 - 50 (primary)     |
+# | kdf-lib           | Rev.10 Basic backend (subset)   | Claim 1-19 subset          |
+# | kdf-cli           | CLI frontend                    | n/a (UI wrapper)           |
+# | kdf-python        | PyO3 bindings over cgb-kdf      | mirrors cgb-kdf            |
+# | kdf-wasm          | WASM bindings over cgb-kdf      | mirrors cgb-kdf            |
+# | cgb-types         | Shared types                    | n/a                        |
+# | cgb-graph         | Graph primitives                | n/a                        |
+# +-------------------+---------------------------------+---------------------------+
+#
+# See docs/patent/SPEC.md for authority rules.
+
+[workspace.metadata.patent]
+authoritative-spec = "docs/patent/filed/"
+compliance-report = "docs/patent/COMPLIANCE.md"
+traceability = "docs/patent/TRACEABILITY.md"
+reference-implementation = "cgb-kdf"

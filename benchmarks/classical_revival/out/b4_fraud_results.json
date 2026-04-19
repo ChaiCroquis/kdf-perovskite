@@ -1,0 +1,84 @@
+{
+  "dataset": "CreditCardFraud (OpenML 1597)",
+  "n_subsample": 5000,
+  "n_fraud": 492,
+  "fraud_rate": 0.0984,
+  "n_edges": 37814,
+  "k_nn": 10,
+  "results": {
+    "keep_30": {
+      "KDF": {
+        "n_selected": 1500,
+        "n_fraud_kept": 138,
+        "fraud_recall": 0.2804878048780488,
+        "fraud_fraction_in_selected": 0.092,
+        "baseline_fraud_fraction": 0.0984
+      },
+      "Random": {
+        "n_selected": 1500,
+        "n_fraud_kept": 156,
+        "fraud_recall": 0.3170731707317073,
+        "fraud_fraction_in_selected": 0.104,
+        "baseline_fraud_fraction": 0.0984
+      },
+      "TopDegree": {
+        "n_selected": 1500,
+        "n_fraud_kept": 92,
+        "fraud_recall": 0.18699186991869918,
+        "fraud_fraction_in_selected": 0.06133333333333333,
+        "baseline_fraud_fraction": 0.0984
+      },
+      "KMeans": {
+        "n_selected": 1499,
+        "n_fraud_kept": 287,
+        "fraud_recall": 0.5833333333333334,
+        "fraud_fraction_in_selected": 0.1914609739826551,
+        "baseline_fraud_fraction": 0.0984
+      },
+      "IsolationForest": {
+        "n_selected": 1500,
+        "n_fraud_kept": 453,
+        "fraud_recall": 0.9207317073170732,
+        "fraud_fraction_in_selected": 0.302,
+        "baseline_fraud_fraction": 0.0984
+      }
+    },
+    "keep_50": {
+      "KDF": {
+        "n_selected": 2500,
+        "n_fraud_kept": 244,
+        "fraud_recall": 0.4959349593495935,
+        "fraud_fraction_in_selected": 0.0976,
+        "baseline_fraud_fraction": 0.0984
+      },
+      "Random": {
+        "n_selected": 2500,
+        "n_fraud_kept": 263,
+        "fraud_recall": 0.5345528455284553,
+        "fraud_fraction_in_selected": 0.1052,
+        "baseline_fraud_fraction": 0.0984
+      },
+      "TopDegree": {
+        "n_selected": 2500,
+        "n_fraud_kept": 169,
+        "fraud_recall": 0.3434959349593496,
+        "fraud_fraction_in_selected": 0.0676,
+        "baseline_fraud_fraction": 0.0984
+      },
+      "KMeans": {
+        "n_selected": 2500,
+        "n_fraud_kept": 373,
+        "fraud_recall": 0.758130081300813,
+        "fraud_fraction_in_selected": 0.1492,
+        "baseline_fraud_fraction": 0.0984
+      },
+      "IsolationForest": {
+        "n_selected": 2500,
+        "n_fraud_kept": 474,
+        "fraud_recall": 0.9634146341463414,
+        "fraud_fraction_in_selected": 0.1896,
+        "baseline_fraud_fraction": 0.0984
+      }
+    }
+  }
+}

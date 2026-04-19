@@ -1,0 +1,9 @@
+[package]
+name = "cgb-graph"
+version = "0.1.0"
+edition = "2021"
+description = "Graph traits and implementations for CGB"
+license-file = "../../LICENSE"
+
+[dependencies]
+cgb-types = { path = "../cgb-types" }

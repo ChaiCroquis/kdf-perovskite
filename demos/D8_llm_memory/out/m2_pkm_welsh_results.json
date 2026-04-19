@@ -1,0 +1,9 @@
+{
+  "n_corpus": 30,
+  "n_rare": 10,
+  "n_edges": 342,
+  "kdf_recall": 0.3,
+  "random_recall_mean": 0.49000000000000005,
+  "ratio": 0.6122448979591836,
+  "verdict": "PKM suitability NOT confirmed on 2nd corpus (KDF <= Random)"
+}

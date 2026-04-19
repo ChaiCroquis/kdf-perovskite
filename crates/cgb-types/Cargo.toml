@@ -1,0 +1,8 @@
+[package]
+name = "cgb-types"
+version = "0.1.0"
+edition = "2021"
+description = "Basic types for Cognitive Gap Bridge"
+license-file = "../../LICENSE"
+
+[dependencies]

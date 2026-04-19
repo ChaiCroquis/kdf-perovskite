@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>KDF Boundary-Spanner Detection — D9 Corporate Network Experiment</title>
+<style>
+  body { font-family: -apple-system, "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; color: #333; }
+  h1 { color: #222; border-bottom: 3px solid #2C3E50; padding-bottom: 10px; }
+  h2 { color: #2C3E50; margin-top: 40px; border-left: 4px solid #3498DB; padding-left: 10px; }
+  .subtitle { color: #666; font-size: 0.9em; margin-top: -10px; }
+  .note { background: #FFF3CD; border-left: 4px solid #F1C40F; padding: 10px; margin: 10px 0; font-size: 0.9em; }
+  .disclaimer { background: #FDEDEC; border: 2px solid #E74C3C; padding: 15px; margin: 20px 0; border-radius: 6px; }
+  .disclaimer b { color: #C0392B; }
+  .stats { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 20px 0; }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+  .stats-card { text-align: center; padding: 10px; background: #ECF0F1; border-radius: 6px; }
+  .stats-card b { font-size: 1.5em; color: #2C3E50; display: block; }
+  .stats-card span { font-size: 0.85em; color: #666; }
+  table { width: 100%; background: white; border-collapse: collapse; margin-top: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  th { background: #34495E; color: white; padding: 10px; text-align: left; font-size: 0.85em; position: sticky; top: 0; }
+  td { padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 0.9em; }
+  tr:hover { background: #F8F9FA; }
+  .num { text-align: right; font-family: monospace; }
+  .center { text-align: center; }
+  .fields { font-size: 0.85em; }
+  footer { margin-top: 50px; padding: 20px; background: white; border-radius: 8px; font-size: 0.85em; color: #666; }
+  section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+</style>
+</head>
+<body>
+<h1>KDF による Boundary-Spanner 検出 — D9 遊び検証</h1>
+<p>
+  <b>Data:</b> OpenAlex より 4 研究分野 × 各 500 論文 (2020-2024、被引用数上位) = 2000 論文<br>
+  <b>Graph:</b> 3,791 研究機関(ノード)、111,020 共著関係(エッジ)<br>
+  <b>Fields:</b>
+  <span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span> AI / Machine Learning<br>
+  <span style="margin-left:90px;"><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span> Materials / Semiconductor</span><br>
+  <span style="margin-left:90px;"><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span> Biomedical / Pharmaceutical</span><br>
+  <span style="margin-left:90px;"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span> Automotive / Mobility Engineering</span>
+</p>
+
+<div class="disclaimer">
+<b>⚠️ 重要:これは投資助言ではありません。</b><br>
+KDF は「過去の共著 pattern から structural broker を記述的に抽出する」deterministic algorithm です。
+未来予測でも、投資推奨でもありません。過去 5 年のデータで、
+特定の機関が complex な分野間 bridge 位置に置かれていたことを示すだけです。
+判断はご自身で。
+</div>
+
+<div class="stats">
+  <h3 style="margin-top:0;">KDF Layer 分布</h3>
+  <div class="stats-grid">
+    <div class="stats-card"><b>98</b><span>Rare (境界 broker)</span></div>
+    <div class="stats-card"><b>282</b><span>Core (多分野 hub)</span></div>
+    <div class="stats-card"><b>3,298</b><span>Edge (単一クラスタ内)</span></div>
+    <div class="stats-card"><b>113</b><span>Garbage (低 signal)</span></div>
+  </div>
+</div>
+
+
+    <section>
+      <h2>Panel A — KDF-Rare 層の boundary broker (低 degree × 多分野 bridge)</h2>
+      <p class="subtitle">KDF が最も優先保護する層。少ない接続で分野間を橋渡しする &#x27;Burt の Structural Holes&#x27; 本命候補。deg が小さいほど純粋 broker。</p>
+      <p class="note">deg が 1〜10 程度で fields≥2 な機関は、規模ではなく position で value を出す &#x27;traveling merchant&#x27; 型。</p>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Institution</th><th>Country</th><th>Type</th>
+            <th>Fields</th><th>Field tags</th><th>KDF layer</th>
+            <th>Degree</th><th>Papers</th>
+          </tr>
+        </thead>
+        <tbody>
+    <tr>
+      <td class="num">1</td>
+      <td><b>University of Rochester</b></td>
+      <td class="center">US</td>
+      <td class="center">education</td>
+      <td class="center">3</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">1</td>
+      <td class="num">4</td>
+    </tr>
+
+    <tr>
+      <td class="num">2</td>
+      <td><b>Brunel University of London</b></td>
+      <td class="center">GB</td>
+      <td class="center">education</td>
+      <td class="center">3</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">3</td>
+      <td class="num">3</td>
+    </tr>
+
+    <tr>
+      <td class="num">3</td>
+      <td><b>Intelligent Systems Research (United States)</b></td>
+      <td class="center">US</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">4</td>
+      <td><b>China People&#x27;s Public Security University</b></td>
+      <td class="center">CN</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">5</td>
+      <td><b>Wright-Patterson Air Force Base</b></td>
+      <td class="center">US</td>
+      <td class="center">other</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">6</td>
+      <td><b>Research Academic Computer Technology Institute</b></td>
+      <td class="center">GR</td>
+      <td class="center">facility</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">7</td>
+      <td><b>Instituto Politécnico Nacional</b></td>
+      <td class="center">MX</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">8</td>
+      <td><b>Autonomous University of Queretaro</b></td>
+      <td class="center">MX</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">9</td>
+      <td><b>Massey University</b></td>
+      <td class="center">NZ</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">10</td>
+      <td><b>Schrodinger (United States)</b></td>
+      <td class="center">US</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">11</td>
+      <td><b>Bahçeşehir University</b></td>
+      <td class="center">TR</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">12</td>
+      <td><b>Stockholm School of Economics</b></td>
+      <td class="center">SE</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">13</td>
+      <td><b>Prairie View A&amp;M University</b></td>
+      <td class="center">US</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">14</td>
+      <td><b>Open Medicine Institute</b></td>
+      <td class="center">US</td>
+      <td class="center">healthcare</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">15</td>
+      <td><b>National Institutes of Natural Sciences</b></td>
+      <td class="center">JP</td>
+      <td class="center">facility</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">16</td>
+      <td><b>National Institute for Fusion Science</b></td>
+      <td class="center">JP</td>
+      <td class="center">facility</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">17</td>
+      <td><b>Samsung (Japan)</b></td>
+      <td class="center">JP</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">18</td>
+      <td><b>Kenyon College</b></td>
+      <td class="center">US</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">19</td>
+      <td><b>University of Calabria</b></td>
+      <td class="center">IT</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">20</td>
+      <td><b>Qatar Foundation</b></td>
+      <td class="center">QA</td>
+      <td class="center">funder</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr></tbody>
+      </table>
+    </section>
+
+
+    <section>
+      <h2>Panel B — KDF-Core 層の multi-field hub (中〜高 degree × 3+ 分野)</h2>
+      <p class="subtitle">伝統的 elite university や大手研究機関。規模と多様性を両立。boundary_score で上位。</p>
+      <p class="note">これらは TopDegree heuristic でも上位に出る、平凡な意味で重要な機関。</p>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Institution</th><th>Country</th><th>Type</th>
+            <th>Fields</th><th>Field tags</th><th>KDF layer</th>
+            <th>Degree</th><th>Papers</th>
+          </tr>
+        </thead>
+        <tbody>
+    <tr>
+      <td class="num">1</td>
+      <td><b>Harvard University</b></td>
+      <td class="center">US</td>
+      <td class="center">education</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">2368</td>
+      <td class="num">92</td>
+    </tr>
+
+    <tr>
+      <td class="num">2</td>
+      <td><b>Inserm</b></td>
+      <td class="center">FR</td>
+      <td class="center">government</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">1886</td>
+      <td class="num">53</td>
+    </tr>
+
+    <tr>
+      <td class="num">3</td>
+      <td><b>University College London</b></td>
+      <td class="center">GB</td>
+      <td class="center">education</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">1669</td>
+      <td class="num">64</td>
+    </tr>
+
+    <tr>
+      <td class="num">4</td>
+      <td><b>University of Toronto</b></td>
+      <td class="center">CA</td>
+      <td class="center">education</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">1625</td>
+      <td class="num">67</td>
+    </tr>
+
+    <tr>
+      <td class="num">5</td>
+      <td><b>University of Oxford</b></td>
+      <td class="center">GB</td>
+      <td class="center">education</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">1549</td>
+      <td class="num">69</td>
+    </tr>
+
+    <tr>
+      <td class="num">6</td>
+      <td><b>Imperial College London</b></td>
+      <td class="center">GB</td>
+      <td class="center">education</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">1436</td>
+      <td class="num">61</td>
+    </tr>
+
+    <tr>
+      <td class="num">7</td>
+      <td><b>University of Washington</b></td>
+      <td class="center">US</td>
+      <td class="center">education</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">1254</td>
+      <td class="num">49</td>
+    </tr>
+
+    <tr>
+      <td class="num">8</td>
+      <td><b>University of Amsterdam</b></td>
+      <td class="center">NL</td>
+      <td class="center">education</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">1220</td>
+      <td class="num">34</td>
+    </tr>
+
+    <tr>
+      <td class="num">9</td>
+      <td><b>Monash University</b></td>
+      <td class="center">AU</td>
+      <td class="center">education</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">1167</td>
+      <td class="num">48</td>
+    </tr>
+
+    <tr>
+      <td class="num">10</td>
+      <td><b>University of Cambridge</b></td>
+      <td class="center">GB</td>
+      <td class="center">education</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">1151</td>
+      <td class="num">50</td>
+    </tr>
+
+    <tr>
+      <td class="num">11</td>
+      <td><b>Johns Hopkins University</b></td>
+      <td class="center">US</td>
+      <td class="center">education</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">1106</td>
+      <td class="num">41</td>
+    </tr>
+
+    <tr>
+      <td class="num">12</td>
+      <td><b>Centre National de la Recherche Scientifique</b></td>
+      <td class="center">FR</td>
+      <td class="center">government</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">1105</td>
+      <td class="num">59</td>
+    </tr>
+
+    <tr>
+      <td class="num">13</td>
+      <td><b>University of Bristol</b></td>
+      <td class="center">GB</td>
+      <td class="center">education</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">1070</td>
+      <td class="num">40</td>
+    </tr>
+
+    <tr>
+      <td class="num">14</td>
+      <td><b>Chinese Academy of Sciences</b></td>
+      <td class="center">CN</td>
+      <td class="center">government</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">1036</td>
+      <td class="num">88</td>
+    </tr>
+
+    <tr>
+      <td class="num">15</td>
+      <td><b>University of Pennsylvania</b></td>
+      <td class="center">US</td>
+      <td class="center">education</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">1015</td>
+      <td class="num">28</td>
+    </tr>
+
+    <tr>
+      <td class="num">16</td>
+      <td><b>University of Michigan</b></td>
+      <td class="center">US</td>
+      <td class="center">education</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">975</td>
+      <td class="num">30</td>
+    </tr>
+
+    <tr>
+      <td class="num">17</td>
+      <td><b>Stanford University</b></td>
+      <td class="center">US</td>
+      <td class="center">education</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">947</td>
+      <td class="num">52</td>
+    </tr>
+
+    <tr>
+      <td class="num">18</td>
+      <td><b>National University of Singapore</b></td>
+      <td class="center">SG</td>
+      <td class="center">education</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">929</td>
+      <td class="num">41</td>
+    </tr>
+
+    <tr>
+      <td class="num">19</td>
+      <td><b>Icahn School of Medicine at Mount Sinai</b></td>
+      <td class="center">US</td>
+      <td class="center">education</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">873</td>
+      <td class="num">28</td>
+    </tr>
+
+    <tr>
+      <td class="num">20</td>
+      <td><b>Columbia University</b></td>
+      <td class="center">US</td>
+      <td class="center">education</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">843</td>
+      <td class="num">31</td>
+    </tr></tbody>
+      </table>
+    </section>
+
+
+    <section>
+      <h2>Panel C — Japanese 機関ランキング(全 81 機関)</h2>
+      <p class="subtitle">分野数 + KDF layer 優先順。日本の産学が どこに位置しているか。</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Institution</th><th>Country</th><th>Type</th>
+            <th>Fields</th><th>Field tags</th><th>KDF layer</th>
+            <th>Degree</th><th>Papers</th>
+          </tr>
+        </thead>
+        <tbody>
+    <tr>
+      <td class="num">1</td>
+      <td><b>The University of Tokyo</b></td>
+      <td class="center">JP</td>
+      <td class="center">education</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">450</td>
+      <td class="num">18</td>
+    </tr>
+
+    <tr>
+      <td class="num">2</td>
+      <td><b>Nagoya University</b></td>
+      <td class="center">JP</td>
+      <td class="center">education</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">163</td>
+      <td class="num">5</td>
+    </tr>
+
+    <tr>
+      <td class="num">3</td>
+      <td><b>Hokkaido University</b></td>
+      <td class="center">JP</td>
+      <td class="center">education</td>
+      <td class="center">3</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">109</td>
+      <td class="num">4</td>
+    </tr>
+
+    <tr>
+      <td class="num">4</td>
+      <td><b>Kyoto University</b></td>
+      <td class="center">JP</td>
+      <td class="center">education</td>
+      <td class="center">3</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">92</td>
+      <td class="num">8</td>
+    </tr>
+
+    <tr>
+      <td class="num">5</td>
+      <td><b>National Institutes of Natural Sciences</b></td>
+      <td class="center">JP</td>
+      <td class="center">facility</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">6</td>
+      <td><b>National Institute for Fusion Science</b></td>
+      <td class="center">JP</td>
+      <td class="center">facility</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">7</td>
+      <td><b>Samsung (Japan)</b></td>
+      <td class="center">JP</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">8</td>
+      <td><b>Tokyo University of Science</b></td>
+      <td class="center">JP</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">9</td>
+      <td><b>Tokyo Medical University</b></td>
+      <td class="center">JP</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">176</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">10</td>
+      <td><b>The University of Osaka</b></td>
+      <td class="center">JP</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">93</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">11</td>
+      <td><b>Hiroshima University</b></td>
+      <td class="center">JP</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">72</td>
+      <td class="num">3</td>
+    </tr>
+
+    <tr>
+      <td class="num">12</td>
+      <td><b>National Institute of Advanced Industrial Science and Technology</b></td>
+      <td class="center">JP</td>
+      <td class="center">government</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">50</td>
+      <td class="num">7</td>
+    </tr>
+
+    <tr>
+      <td class="num">13</td>
+      <td><b>Kyushu University</b></td>
+      <td class="center">JP</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">46</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">14</td>
+      <td><b>Ritsumeikan University</b></td>
+      <td class="center">JP</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">21</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">15</td>
+      <td><b>RIKEN Center for Advanced Intelligence Project</b></td>
+      <td class="center">JP</td>
+      <td class="center">facility</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">20</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">16</td>
+      <td><b>Shinshu University</b></td>
+      <td class="center">JP</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">18</td>
+      <td class="num">3</td>
+    </tr>
+
+    <tr>
+      <td class="num">17</td>
+      <td><b>National Center of Neurology and Psychiatry</b></td>
+      <td class="center">JP</td>
+      <td class="center">healthcare</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">17</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">18</td>
+      <td><b>Kumamoto University</b></td>
+      <td class="center">JP</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">14</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">19</td>
+      <td><b>Fujifilm (Japan)</b></td>
+      <td class="center">JP</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">14</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">20</td>
+      <td><b>Japan Chemical Industry Association</b></td>
+      <td class="center">JP</td>
+      <td class="center">other</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">14</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">21</td>
+      <td><b>Toto (Japan)</b></td>
+      <td class="center">JP</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">14</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">22</td>
+      <td><b>Mitsubishi Chemical (Japan)</b></td>
+      <td class="center">JP</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">14</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">23</td>
+      <td><b>Meiji University</b></td>
+      <td class="center">JP</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">14</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">24</td>
+      <td><b>Tokyo Metropolitan University</b></td>
+      <td class="center">JP</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">4</td>
+      <td class="num">3</td>
+    </tr>
+
+    <tr>
+      <td class="num">25</td>
+      <td><b>Japan Advanced Institute of Science and Technology</b></td>
+      <td class="center">JP</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">4</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">26</td>
+      <td><b>Nagoya Institute of Technology</b></td>
+      <td class="center">JP</td>
+      <td class="center">education</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">3</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">27</td>
+      <td><b>The University of Kitakyushu</b></td>
+      <td class="center">JP</td>
+      <td class="center">education</td>
+      <td class="center">1</td>
+      <td class="fields"><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">1</td>
+      <td class="num">1</td>
+    </tr>
+
+    <tr>
+      <td class="num">28</td>
+      <td><b>Japan Science and Technology Agency</b></td>
+      <td class="center">JP</td>
+      <td class="center">government</td>
+      <td class="center">1</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">1</td>
+      <td class="num">1</td>
+    </tr>
+
+    <tr>
+      <td class="num">29</td>
+      <td><b>Shimane University</b></td>
+      <td class="center">JP</td>
+      <td class="center">education</td>
+      <td class="center">1</td>
+      <td class="fields"><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">108</td>
+      <td class="num">1</td>
+    </tr>
+
+    <tr>
+      <td class="num">30</td>
+      <td><b>University of Shimane</b></td>
+      <td class="center">JP</td>
+      <td class="center">education</td>
+      <td class="center">1</td>
+      <td class="fields"><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">108</td>
+      <td class="num">1</td>
+    </tr></tbody>
+      </table>
+    </section>
+
+
+    <section>
+      <h2>Panel D — 企業(type=company)のみの boundary spanner</h2>
+      <p class="subtitle">大学ではなく企業研究部門だけに絞った ranking。産業 boundary spanner 候補。</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Institution</th><th>Country</th><th>Type</th>
+            <th>Fields</th><th>Field tags</th><th>KDF layer</th>
+            <th>Degree</th><th>Papers</th>
+          </tr>
+        </thead>
+        <tbody>
+    <tr>
+      <td class="num">1</td>
+      <td><b>Google (United States)</b></td>
+      <td class="center">US</td>
+      <td class="center">company</td>
+      <td class="center">4</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">80</td>
+      <td class="num">40</td>
+    </tr>
+
+    <tr>
+      <td class="num">2</td>
+      <td><b>AstraZeneca (United Kingdom)</b></td>
+      <td class="center">GB</td>
+      <td class="center">company</td>
+      <td class="center">3</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span></td>
+      <td class="center"><span style="background:#3498DB;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Core</span></td>
+      <td class="num">309</td>
+      <td class="num">10</td>
+    </tr>
+
+    <tr>
+      <td class="num">3</td>
+      <td><b>Janssen (Belgium)</b></td>
+      <td class="center">BE</td>
+      <td class="center">company</td>
+      <td class="center">3</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">207</td>
+      <td class="num">9</td>
+    </tr>
+
+    <tr>
+      <td class="num">4</td>
+      <td><b>ICF International (United States)</b></td>
+      <td class="center">US</td>
+      <td class="center">company</td>
+      <td class="center">3</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">206</td>
+      <td class="num">8</td>
+    </tr>
+
+    <tr>
+      <td class="num">5</td>
+      <td><b>Prioris.ai (Canada)</b></td>
+      <td class="center">CA</td>
+      <td class="center">company</td>
+      <td class="center">3</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">206</td>
+      <td class="num">8</td>
+    </tr>
+
+    <tr>
+      <td class="num">6</td>
+      <td><b>Hindawi (United Kingdom)</b></td>
+      <td class="center">GB</td>
+      <td class="center">company</td>
+      <td class="center">3</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">206</td>
+      <td class="num">8</td>
+    </tr>
+
+    <tr>
+      <td class="num">7</td>
+      <td><b>Taylor and Francis (United Kingdom)</b></td>
+      <td class="center"></td>
+      <td class="center">company</td>
+      <td class="center">3</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">156</td>
+      <td class="num">6</td>
+    </tr>
+
+    <tr>
+      <td class="num">8</td>
+      <td><b>Merck &amp; Co., Inc., Rahway, NJ, USA (United States)</b></td>
+      <td class="center">US</td>
+      <td class="center">company</td>
+      <td class="center">3</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">144</td>
+      <td class="num">7</td>
+    </tr>
+
+    <tr>
+      <td class="num">9</td>
+      <td><b>Google DeepMind (United Kingdom)</b></td>
+      <td class="center">GB</td>
+      <td class="center">company</td>
+      <td class="center">3</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">101</td>
+      <td class="num">14</td>
+    </tr>
+
+    <tr>
+      <td class="num">10</td>
+      <td><b>Nvidia (United States)</b></td>
+      <td class="center">US</td>
+      <td class="center">company</td>
+      <td class="center">3</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">71</td>
+      <td class="num">6</td>
+    </tr>
+
+    <tr>
+      <td class="num">11</td>
+      <td><b>Microsoft (United States)</b></td>
+      <td class="center">US</td>
+      <td class="center">company</td>
+      <td class="center">3</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">65</td>
+      <td class="num">15</td>
+    </tr>
+
+    <tr>
+      <td class="num">12</td>
+      <td><b>Google (United Kingdom)</b></td>
+      <td class="center">GB</td>
+      <td class="center">company</td>
+      <td class="center">3</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">56</td>
+      <td class="num">5</td>
+    </tr>
+
+    <tr>
+      <td class="num">13</td>
+      <td><b>Tencent (China)</b></td>
+      <td class="center">CN</td>
+      <td class="center">company</td>
+      <td class="center">3</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">51</td>
+      <td class="num">7</td>
+    </tr>
+
+    <tr>
+      <td class="num">14</td>
+      <td><b>Novartis (Switzerland)</b></td>
+      <td class="center">CH</td>
+      <td class="center">company</td>
+      <td class="center">3</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">34</td>
+      <td class="num">4</td>
+    </tr>
+
+    <tr>
+      <td class="num">15</td>
+      <td><b>Intel (United States)</b></td>
+      <td class="center">US</td>
+      <td class="center">company</td>
+      <td class="center">3</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">30</td>
+      <td class="num">6</td>
+    </tr>
+
+    <tr>
+      <td class="num">16</td>
+      <td><b>Samsung (United States)</b></td>
+      <td class="center">US</td>
+      <td class="center">company</td>
+      <td class="center">3</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">5</td>
+      <td class="num">3</td>
+    </tr>
+
+    <tr>
+      <td class="num">17</td>
+      <td><b>Microsoft Research (United Kingdom)</b></td>
+      <td class="center">GB</td>
+      <td class="center">company</td>
+      <td class="center">3</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">3</td>
+      <td class="num">4</td>
+    </tr>
+
+    <tr>
+      <td class="num">18</td>
+      <td><b>Intelligent Systems Research (United States)</b></td>
+      <td class="center">US</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">19</td>
+      <td><b>Schrodinger (United States)</b></td>
+      <td class="center">US</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">20</td>
+      <td><b>Samsung (Japan)</b></td>
+      <td class="center">JP</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">21</td>
+      <td><b>Craft Engineering Associates (United States)</b></td>
+      <td class="center">US</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">176</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">22</td>
+      <td><b>TauRx Pharmaceuticals (Singapore)</b></td>
+      <td class="center">SG</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">176</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">23</td>
+      <td><b>Tessa Therapeutic (Singapore)</b></td>
+      <td class="center">SG</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">176</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">24</td>
+      <td><b>OpenCell Technologies (United States)</b></td>
+      <td class="center">US</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">176</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">25</td>
+      <td><b>AstraZeneca (Brazil)</b></td>
+      <td class="center">BR</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">176</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">26</td>
+      <td><b>Celerion (Canada)</b></td>
+      <td class="center">CA</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">176</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">27</td>
+      <td><b>Precision for Medicine (United States)</b></td>
+      <td class="center">US</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">176</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">28</td>
+      <td><b>Taylor Wimpey (United Kingdom)</b></td>
+      <td class="center">GB</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">114</td>
+      <td class="num">4</td>
+    </tr>
+
+    <tr>
+      <td class="num">29</td>
+      <td><b>Cambridge Life Sciences (United Kingdom)</b></td>
+      <td class="center">GB</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#4A90E2;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">AI ML</span><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">114</td>
+      <td class="num">4</td>
+    </tr>
+
+    <tr>
+      <td class="num">30</td>
+      <td><b>Kleijnen Systematic Reviews (United Kingdom)</b></td>
+      <td class="center">GB</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#50C878;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Biomed Pharm</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">102</td>
+      <td class="num">3</td>
+    </tr></tbody>
+      </table>
+    </section>
+
+
+    <section>
+      <h2>Panel E — 日本企業(type=company &amp; country=JP)のみ</h2>
+      <p class="subtitle">日本企業の中で最も多分野橋渡しをしている機関。&#x27;投資参考&#x27; ではなく &#x27;過去 5 年の構造的位置&#x27; の記述。</p>
+      <p class="note">件数が少ない場合、OpenAlex coverage が企業研究をフルに捉えていない可能性あり。</p>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Institution</th><th>Country</th><th>Type</th>
+            <th>Fields</th><th>Field tags</th><th>KDF layer</th>
+            <th>Degree</th><th>Papers</th>
+          </tr>
+        </thead>
+        <tbody>
+    <tr>
+      <td class="num">1</td>
+      <td><b>Fujifilm (Japan)</b></td>
+      <td class="center">JP</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">14</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">2</td>
+      <td><b>Toto (Japan)</b></td>
+      <td class="center">JP</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">14</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">3</td>
+      <td><b>Mitsubishi Chemical (Japan)</b></td>
+      <td class="center">JP</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">14</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">4</td>
+      <td><b>Samsung (Japan)</b></td>
+      <td class="center">JP</td>
+      <td class="center">company</td>
+      <td class="center">2</td>
+      <td class="fields"><span style="background:#F39C12;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Automotive</span><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#E74C3C;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Rare</span></td>
+      <td class="num">2</td>
+      <td class="num">2</td>
+    </tr>
+
+    <tr>
+      <td class="num">5</td>
+      <td><b>Kyocera (Japan)</b></td>
+      <td class="center">JP</td>
+      <td class="center">company</td>
+      <td class="center">1</td>
+      <td class="fields"><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">24</td>
+      <td class="num">1</td>
+    </tr>
+
+    <tr>
+      <td class="num">6</td>
+      <td><b>Otsuka (Japan)</b></td>
+      <td class="center">JP</td>
+      <td class="center">company</td>
+      <td class="center">1</td>
+      <td class="fields"><span style="background:#9C6ADE;color:white;padding:1px 5px;border-radius:3px;font-size:0.75em;margin-right:3px;">Materials Se</span></td>
+      <td class="center"><span style="background:#95A5A6;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">Edge</span></td>
+      <td class="num">2</td>
+      <td class="num">1</td>
+    </tr></tbody>
+      </table>
+    </section>
+
+<footer>
+  <h3>この dashboard の読み方</h3>
+  <ul>
+    <li><b>Rare 層</b>: deg が小さくても KDF が保護した "純粋 broker"。構造的交渉力が強い position。</li>
+    <li><b>Core 層</b>: 大きな hub。重要だが TopDegree と同じ結果で差別化薄い。</li>
+    <li><b>n_fields = 4</b>: 全 4 分野で論文がある機関。多分野展開の証拠。</li>
+    <li><b>n_fields = 1</b>: 単一分野のみ。specialist で、KDF 的には bridge ではない。</li>
+    <li><b>boundary_score</b> = n_fields × layer_score(Rare=3, Core=2, Edge=1, Garbage=0)</li>
+  </ul>
+  <h3>Algorithm</h3>
+  <p>
+    KDF (cgb-kdf Rust crate) の <code>NodeClassifier</code> を共著 graph に適用、
+    keep_rate=0.30 で 機関を Rare/Core/Edge/Garbage に分類。
+    同一 repo の <code>kdf_select_generic</code> binary 経由。
+    Script: <code>demos/D9_corporate_network/scripts/</code>
+  </p>
+  <h3>Honest limitations</h3>
+  <ul>
+    <li>サンプルは OpenAlex の被引用上位 2000 論文のみ。長 tail の中小企業が欠落する。</li>
+    <li>共著関係 ≠ 正式な joint patent。collaboration の proxy。</li>
+    <li>OpenAlex は米英中心の coverage が厚い。日本企業の研究発表はやや過小表示される。</li>
+    <li>4 分野は arbitrary choice。別分野(energy, quantum, robotics 等)で別 ranking が得られる。</li>
+    <li>ある機関が Rare 層に出ても、それが商業的価値を持つかは別問題。過去 5 年の構造的位置の記述のみ。</li>
+  </ul>
+</footer>
+
+</body>
+</html>

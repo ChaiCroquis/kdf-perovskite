@@ -1,0 +1,162 @@
+% !TEX program = xelatex
+%
+% KDF: Knowledge Decay Framework — arXiv preprint (v0.3, 2026-04-19)
+%
+% Build pipeline (arxiv / TeX Live 2026 compatible):
+%   1. Regenerate paper_body.tex from paper.md (body only, from "## 1. Introduction"):
+%        sed -n '/^## 1\. Introduction/,$p' paper.md > _body.md
+%        pandoc _body.md -o paper_body.tex --shift-heading-level-by=-1 --wrap=preserve
+%        rm _body.md
+%   2. Compile:
+%        xelatex paper.tex && bibtex paper && xelatex paper.tex && xelatex paper.tex
+%
+% arxiv's AutoTeX uses TeX Live and respects the %!TEX program magic comment,
+% so uploading paper.tex + paper_body.tex + references.bib works directly.
+
+\documentclass[11pt,a4paper]{article}
+
+% ---- Unicode + fonts (XeLaTeX) ----
+% Tectonic / TeX Live 2024+ supports fontspec; Latin Modern Roman ships with
+% every standard TeX Live install, so this is arxiv-safe.
+\usepackage{fontspec}
+\setmainfont{Latin Modern Roman}
+% For pdflatex fallback (limited Unicode coverage — our paper.md uses θ, ≤, ↔,
+% so xelatex is required), the pdflatex-compatible alternative would be:
+%   \usepackage[utf8]{inputenc}
+%   \usepackage[T1]{fontenc}
+%   \usepackage{lmodern}
+
+% ---- Pandoc helper macros (auto-generated lists use \tightlist) ----
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+% ---- Geometry + layout ----
+\usepackage[margin=1in]{geometry}
+\usepackage{microtype}
+\usepackage{setspace}
+\onehalfspacing
+
+% ---- Math ----
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+
+% ---- Tables ----
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{tabularx}
+
+% ---- Graphics + color ----
+\usepackage{graphicx}
+\usepackage{xcolor}
+
+% ---- Hyperlinks ----
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue]{hyperref}
+
+% ---- Lists ----
+\usepackage{enumitem}
+
+% ---- Authors + title ----
+\usepackage{authblk}
+
+% ---- Theorem environments ----
+\newtheorem{hypothesis}{Hypothesis}
+\newtheorem{conjecture}{Conjecture}
+
+% ---- Bibliography ----
+\usepackage[numbers,square,sort&compress]{natbib}
+\bibliographystyle{unsrtnat}
+
+% ============================================================================
+% Title + Authors
+% ============================================================================
+
+\title{KDF: A Deterministic Architecture for Finite-Resource
+       Information Preservation\\
+       \large Cross-Domain Evidence and Self-Refutation of Canonical Values}
+
+\author{Yasuhiro Kuroki}
+\affil{Independent researcher, Japan}
+\affil{\texttt{garden.of.knowledge.chai@gmail.com}}
+\affil{ORCID: \href{https://orcid.org/0009-0006-8943-9344}
+                   {0009-0006-8943-9344}}
+
+\date{v0.3, 2026-04-19\\
+      Patent JP 2026-027032 (filed 2026-02-24)\\
+      Code: \href{https://github.com/ChaiCroquis/kdf-perovskite}
+                 {github.com/ChaiCroquis/kdf-perovskite}
+      (PolyForm Noncommercial 1.0.0; commercial license separate)}
+
+% ============================================================================
+% Document body
+% ============================================================================
+
+\begin{document}
+
+\maketitle
+
+% -----------------------------------------------------------------------------
+% Abstract
+% -----------------------------------------------------------------------------
+\begin{abstract}
+\noindent
+\textbf{KDF (Knowledge Decay Framework)} is a deterministic graph-compression
+technique: given a graph and a retention budget, selected nodes are preserved
+\textbf{verbatim} while unselected nodes are discarded, distinguishing KDF from
+content-transforming methods such as LLM fact extraction. KDF combines three
+mechanisms---edge-based continuous-time exponential decay (metabolic control),
+rarity protection under the absolute threshold $\deg_E(v) \le 1$, and
+integrity discovery (analogy) via graph-Laplacian eigenvalue
+fingerprints---a three-pillar structure that our related-work survey finds
+independently recurring across ten disciplines, including mammalian memory
+consolidation, immune clonal selection, Ginzburg-Landau critical phenomena,
+continual-learning EWC, Hopfield associative memory, and K-SVD sparse
+coding.
+
+\medskip
+Empirically, KDF delivers $7.7\times$ gain over industry-standard TTL on
+LongMemEval (ICLR 2025), $F_1 = 0.747$ on a 2,182-note Obsidian vault
+(Wilcoxon $p = 0.006$), $2.3\times$ over Random for rare-event preservation
+on NASA HTTP logs, and a \textbf{$+3.06$-point rare-recall improvement in a
+realistic streaming replay of the NASA log}---providing the first positive
+empirical anchor for our narrowed thesis that dynamic control components find
+their true use in streaming scenarios rather than static queries.
+
+\medskip
+However, we also transparently report refutations of our own prior claims.
+The sandwich 2-threshold \textit{mechanism} is supported, but \textbf{our
+patent's canonical values $(\theta_L, \theta_U) = (0.70, 0.80)$ are
+empirically refuted across four benchmarks} (Hopfield mixture, direct
+analogy, synthetic pairs, LoCoMo streaming): specific values require
+domain-specific calibration. Additional honest negatives include OSS issue
+generalization $\times 1.00$ across three repositories, paper rediscovery
+$\times 0.83$, and Gaussian-Process inducing-point selection failures.
+Applicability is predictable a priori via a zero-dependency
+\texttt{bias-detector} metric.
+
+\medskip
+\noindent\textbf{Keywords:} information preservation, graph metabolism, rarity
+protection, analogy discovery, Laplacian fingerprint, Ginzburg-Landau,
+Hopfield attractor, Equitable Coreset Selection, complementary learning
+systems, memory consolidation.
+\end{abstract}
+
+% -----------------------------------------------------------------------------
+% Body — generated from paper.md via pandoc
+% -----------------------------------------------------------------------------
+%
+% Run once to generate paper_body.tex:
+%   pandoc paper.md -o paper_body.tex
+%
+% Then \input it here. The \input line below assumes paper_body.tex exists;
+% if it does not, see BUILD.md for setup. The included file should contain the
+% sections (§1 Introduction through Appendix B) in LaTeX form.
+
+\input{paper_body.tex}
+
+% -----------------------------------------------------------------------------
+% Bibliography
+% -----------------------------------------------------------------------------
+\bibliography{references}
+
+\end{document}

@@ -1,0 +1,10 @@
+[package]
+name = "kdf-incremental-update"
+version = "0.1.0"
+edition = "2021"
+description = "Incremental update and dynamic data handling for KDF"
+
+[workspace]
+
+[dependencies]
+rand = "0.8"

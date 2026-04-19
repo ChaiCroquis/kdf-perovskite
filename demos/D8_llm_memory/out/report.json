@@ -1,0 +1,140 @@
+{
+  "demo_id": "D8",
+  "title": "LLM エージェント持続的メモリ curation",
+  "dataset_name": "synth_llm_memory",
+  "n_items": 250,
+  "patent_section": "明細書 §0002 (広義ナレッジ/エージェントメモリ) / Claim 1, 25, 46",
+  "metric_definitions": [
+    {
+      "name": "rare_fact_recall",
+      "higher_is_better": true,
+      "mean": 0.0,
+      "stderr": 0.0,
+      "axis": "KdfStrength"
+    },
+    {
+      "name": "compression",
+      "higher_is_better": true,
+      "mean": 0.0,
+      "stderr": 0.0,
+      "axis": "Tie"
+    },
+    {
+      "name": "wall_ms",
+      "higher_is_better": false,
+      "mean": 0.0,
+      "stderr": 0.0,
+      "axis": "KdfWeakness"
+    }
+  ],
+  "method_results": [
+    {
+      "method": "TTL_oldest",
+      "requires_labels": false,
+      "metrics": {
+        "compression": 0.8,
+        "rare_fact_recall": 0.0,
+        "wall_ms": 0.0012399999999999998
+      },
+      "wall_ms": 0.0012399999999999998,
+      "notes": ""
+    },
+    {
+      "method": "RecentTop",
+      "requires_labels": false,
+      "metrics": {
+        "compression": 0.8,
+        "rare_fact_recall": 0.0,
+        "wall_ms": 0.0010599999999999997
+      },
+      "wall_ms": 0.0010599999999999997,
+      "notes": ""
+    },
+    {
+      "method": "FreqSummary",
+      "requires_labels": false,
+      "metrics": {
+        "compression": 0.8,
+        "rare_fact_recall": 0.0,
+        "wall_ms": 0.37016
+      },
+      "wall_ms": 0.37016,
+      "notes": ""
+    },
+    {
+      "method": "KDF",
+      "requires_labels": false,
+      "metrics": {
+        "compression": 0.8,
+        "rare_fact_recall": 0.19538461538461538,
+        "wall_ms": 0.26528
+      },
+      "wall_ms": 0.26528,
+      "notes": ""
+    },
+    {
+      "method": "KDF+TextSim",
+      "requires_labels": false,
+      "metrics": {
+        "compression": 0.8,
+        "rare_fact_recall": 1.0,
+        "wall_ms": 0.633
+      },
+      "wall_ms": 0.633,
+      "notes": ""
+    }
+  ],
+  "raw_trials": {
+    "FreqSummary/rare_fact_recall": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "KDF+TextSim/rare_fact_recall": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "KDF/rare_fact_recall": [
+      0.0,
+      0.3,
+      0.5,
+      0.07692307692307693,
+      0.1
+    ],
+    "RecentTop/rare_fact_recall": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "TTL_oldest/rare_fact_recall": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "conclusion": {
+    "kdf_recommended_for": [
+      "LLM エージェント会話履歴の long-term memory curation",
+      "構造(session, reply chain, shared vocabulary)が残っている環境",
+      "LLM API コスト無しでの決定論的 memory 選別"
+    ],
+    "kdf_not_recommended_for": [
+      "意味解釈が必須の memory 運用 → LLM summary 系 (Mem0, MemGPT) 併用要",
+      "構造がほぼ無い純粹発話リスト"
+    ],
+    "honest_limits": [
+      "合成 conversation(5 sessions × 50 utterances × 10 rare planted)",
+      "実 LLM 会話 log (Anthropic/OpenAI 等の memory bench) での検証は未実施",
+      "セマンティック類似は shingle proxy のみ(embedding 未使用)"
+    ]
+  }
+}

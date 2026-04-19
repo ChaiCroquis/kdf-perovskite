@@ -1,0 +1,10 @@
+[package]
+name = "kdf-performance-benchmark"
+version = "0.1.0"
+edition = "2021"
+description = "Performance benchmark for KDF (time, memory, throughput)"
+
+[workspace]
+
+[dependencies]
+rand = "0.8"
