@@ -5,11 +5,28 @@
 [![Commercial](https://img.shields.io/badge/Commercial-Contact%20author-red.svg)](COMMERCIAL.md)
 [![Patent filed](https://img.shields.io/badge/Patent-2026--027032-informational)](docs/patent/SPEC.md)
 [![Spec frozen](https://img.shields.io/badge/Spec-FROZEN-brightgreen)](docs/patent/SPEC.md)
-[![Preprint](https://img.shields.io/badge/Preprint-Zenodo-blue)](docs/arxiv_submission/paper.pdf)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19651035.svg)](https://doi.org/10.5281/zenodo.19651035)
 
 **KDF** は、長期運用される情報ネットワーク(知識グラフ、ログ、学習データ等)を、**代謝的に削減しつつ希少情報を構造的に保護**する Rust 実装フレームワークです。
 
-本実装は、特願 **2026-027032** の請求項1–50 を参照仕様として厳密に実装しています。特許出願書類 5 点(特許願 / 特許請求の範囲 / 明細書 / 要約書 / 図面)は **日本特許庁による自動公開(出願から 18 ヶ月、2027-08-24 頃)** まで本リポジトリには含めていません。それまでの間は、権威仕様の要約を [docs/patent/SPEC.md](docs/patent/SPEC.md)、請求項 × 実装の対応を [docs/patent/COMPLIANCE.md](docs/patent/COMPLIANCE.md) と [docs/patent/TRACEABILITY.md](docs/patent/TRACEABILITY.md) に記載しています。発明の理論・手法の詳細は [プレプリント論文](docs/arxiv_submission/paper.pdf) を参照してください。
+本実装は、特願 **2026-027032** の請求項1–50 を参照仕様として厳密に実装しています。特許出願書類 5 点(特許願 / 特許請求の範囲 / 明細書 / 要約書 / 図面)は **日本特許庁による自動公開(出願から 18 ヶ月、2027-08-24 頃)** まで本リポジトリには含めていません。それまでの間は、権威仕様の要約を [docs/patent/SPEC.md](docs/patent/SPEC.md)、請求項 × 実装の対応を [docs/patent/COMPLIANCE.md](docs/patent/COMPLIANCE.md) と [docs/patent/TRACEABILITY.md](docs/patent/TRACEABILITY.md) に記載しています。発明の理論・手法の詳細は **プレプリント論文(Zenodo DOI: [10.5281/zenodo.19651035](https://doi.org/10.5281/zenodo.19651035))** または [`docs/arxiv_submission/paper.pdf`](docs/arxiv_submission/paper.pdf) を参照してください。
+
+## 引用(Citation)
+
+```bibtex
+@misc{kuroki2026kdf,
+  author       = {Kuroki, Yasuhiro},
+  title        = {{KDF: A Deterministic Architecture for Finite-Resource
+                   Information Preservation---Cross-Domain Evidence and
+                   Self-Refutation of Canonical Values}},
+  year         = {2026},
+  publisher    = {Zenodo},
+  version      = {v0.3},
+  doi          = {10.5281/zenodo.19651035},
+  url          = {https://doi.org/10.5281/zenodo.19651035},
+  note         = {Preprint. Patent: JP 2026-027032 (filed 2026-02-24).}
+}
+```
 
 > 🔍 **検証済み知見集**: Phase 0〜8 Stage 2 で独立検証エージェントを通過した全知見を [**docs/VERIFIED_FINDINGS.md**](docs/VERIFIED_FINDINGS.md) に体系化。失敗モード / 解決策 / 未検証事項も honest に列挙。
 

@@ -1,0 +1,63 @@
+cff-version: 1.2.0
+message: >
+  If you use this software or the accompanying preprint in your research,
+  please cite the Zenodo preprint below. Commercial use requires a separate
+  license (see COMMERCIAL.md).
+type: software
+title: >
+  KDF: A Deterministic Architecture for Finite-Resource Information
+  Preservation—Cross-Domain Evidence and Self-Refutation of Canonical Values
+abstract: >
+  KDF (Knowledge Decay Framework) is a deterministic graph-compression
+  technique for finite-resource information preservation. Selected nodes are
+  preserved verbatim while unselected nodes are discarded, distinguishing KDF
+  from content-transforming methods such as LLM-based fact extraction.
+  Cross-domain evidence from 67 verified findings; includes transparent
+  self-refutation of the patent's canonical values across four benchmarks.
+authors:
+  - family-names: Kuroki
+    given-names: Yasuhiro
+    orcid: https://orcid.org/0009-0006-8943-9344
+    affiliation: Independent researcher, Japan
+version: v0.3
+date-released: "2026-04-19"
+license: LicenseRef-PolyForm-Noncommercial-1.0.0
+license-url: https://polyformproject.org/licenses/noncommercial/1.0.0/
+repository-code: https://github.com/ChaiCroquis/kdf-perovskite
+url: https://doi.org/10.5281/zenodo.19651035
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.19651035
+    description: Zenodo preprint (v1)
+  - type: doi
+    value: 10.5281/zenodo.19651034
+    description: Zenodo concept DOI (all versions)
+  - type: other
+    value: JP 2026-027032
+    description: Japanese Patent Application (filed 2026-02-24)
+keywords:
+  - information preservation
+  - graph compression
+  - deterministic algorithm
+  - rare-event preservation
+  - Laplacian fingerprint
+  - complementary learning systems
+  - memory consolidation
+  - structural holes
+  - self-refutation
+  - Knowledge Decay Framework
+  - KDF
+preferred-citation:
+  type: article
+  title: >
+    KDF: A Deterministic Architecture for Finite-Resource Information
+    Preservation—Cross-Domain Evidence and Self-Refutation of Canonical Values
+  authors:
+    - family-names: Kuroki
+      given-names: Yasuhiro
+      orcid: https://orcid.org/0009-0006-8943-9344
+  year: 2026
+  month: 4
+  journal: Zenodo (preprint)
+  doi: 10.5281/zenodo.19651035
+  url: https://doi.org/10.5281/zenodo.19651035
