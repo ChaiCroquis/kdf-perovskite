@@ -34,6 +34,21 @@ demos/D9_corporate_network/out/institutions_ranked.json
 demos/D9_corporate_network/out/corporate_graph.db
 demos/D9_corporate_network/out/tmp_*/
 
+# Private / business materials — MUST NEVER be in the public repo
+# These paths are intentionally gitignored as a safety belt. If business
+# docs (commercial pricing, customer names, internal negotiation materials)
+# ever get copied here by mistake, git will refuse to stage them.
+# The authoritative copies live only in the private dev repo.
+docs/business/
+docs/private/
+docs/internal/
+docs/sales/
+docs/*_internal.md
+**/COMMERCIAL_CONFIDENTIAL*
+**/PRICING*.md
+**/CUSTOMER_LIST*
+**/NEGOTIATION*
+
 # IDE / editor
 .vscode/
 .idea/
