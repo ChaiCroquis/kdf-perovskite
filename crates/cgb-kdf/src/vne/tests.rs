@@ -800,3 +800,89 @@ fn test_dispatch_threshold() {
     assert!(large.eigenvalues.is_empty());
     assert!(large.entropy >= 0.0);
 }
+
+// =========================================================================
+// spectral_gap_sparse tests (Lanczos with deflation against ones-kernel)
+// =========================================================================
+
+#[test]
+fn test_spectral_gap_sparse_disconnected_returns_zero() {
+    // Two disjoint triangles: c=2 → λ₁ = λ₂ = 0 → gap = 0.
+    let edges = vec![
+        (0, 1, 1.0),
+        (1, 2, 1.0),
+        (2, 0, 1.0),
+        (3, 4, 1.0),
+        (4, 5, 1.0),
+        (5, 3, 1.0),
+    ];
+    let gap = sparse::spectral_gap_sparse(6, &edges, 2);
+    assert_eq!(gap, 0.0);
+}
+
+#[test]
+fn test_spectral_gap_sparse_empty_returns_zero() {
+    assert_eq!(sparse::spectral_gap_sparse(0, &[], 0), 0.0);
+    assert_eq!(sparse::spectral_gap_sparse(10, &[], 10), 0.0);
+}
+
+#[test]
+fn test_spectral_gap_sparse_matches_dense_connected() {
+    // Connected ER graphs at n ∈ {100, 200, 500}. Lanczos with deflation
+    // (30 iters, full reorthogonalisation) is expected to match the dense
+    // path's λ₂ within ≈10% relative error for these sizes — the bound is
+    // wider than the entropy precision because the Fiedler value can be
+    // O(1/n) and Lanczos converges to interior eigenvalues more slowly than
+    // to extreme ones. Still tight enough to be useful for the
+    // anomaly-detection signal in `triggered.rs`.
+    for &(n, p) in &[(100usize, 0.10), (200, 0.05), (500, 0.025)] {
+        let edges = er_graph(n, p, 1234 + n as u64);
+        let dense = entropy::von_neumann_entropy_dense(n, &edges);
+        // Skip cases where the random graph happens to be disconnected —
+        // both paths return 0 and the relative error formula is undefined.
+        if dense.num_components != 1 {
+            continue;
+        }
+        let gap_dense = dense.spectral_gap;
+        let gap_sparse = sparse::spectral_gap_sparse(n, &edges, dense.num_components);
+        let rel = (gap_dense - gap_sparse).abs() / gap_dense.abs().max(1e-12);
+        assert!(
+            rel < 0.10,
+            "n={n}: dense_gap={gap_dense:.6e} sparse_gap={gap_sparse:.6e} rel_err={rel:.4e}",
+        );
+    }
+}
+
+#[test]
+fn test_spectral_gap_sparse_is_nonnegative() {
+    // Spectral gap is mathematically ≥ 0; clamp must hold even for noisy Ritz.
+    let edges = er_graph(300, 0.02, 9999);
+    let dense = entropy::von_neumann_entropy_dense(300, &edges);
+    let gap = sparse::spectral_gap_sparse(300, &edges, dense.num_components);
+    assert!(gap >= 0.0);
+}
+
+#[test]
+fn test_spectral_gap_sparse_determinism() {
+    // Same input → same output (seeded RNG).
+    let edges = er_graph(200, 0.05, 7);
+    let g1 = sparse::spectral_gap_sparse(200, &edges, 1);
+    let g2 = sparse::spectral_gap_sparse(200, &edges, 1);
+    assert_eq!(g1, g2);
+}
+
+#[test]
+fn test_detailed_sparse_path_populates_spectral_gap() {
+    // n >= SPARSE_THRESHOLD must now return a non-zero spectral_gap for
+    // a connected graph (previous behaviour was 0.0 unconditionally).
+    let n = 1000;
+    let edges = er_graph(n, 5.0 / (n as f64 - 1.0), 42);
+    let result = entropy::von_neumann_entropy_detailed(n, &edges);
+    if result.num_components == 1 {
+        assert!(
+            result.spectral_gap > 0.0,
+            "connected n=1000 graph should have positive spectral gap, got {}",
+            result.spectral_gap,
+        );
+    }
+}

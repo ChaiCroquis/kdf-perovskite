@@ -258,3 +258,160 @@ pub fn count_components(node_count: usize, edges: &[(u32, u32, f64)]) -> usize {
     }
     roots.len()
 }
+
+/// Lanczos iteration count for spectral-gap estimation. Empirically 30 is
+/// sufficient for the second-smallest eigenvalue of `ρ = L/tr(L)` on graphs
+/// up to n ≈ 10⁴; raise if convergence diagnostics warrant.
+pub const VNE_LANCZOS_ITERATIONS: usize = 30;
+
+/// Apply `ρ = L / tr_l` to a dense vector `v` (writing into `out`).
+fn apply_rho(lap: &CsrMatrix<f64>, tr_l: f64, v: &[f64], out: &mut [f64]) {
+    let row_offsets = lap.row_offsets();
+    let col_indices = lap.col_indices();
+    let values = lap.values();
+    let n = v.len();
+    for i in 0..n {
+        let mut s = 0.0;
+        for k in row_offsets[i]..row_offsets[i + 1] {
+            s += values[k] * v[col_indices[k]];
+        }
+        out[i] = s / tr_l;
+    }
+}
+
+/// Estimate the spectral gap `λ₂(ρ) − λ₁(ρ)` of the normalized Laplacian.
+///
+/// `λ₁` is always 0 for graph Laplacians; for connected graphs the gap equals
+/// the (normalized) Fiedler value, and for graphs with `c ≥ 2` connected
+/// components the multiplicity of the zero eigenvalue is `c`, hence the gap
+/// is 0. We exploit this:
+///
+/// - **Disconnected case** (`num_components ≥ 2`): return 0 directly.
+/// - **Connected case**: Lanczos with explicit deflation against the kernel
+///   vector `v₀ = ones/√n` (which spans `ker(L)` for connected graphs).
+///   Starting from a random vector orthogonalised against `v₀`, the Krylov
+///   subspace `K(ρ, q₁)` lies entirely in `span{v₀}^⊥`, so the smallest
+///   Ritz value of the resulting `K × K` tridiagonal `T` approximates `λ₂(ρ)`.
+///
+/// Full reorthogonalisation (Modified Gram-Schmidt against all prior basis
+/// vectors plus `v₀`) is used for numerical stability — Lanczos is famously
+/// fragile in finite precision. Cost is `O(K · |E| + K² · n)`, dominated by
+/// the matvec for typical sparse graphs.
+///
+/// Determinism: ChaCha8Rng seeded with `VNE_RNG_SEED ^ 0xCAFE_BABE` (distinct
+/// from the entropy estimator's RNG so the two paths do not share probe state).
+pub fn spectral_gap_sparse(
+    node_count: usize,
+    edges: &[(u32, u32, f64)],
+    num_components: usize,
+) -> f64 {
+    if num_components != 1 || node_count < 2 || edges.is_empty() {
+        return 0.0;
+    }
+
+    let lap = laplacian_csr(node_count, edges);
+    let tr_l = csr_trace(&lap);
+    if tr_l.abs() < 1e-15 {
+        return 0.0;
+    }
+
+    let n = node_count;
+    let v0_factor = 1.0 / (n as f64).sqrt();
+
+    // Helper: orthogonalise `w` against v₀ = ones/√n.
+    let orth_v0 = |w: &mut [f64]| {
+        let dot: f64 = w.iter().sum::<f64>() * v0_factor;
+        let coeff = dot * v0_factor;
+        for x in w.iter_mut() {
+            *x -= coeff;
+        }
+    };
+
+    // Initial Lanczos vector: random Gaussian-ish, projected onto span{v₀}^⊥.
+    let mut rng = ChaCha8Rng::seed_from_u64(VNE_RNG_SEED ^ 0xCAFE_BABE);
+    let mut q1: Vec<f64> = (0..n)
+        .map(|_| rng.gen_bool(0.5) as i32 as f64 * 2.0 - 1.0)
+        .collect();
+    orth_v0(&mut q1);
+    let q1_norm = q1.iter().map(|x| x * x).sum::<f64>().sqrt();
+    if q1_norm < 1e-15 {
+        return 0.0;
+    }
+    for x in q1.iter_mut() {
+        *x /= q1_norm;
+    }
+
+    let max_iter = VNE_LANCZOS_ITERATIONS.min(n - 1);
+    let mut alpha: Vec<f64> = Vec::with_capacity(max_iter);
+    let mut beta: Vec<f64> = Vec::with_capacity(max_iter);
+    let mut basis: Vec<Vec<f64>> = Vec::with_capacity(max_iter + 1);
+    basis.push(q1);
+
+    let mut z = vec![0.0f64; n];
+
+    for j in 0..max_iter {
+        // z ← ρ · basis[j]
+        apply_rho(&lap, tr_l, &basis[j], &mut z);
+
+        // α_j = ⟨basis[j], z⟩
+        let alpha_j: f64 = basis[j].iter().zip(z.iter()).map(|(v, w)| v * w).sum();
+        alpha.push(alpha_j);
+
+        // z ← z − α_j basis[j] − β_{j-1} basis[j-1]
+        for i in 0..n {
+            z[i] -= alpha_j * basis[j][i];
+        }
+        if j > 0 {
+            let bm1 = beta[j - 1];
+            for i in 0..n {
+                z[i] -= bm1 * basis[j - 1][i];
+            }
+        }
+
+        // Full reorthogonalisation: against v₀ first, then all prior basis vectors.
+        orth_v0(&mut z);
+        for v_prev in basis.iter() {
+            let coeff: f64 = v_prev.iter().zip(z.iter()).map(|(v, w)| v * w).sum();
+            for i in 0..n {
+                z[i] -= coeff * v_prev[i];
+            }
+        }
+
+        let beta_j: f64 = z.iter().map(|x| x * x).sum::<f64>().sqrt();
+        if beta_j < 1e-12 {
+            break; // Krylov subspace exhausted (rare for our use case).
+        }
+        beta.push(beta_j);
+
+        let mut q_next = vec![0.0f64; n];
+        for i in 0..n {
+            q_next[i] = z[i] / beta_j;
+        }
+        basis.push(q_next);
+    }
+
+    let k = alpha.len();
+    if k == 0 {
+        return 0.0;
+    }
+
+    // Diagonalise the small dense tridiagonal T_k via SymmetricEigen.
+    use nalgebra::{DMatrix, SymmetricEigen};
+    let mut t_mat = DMatrix::zeros(k, k);
+    for i in 0..k {
+        t_mat[(i, i)] = alpha[i];
+        if i + 1 < k {
+            t_mat[(i, i + 1)] = beta[i];
+            t_mat[(i + 1, i)] = beta[i];
+        }
+    }
+
+    let eig = SymmetricEigen::new(t_mat);
+    let smallest = eig
+        .eigenvalues
+        .iter()
+        .cloned()
+        .fold(f64::INFINITY, f64::min);
+    // Ritz values are an approximation; clamp to the mathematically valid range.
+    smallest.max(0.0)
+}

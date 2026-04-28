@@ -34,18 +34,22 @@ pub fn von_neumann_entropy(node_count: usize, edges: &[(u32, u32, f64)]) -> f64 
 
 /// Compute detailed VNE result including eigenvalues and spectral gap.
 ///
-/// On the sparse path (`node_count >= `[`SPARSE_THRESHOLD`]) eigenvalues and
-/// `spectral_gap` are not computed — those fields are left empty / zero.
-/// `num_components` is recovered via union-find on the edge list.
+/// On the sparse path (`node_count >= `[`SPARSE_THRESHOLD`]) the per-eigenvalue
+/// vector is not materialised — the dense `SymmetricEigen` is precisely what we
+/// are avoiding — so `eigenvalues` is left empty. `entropy`, `num_components`
+/// and `spectral_gap` are filled via the dedicated sparse estimators
+/// ([`sparse::von_neumann_entropy_sparse`], [`sparse::count_components`],
+/// [`sparse::spectral_gap_sparse`]).
 pub fn von_neumann_entropy_detailed(node_count: usize, edges: &[(u32, u32, f64)]) -> VNEResult {
     if node_count < SPARSE_THRESHOLD {
         von_neumann_entropy_dense(node_count, edges)
     } else {
+        let num_components = sparse::count_components(node_count, edges);
         VNEResult {
             entropy: sparse::von_neumann_entropy_sparse(node_count, edges),
             eigenvalues: Vec::new(),
-            spectral_gap: 0.0,
-            num_components: sparse::count_components(node_count, edges),
+            spectral_gap: sparse::spectral_gap_sparse(node_count, edges, num_components),
+            num_components,
         }
     }
 }
