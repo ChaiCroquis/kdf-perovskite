@@ -7,7 +7,7 @@ license-file = "../../LICENSE"
 
 [dependencies]
 # Linear Algebra (固有値計算)
-nalgebra = "0.33"
+nalgebra = "0.34"
 # Sparse linear algebra for VNE on n >= 1000 (Hutchinson + Chebyshev,
 # avoids dense O(n³) eigendecomposition). Apache-2.0, matches nalgebra.
 nalgebra-sparse = "0.10"
