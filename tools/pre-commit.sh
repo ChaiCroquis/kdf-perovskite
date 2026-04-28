@@ -17,8 +17,10 @@ if ! cargo fmt --all -- --check; then
     exit 1
 fi
 
-echo "[pre-commit] cargo clippy -D warnings (workspace, excluding kdf-python / kdf-wasm)"
-if ! cargo clippy --workspace --exclude kdf-python --exclude kdf-wasm --all-targets -- -D warnings; then
+echo "[pre-commit] cargo clippy -D warnings (workspace, excluding kdf-python / kdf-wasm / kdf-perovskite-py)"
+# Mirrors .github/workflows/rust-quality.yml exclusions exactly.
+# kdf-perovskite-py is excluded due to pyo3 0.22 / Python 3.14 incompatibility.
+if ! cargo clippy --workspace --exclude kdf-python --exclude kdf-wasm --exclude kdf-perovskite-py --all-targets -- -D warnings; then
     echo "[pre-commit] FAIL: clippy violations." >&2
     exit 1
 fi
