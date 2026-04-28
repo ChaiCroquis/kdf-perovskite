@@ -7,4 +7,4 @@ description = "Performance benchmark for KDF (time, memory, throughput)"
 [workspace]
 
 [dependencies]
-rand = "0.8"
+rand = { workspace = true }

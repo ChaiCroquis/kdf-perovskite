@@ -8,8 +8,8 @@ description = "Shared utilities for KDF showcase demos (D1-D8)"
 [dependencies]
 cgb-kdf = { path = "../../crates/cgb-kdf" }
 real-data-bench = { path = "../../benchmarks/real_data" }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde = { workspace = true }
+serde_json = { workspace = true }
 
 [lints]
 workspace = true

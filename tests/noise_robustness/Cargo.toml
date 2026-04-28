@@ -7,4 +7,4 @@ description = "Noise robustness verification for KDF"
 [workspace]
 
 [dependencies]
-rand = "0.8"
+rand = { workspace = true }

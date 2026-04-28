@@ -13,8 +13,8 @@ path = "src/main.rs"
 kdf-demos-common = { path = "../common" }
 cgb-kdf = { path = "../../crates/cgb-kdf" }
 real-data-bench = { path = "../../benchmarks/real_data" }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde = { workspace = true }
+serde_json = { workspace = true }
 
 [lints]
 workspace = true

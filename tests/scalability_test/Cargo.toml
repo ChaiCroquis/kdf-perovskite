@@ -7,4 +7,4 @@ description = "Scalability test for KDF with large data volumes"
 [workspace]
 
 [dependencies]
-rand = "0.8"
+rand = { workspace = true }

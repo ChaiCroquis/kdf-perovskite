@@ -7,4 +7,4 @@ description = "Large scale verification for KDF (10K, 100K items)"
 [workspace]
 
 [dependencies]
-rand = "0.8"
+rand = { workspace = true }
