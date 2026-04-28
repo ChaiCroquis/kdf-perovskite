@@ -38,7 +38,7 @@ cargo run --release -p sota-comparison
 
 ### Pre-commit hook(推奨)
 
-ステップ 4 の `fmt + clippy` を commit 前に自動実行する hook を用意:
+ステップ 4 の `fmt + clippy` を commit 前に自動実行する hook を用意。
 
 ```bash
 # 一回だけ実行(以後 commit 時に自動で fmt + clippy が走る)
@@ -49,7 +49,18 @@ cargo run --release -p sota-comparison
 git commit --no-verify
 ```
 
-**経緯**: 2026-04-28 に過去 commit 蓄積の rustfmt 169 file + clippy 208 件を CI が一気に検出した事故の再発防止策。`tools/pre-commit.sh` が CI の `rust-quality.yml` と同じチェックを走らせる。
+仕組み: `git config --local core.hooksPath .githooks` を設定し、repo に commit された `.githooks/pre-commit` を hook として使う。新しい hook が追加されても再 install 不要。
+
+**経緯**: 2026-04-28 に過去 commit 蓄積の rustfmt 169 file + clippy 208 件を CI が一気に検出した事故の再発防止策。`.githooks/pre-commit` が CI の `rust-quality.yml` と同じチェックを走らせる。
+
+### 開発環境の整合性
+
+| 仕組み | ファイル | 役割 |
+|---|---|---|
+| **rust toolchain pin** | `rust-toolchain.toml` | `channel = "1.95.0"` で local / CI 一致 |
+| **改行コード統一** | `.gitattributes` | `* text=auto eol=lf` で git 内 LF 統一 |
+| **dependency auto-update** | `.github/dependabot.yml` | weekly で security advisory を自動 PR |
+| **lint policy 集中管理** | ルート `Cargo.toml` の `[workspace.lints.clippy]` | 設計判断 lint を一元 allow |
 
 ### PR チェックリスト
 

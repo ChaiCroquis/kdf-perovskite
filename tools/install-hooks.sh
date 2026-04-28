@@ -1,40 +1,39 @@
 #!/usr/bin/env bash
-# Install repository git hooks.
+# Configure git to use the repository-tracked .githooks/ directory.
 #
-# Sets .git/hooks/pre-commit to point at tools/pre-commit.sh
-# (symlink where supported, copy fallback for Windows where symlinks
-# require admin / developer mode).
+# Why this approach (not .git/hooks/):
+#   .githooks/ is committed to the repo. `git config core.hooksPath .githooks`
+#   tells git to look there instead of .git/hooks/. Result: each developer
+#   runs this script once, and any new hook (or update to an existing hook)
+#   added to .githooks/ takes effect on the next commit — no manual re-sync,
+#   no symlinks needed (which require admin/dev-mode on Windows).
 #
 # Usage: ./tools/install-hooks.sh
+# Disable: git config --local --unset core.hooksPath
 
 set -e
-
 cd "$(dirname "$0")/.."
 
-HOOK_SRC_REL="../../tools/pre-commit.sh"
-HOOK_SRC_ABS="tools/pre-commit.sh"
-HOOK_DEST=".git/hooks/pre-commit"
-
 if [ ! -d ".git" ]; then
-    echo "[install-hooks] ERROR: .git not found — run from repo root or via ./tools/install-hooks.sh" >&2
+    echo "[install-hooks] ERROR: .git not found — run from repo root" >&2
     exit 1
 fi
 
-if [ ! -f "$HOOK_SRC_ABS" ]; then
-    echo "[install-hooks] ERROR: $HOOK_SRC_ABS not found" >&2
+if [ ! -d ".githooks" ]; then
+    echo "[install-hooks] ERROR: .githooks/ not found in repo" >&2
     exit 1
 fi
 
-# Remove any existing hook
-[ -e "$HOOK_DEST" ] && rm -f "$HOOK_DEST"
-
-# Try symlink first (Unix-like), fall back to copy (Windows without dev mode)
-if ln -sf "$HOOK_SRC_REL" "$HOOK_DEST" 2>/dev/null; then
-    echo "[install-hooks] symlinked $HOOK_DEST -> $HOOK_SRC_REL"
-else
-    cp "$HOOK_SRC_ABS" "$HOOK_DEST"
-    echo "[install-hooks] copied $HOOK_SRC_ABS to $HOOK_DEST (symlink unsupported)"
+# Migrate from legacy .git/hooks/pre-commit (symlink/copy era)
+if [ -e ".git/hooks/pre-commit" ]; then
+    rm -f ".git/hooks/pre-commit"
+    echo "[install-hooks] removed legacy .git/hooks/pre-commit"
 fi
 
-chmod +x "$HOOK_SRC_ABS" "$HOOK_DEST" 2>/dev/null || true
-echo "[install-hooks] done — pre-commit hook is now active"
+git config --local core.hooksPath .githooks
+chmod +x .githooks/* 2>/dev/null || true
+
+echo "[install-hooks] core.hooksPath = .githooks"
+echo "[install-hooks] active hooks:"
+ls -1 .githooks/ | sed 's/^/  /'
+echo "[install-hooks] done"

@@ -1,0 +1,35 @@
+# Normalize line endings to LF in the repository.
+# Working tree may use platform-native line endings (CRLF on Windows) but
+# what's stored in git is always LF. This prevents the CRLF/LF mismatch
+# that surfaced on 2026-04-28 when sha256 of working-tree files differed
+# from sha256 of git-stored content (CI uses LF, Windows local uses CRLF).
+* text=auto eol=lf
+
+# Source code files: explicit LF
+*.rs       text eol=lf
+*.toml     text eol=lf
+*.md       text eol=lf
+*.yml      text eol=lf
+*.yaml     text eol=lf
+*.json     text eol=lf
+*.sh       text eol=lf
+*.py       text eol=lf
+*.cff      text eol=lf
+*.txt      text eol=lf
+
+# Binary files: never touch
+*.pdf      binary
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.gif      binary
+*.ico      binary
+*.zip      binary
+*.gz       binary
+*.tar      binary
+
+# SVG: text but commonly auto-generated, keep LF
+*.svg      text eol=lf
+
+# Cargo.lock: text but auto-managed, keep LF
+Cargo.lock text eol=lf

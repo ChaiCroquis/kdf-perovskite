@@ -1,0 +1,13 @@
+# Pin Rust toolchain to match CI (dtolnay/rust-toolchain@stable resolves to
+# this version when the file is present).
+#
+# Why pinned: on 2026-04-28 a clippy::unnecessary_sort_by lint introduced
+# in Rust 1.95 was undetected on local rust 1.92, causing CI failures
+# unreachable from local pre-commit. Pinning ensures local and CI agree.
+#
+# Bump procedure: edit `channel`, run `rustup update`, re-run pre-commit.
+# Keep CI workflow's `dtolnay/rust-toolchain@stable` — it picks up this file.
+[toolchain]
+channel = "1.95.0"
+components = ["rustfmt", "clippy"]
+profile = "default"

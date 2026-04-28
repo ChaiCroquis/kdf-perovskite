@@ -1,0 +1,29 @@
+version: 2
+updates:
+  # Rust crate dependencies (workspace).
+  # Weekly batched PRs to surface advisory drift (RUSTSEC-2025-0020 style)
+  # before they accumulate. Limit pace so PRs stay reviewable.
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(cargo)"
+    labels:
+      - "dependencies"
+      - "rust"
+
+  # GitHub Actions versions (e.g. dtolnay/rust-toolchain, EmbarkStudios/cargo-deny-action).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "deps(actions)"
+    labels:
+      - "dependencies"
+      - "ci"
