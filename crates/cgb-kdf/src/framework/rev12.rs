@@ -152,6 +152,16 @@ pub struct KdfProcessorRev12 {
     /// of pool size. Setting to a very large value (e.g. usize::MAX) reverts
     /// to the legacy percentage-based screening (Claim 46 default 5%).
     pub shortlist_top_k: usize,
+    /// Pre-built candidate-id list (CORE+EDGE) used by attempt_discovery.
+    ///
+    /// Built once at the end of `initialize` and reused across every
+    /// attempt_discovery call. This eliminates the per-call O(n_pool)
+    /// HashMap iteration over `classification.layers` that previously
+    /// dominated wall-time alongside the structure-mapping work itself.
+    /// Snapshot semantics: promotion/demotion during a review cycle does
+    /// not invalidate the cache (stale entries are still valid analogy
+    /// targets — the analogy engine itself filters by registered features).
+    candidates_cache: Vec<String>,
     /// Rev.12 statistics
     stats: Rev12Stats,
     /// Neighbors map for quick lookup
@@ -199,6 +209,7 @@ impl Default for KdfProcessorRev12 {
             discovery_threshold: DISCOVERY_THRESHOLD_DEFAULT,
             discovery_threshold_upper: DISCOVERY_THRESHOLD_UPPER_DEFAULT,
             shortlist_top_k: SHORTLIST_TOP_K_DEFAULT,
+            candidates_cache: Vec::new(),
             stats: Rev12Stats::default(),
             neighbors: HashMap::new(),
         }
@@ -382,6 +393,20 @@ impl KdfProcessorRev12 {
                 .register_node(&node_id.to_string(), features, &label);
         }
 
+        // Pre-build the CORE+EDGE candidate-id list once so attempt_discovery
+        // avoids the per-call O(n_pool) HashMap iteration. Order does not
+        // affect correctness — the analogy engine internally screens by
+        // fingerprint distance — but we sort by node id for determinism.
+        self.candidates_cache.clear();
+        let mut core_edge: Vec<u32> = classification
+            .layers
+            .iter()
+            .filter(|&(_, &l)| l == Layer::Core || l == Layer::Edge)
+            .map(|(&id, _)| id)
+            .collect();
+        core_edge.sort_unstable();
+        self.candidates_cache = core_edge.into_iter().map(|id| id.to_string()).collect();
+
         self.decay_manager.initialize(classification);
     }
 
@@ -397,21 +422,11 @@ impl KdfProcessorRev12 {
             return None;
         }
 
-        // Get candidate nodes (CORE and EDGE layers).
-        let candidates: Vec<String> = self
-            .decay_manager
-            .classification
-            .as_ref()
-            .map(|c| {
-                c.layers
-                    .iter()
-                    .filter(|&(_, &layer)| layer == Layer::Core || layer == Layer::Edge)
-                    .map(|(&id, _)| id.to_string())
-                    .collect()
-            })
-            .unwrap_or_default();
-
-        if candidates.is_empty() {
+        // Use the pre-built candidate cache (CORE+EDGE) instead of iterating
+        // the classification HashMap on every call. The cache is populated
+        // once in `initialize` and is correct for the lifetime of the
+        // processor (snapshot semantics — see field doc).
+        if self.candidates_cache.is_empty() {
             return Some(DiscoveryOutcome {
                 invoked_analogy: false,
                 analogy_result: None,
@@ -420,7 +435,7 @@ impl KdfProcessorRev12 {
 
         let analogy_result = self
             .analogy_engine
-            .compute_analogy(&rare_node.to_string(), &candidates);
+            .compute_analogy(&rare_node.to_string(), &self.candidates_cache);
 
         Some(DiscoveryOutcome {
             invoked_analogy: true,
