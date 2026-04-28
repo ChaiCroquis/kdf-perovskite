@@ -75,7 +75,7 @@ useless_vec = "allow"
 # Top-frequency dep集約 (drift 防止、dev と同方針). Each member references via
 # `dep = { workspace = true }`, optionally overriding features.
 [workspace.dependencies]
-rand = { version = "0.8", features = ["small_rng"] }
+rand = { version = "0.10", features = ["small_rng"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 rayon = "1.10"
