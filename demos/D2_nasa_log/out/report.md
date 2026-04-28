@@ -1,6 +1,6 @@
 # Demo D2: HTTP アクセスログ圧縮 — 稀なエラー応答の自動保持
 
-**Dataset:** NASA-HTTP (real) (n=49903)
+**Dataset:** NASA-HTTP (synthetic, Zipf) (n=20000)
 
 **Patent section:** 明細書 §0002 (ログ管理) / Claim 1, 18 (保護属性), 33 (孤立度指標)
 
@@ -23,13 +23,13 @@
 
 | Method | ラベル要 | rare_recall | label_free | compression | wall_ms | wall(ms) |
 |---|:---:|---:|---:|---:|---:|---:|
-| Random | No | 0.102 | 1.000 | 0.900 | 0.369 | 0.37 |
-| Reservoir | No | 0.102 | 1.000 | 0.900 | 0.294 | 0.29 |
-| Head | No | 0.089 | 1.000 | 0.900 | 0.047 | 0.05 |
-| TailBasedLabeled | Yes | 1.000 | 0.000 | 0.900 | 0.653 | 0.65 |
-| StratifiedLabeled | Yes | 1.000 | 0.000 | 0.900 | 0.499 | 0.50 |
-| **KDF** | No | 0.237 | 1.000 | 0.900 | 7.117 | 7.12 |
-| KDF+RelDensity | No | 0.021 | 1.000 | 0.900 | 3.425 | 3.42 |
+| Random | No | 0.104 | 1.000 | 0.900 | 0.155 | 0.15 |
+| Reservoir | No | 0.104 | 1.000 | 0.900 | 0.121 | 0.12 |
+| Head | No | 0.115 | 1.000 | 0.900 | 0.020 | 0.02 |
+| TailBasedLabeled | Yes | 1.000 | 0.000 | 0.900 | 0.315 | 0.32 |
+| StratifiedLabeled | Yes | 1.000 | 0.000 | 0.900 | 0.146 | 0.15 |
+| **KDF** | No | 0.078 | 1.000 | 0.900 | 1.685 | 1.69 |
+| KDF+RelDensity | No | 0.307 | 1.000 | 0.900 | 1.451 | 1.45 |
 
 ## 結論(正直)
 
@@ -45,6 +45,7 @@
 
 ### 📋 正直な制限事項
 
+- 本実行は **合成ログ (n=20000, Zipf分布, planted error rate ~5%)** を使用。実 NASA log は `demos/D2_nasa_log/data/access.log` に配置すると自動で使用されます。
 - 選択比率を 10% に固定した単一ポイント評価(sweep は Phase 9 候補)
 - Bipartite graph 化(IP×resource)は NASA log の自然な構造、他ログで検証要
 

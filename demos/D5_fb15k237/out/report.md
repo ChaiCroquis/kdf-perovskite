@@ -1,6 +1,6 @@
 # Demo D5: 知識グラフ (FB15K-237) 希少 entity 保存付き curation
 
-**Dataset:** FB15K-237 (n=14541)
+**Dataset:** FB15K-237_synth_n5000_rel50 (n=5000)
 
 **Patent section:** 明細書 §0002 (知識グラフ) / Claim 1, 42, 46 (整合性発見)
 
@@ -23,13 +23,13 @@
 
 | Method | ラベル要 | rare_recall | analogy_pairs | compression | wall_ms | wall(ms) |
 |---|:---:|---:|---:|---:|---:|---:|
-| Random | No | 0.297 | 9662.000 | 0.701 | 0.162 | 0.16 |
-| FreqCutoff | No | 0.198 | 4424.000 | 0.700 | 0.585 | 0.58 |
-| DegreeTopK | No | 0.358 | 11411.000 | 0.700 | 0.562 | 0.56 |
-| TransE-like | No | 0.345 | 10989.900 | 0.700 | 0.561 | 0.56 |
-| **KDF** | No | 0.331 | 8839.000 | 0.700 | 20.673 | 20.67 |
-| KDF+RelDensity | No | 0.237 | 4386.000 | 0.700 | 7.566 | 7.57 |
-| KDF+Analogy | No | 0.332 | 8839.000 | 0.700 | 29.556 | 29.56 |
+| Random | No | 0.288 | 10411.300 | 0.702 | 0.043 | 0.04 |
+| FreqCutoff | No | 0.250 | 11911.000 | 0.700 | 0.076 | 0.08 |
+| DegreeTopK | No | 0.317 | 9128.000 | 0.700 | 0.063 | 0.06 |
+| TransE-like | No | 0.338 | 8764.400 | 0.700 | 0.078 | 0.08 |
+| **KDF** | No | 0.283 | 10706.000 | 0.700 | 1.798 | 1.80 |
+| KDF+RelDensity | No | 0.233 | 14373.000 | 0.700 | 0.955 | 0.96 |
+| KDF+Analogy | No | 0.367 | 10706.000 | 0.700 | 2.948 | 2.95 |
 
 ## 結論(正直)
 
@@ -45,6 +45,7 @@
 
 ### 📋 正直な制限事項
 
+- 本実行は合成 KG (n=5000, Freebase-shaped) を使用。実 FB15K-237 使用時は `demos/D5_fb15k237/data/fb15k-237/` に train/valid/test.txt を配置
 - rare entity = 出現関係 freq ≤ 5 の端点、という定義に対する評価。他の定義(betweenness 等)は別途検証要
 - TransE-like は「次数 top-K を embedding-top-K の近似プロキシ」として実装(訓練しない)
 
