@@ -43,7 +43,19 @@ deny = []
 
 [advisories]
 yanked = "warn"
-ignore = []
+# Documented advisory ignores:
+# RUSTSEC-2024-0436 — `paste` unmaintained.
+#   Pulled in transitively via `nalgebra → simba → paste` as a build-time
+#   proc-macro. No runtime impact. Upstream `simba` replacement pending.
+#   TODO: revisit when nalgebra >= 0.34 with updated simba lands.
+# RUSTSEC-2026-0097 — `rand` unsound (custom logger + rand::rng() + reseed).
+#   We do NOT define a custom logger and do NOT call `rand::rng()`; we use
+#   `SmallRng::seed_from_u64()` exclusively. The vulnerable code path
+#   (logger reseed) is unreachable in this workspace.
+ignore = [
+    "RUSTSEC-2024-0436",
+    "RUSTSEC-2026-0097",
+]
 
 [sources]
 unknown-registry = "warn"

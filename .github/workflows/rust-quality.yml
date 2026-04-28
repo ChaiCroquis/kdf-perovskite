@@ -52,8 +52,3 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: EmbarkStudios/cargo-deny-action@v2
-        with:
-          # advisories check is skipped in CI gate; tracked separately and
-          # addressed in dedicated upgrade commits. Run locally with
-          # `cargo deny check advisories` to audit.
-          command: check licenses bans sources

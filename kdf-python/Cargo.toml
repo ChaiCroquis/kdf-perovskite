@@ -10,7 +10,7 @@ name = "kdf_rs"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.22", features = ["extension-module"] }
+pyo3 = { version = "0.28", features = ["extension-module"] }
 kdf = { path = "../kdf-lib", default-features = false }
 
 [lints]
