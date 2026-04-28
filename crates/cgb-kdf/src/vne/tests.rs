@@ -871,6 +871,50 @@ fn test_spectral_gap_sparse_determinism() {
     assert_eq!(g1, g2);
 }
 
+// =========================================================================
+// SLQ tests (alternative estimator, not the production default)
+// =========================================================================
+
+#[test]
+fn test_slq_zero_edges_returns_zero() {
+    assert_eq!(sparse::von_neumann_entropy_slq(0, &[]), 0.0);
+    assert_eq!(sparse::von_neumann_entropy_slq(100, &[]), 0.0);
+}
+
+#[test]
+fn test_slq_determinism() {
+    let edges = er_graph(200, 0.05, 7);
+    let s1 = sparse::von_neumann_entropy_slq(200, &edges);
+    let s2 = sparse::von_neumann_entropy_slq(200, &edges);
+    assert_eq!(s1, s2);
+}
+
+#[test]
+fn test_slq_precision_vs_dense() {
+    // SLQ is empirically *less* accurate than Chebyshev on graph Laplacian
+    // entropy (see von_neumann_entropy_slq doc-comment for measurements);
+    // this test pins SLQ's actual achievable bound, not a tighter one.
+    // Bound is 2e-2 — wide enough to cover stochastic + Lanczos truncation
+    // error at the worst observed n in our benchmark suite.
+    for &(n, p) in &[(100usize, 0.10), (500, 0.02), (1000, 0.01)] {
+        let edges = er_graph(n, p, 42 + n as u64);
+        let dense_s = entropy::von_neumann_entropy_dense(n, &edges).entropy;
+        let slq_s = sparse::von_neumann_entropy_slq(n, &edges);
+        let rel = (dense_s - slq_s).abs() / dense_s.abs().max(1e-12);
+        assert!(
+            rel < 2e-2,
+            "n={n}: dense={dense_s:.6} slq={slq_s:.6} rel={rel:.4e}",
+        );
+    }
+}
+
+#[test]
+fn test_slq_nonnegative() {
+    let edges = er_graph(300, 0.02, 99);
+    let s = sparse::von_neumann_entropy_slq(300, &edges);
+    assert!(s >= 0.0);
+}
+
 #[test]
 fn test_detailed_sparse_path_populates_spectral_gap() {
     // n >= SPARSE_THRESHOLD must now return a non-zero spectral_gap for
