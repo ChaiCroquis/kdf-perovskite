@@ -142,7 +142,7 @@ fn main() {
         .enumerate()
         .map(|(i, p)| (i as u32, p.cited_by_count.unwrap_or(0)))
         .collect();
-    by_cite.sort_by(|a, b| b.1.cmp(&a.1));
+    by_cite.sort_by_key(|b| std::cmp::Reverse(b.1));
     let sel_topcite: HashSet<u32> = by_cite.into_iter().take(keep).map(|(i, _)| i).collect();
     let r_topcite = recall(&sel_topcite);
 

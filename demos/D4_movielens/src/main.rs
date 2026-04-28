@@ -283,7 +283,7 @@ fn sample_popularity_top(ratings: &[Rating], keep: usize) -> HashSet<u32> {
         *item_deg.entry(r.item).or_insert(0) += 1;
     }
     let mut order: Vec<(u32, u32)> = item_deg.into_iter().collect();
-    order.sort_by(|a, b| b.1.cmp(&a.1));
+    order.sort_by_key(|b| std::cmp::Reverse(b.1));
     order.into_iter().take(keep).map(|(i, _)| i).collect()
 }
 
