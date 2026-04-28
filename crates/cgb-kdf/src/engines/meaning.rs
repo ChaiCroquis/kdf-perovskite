@@ -180,7 +180,7 @@ impl KDFMeaningEngine {
 
         // Top 3 words
         let mut items: Vec<(String, usize)> = freq.into_iter().collect();
-        items.sort_by(|a, b| b.1.cmp(&a.1));
+        items.sort_by_key(|b| std::cmp::Reverse(b.1));
 
         let top_words: Vec<String> = items.into_iter().take(3).map(|(w, _)| w).collect();
 
