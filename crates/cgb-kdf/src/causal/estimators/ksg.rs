@@ -1,6 +1,8 @@
 //! KSG Transfer Entropy Estimator
 
 use super::super::types::TeResult;
+use rand::{Rng, SeedableRng};
+use rand_chacha::ChaCha8Rng;
 
 /// KSG Transfer Entropy Estimator
 ///
@@ -17,8 +19,11 @@ pub struct KsgEstimator {
     pub lag: usize,
     /// Minimum samples
     pub min_samples: usize,
-    /// RNG state for surrogate generation
-    rng_state: u64,
+    /// Deterministic RNG for surrogate generation (Fisher-Yates shuffle).
+    /// Seeded to 42 for reproducibility — same seed semantics as before, but
+    /// ChaCha8 replaces the prior hand-rolled xorshift64 (bias-free f64,
+    /// survives seed=0).
+    rng: ChaCha8Rng,
 }
 
 impl KsgEstimator {
@@ -30,7 +35,7 @@ impl KsgEstimator {
             alpha,
             lag,
             min_samples,
-            rng_state: 42,
+            rng: ChaCha8Rng::seed_from_u64(42),
         }
     }
 }
@@ -42,12 +47,9 @@ impl Default for KsgEstimator {
 }
 
 impl KsgEstimator {
-    /// Simple xorshift RNG
+    /// Draw a uniform [0, 1) sample from the surrogate RNG.
     fn next_rand(&mut self) -> f64 {
-        self.rng_state ^= self.rng_state << 13;
-        self.rng_state ^= self.rng_state >> 7;
-        self.rng_state ^= self.rng_state << 17;
-        (self.rng_state as f64) / (u64::MAX as f64)
+        self.rng.r#gen::<f64>()
     }
 
     /// Chebyshev (L-infinity) distance

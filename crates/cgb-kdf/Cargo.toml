@@ -8,10 +8,17 @@ license-file = "../../LICENSE"
 [dependencies]
 # Linear Algebra (固有値計算)
 nalgebra = "0.33"
+# RNG (deterministic, defensible).
+# rand_chacha unifies the two xorshift64 implementations that previously
+# lived in fingerprint/rng.rs and causal/estimators/ksg.rs. ChaCha8 gives
+# bias-free f64 sampling and survives seed=0 (xorshift64 emits an all-zero
+# stream from seed=0), which matters for Claim 12 (Bernoulli pruning) and
+# the KSG surrogate test.
+rand = { workspace = true }
+rand_chacha = "0.3"
 
 [dev-dependencies]
 proptest = "1.5"
-rand = { workspace = true }
 
 [lints]
 workspace = true
