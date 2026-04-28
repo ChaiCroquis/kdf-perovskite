@@ -25,6 +25,8 @@ allow = [
     "MPL-2.0",
     "Zlib",
     "CC0-1.0",
+    # CDLA-Permissive-2.0: webpki-roots (data license, permissive)
+    "CDLA-Permissive-2.0",
     # Workspace own license (no crates.io crate uses this — only our own members)
     "PolyForm-Noncommercial-1.0.0",
 ]
