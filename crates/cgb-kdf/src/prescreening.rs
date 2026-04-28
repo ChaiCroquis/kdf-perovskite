@@ -210,15 +210,30 @@ impl OwnedPreScreeningOptimizer {
         &mut self.fp_engine
     }
 
-    /// Screen candidates
+    /// Screen candidates (mutable: updates internal stats counters).
     pub fn screen_candidates(
         &mut self,
         source_fp: &Fingerprint,
         candidates: Vec<Candidate>,
     ) -> Vec<Candidate> {
-        self.stats.screening_calls += 1;
-        self.stats.candidates_before += candidates.len() as u64;
+        let before = candidates.len();
+        let selected = self.screen_candidates_pure(source_fp, candidates);
+        self.record_screening(before, selected.len());
+        selected
+    }
 
+    /// Screen candidates without updating stats (Step 4 parallelization).
+    ///
+    /// Pure function of `&self.fp_engine`, `top_k_percent`, `min_candidates`.
+    /// Callers that dispatch this from `par_iter` must aggregate stats with
+    /// `record_screening` after the parallel section completes, to keep
+    /// `screening_calls` / `candidates_before` / `candidates_after` consistent
+    /// with the sequential `screen_candidates` semantics.
+    pub fn screen_candidates_pure(
+        &self,
+        source_fp: &Fingerprint,
+        candidates: Vec<Candidate>,
+    ) -> Vec<Candidate> {
         if candidates.is_empty() {
             return vec![];
         }
@@ -238,9 +253,14 @@ impl OwnedPreScreeningOptimizer {
             .max((distances.len() as f64 * self.top_k_percent) as usize);
         let top_k = top_k.min(distances.len());
 
-        let selected: Vec<Candidate> = distances.into_iter().take(top_k).map(|(c, _)| c).collect();
-        self.stats.candidates_after += selected.len() as u64;
-        selected
+        distances.into_iter().take(top_k).map(|(c, _)| c).collect()
+    }
+
+    /// Apply a screening stats delta produced by a parallel `screen_candidates_pure` call.
+    pub fn record_screening(&mut self, before: usize, after: usize) {
+        self.stats.screening_calls += 1;
+        self.stats.candidates_before += before as u64;
+        self.stats.candidates_after += after as u64;
     }
 
     /// Find best match

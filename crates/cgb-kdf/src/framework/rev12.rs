@@ -1,9 +1,47 @@
 //! KDF Rev.12 Implementation - Analogy Discovery Mechanism
 
 use super::{ClassificationStats, DecayManager, Layer, NodeClassifier};
-use crate::analogy::{AnalogyDiscoveryEngine, NodeFeatures};
+use crate::analogy::{AnalogyComputeResult, AnalogyDiscoveryEngine, NodeFeatures};
 use crate::fingerprint::{Fingerprint, NodeLabel};
+use rayon::prelude::*;
 use std::collections::HashMap;
+
+/// Outcome of a parallel-friendly `KdfProcessorRev12::compute_discovery` call.
+///
+/// Returned from the read-only path that runs inside `process_review_cycle`'s
+/// `par_iter`. The caller applies side effects (rev12 stats, analogy_engine
+/// stats / history, rare_states mutation, phase transitions) sequentially in
+/// `active_nodes` order, mirroring the sequential `attempt_discovery` exactly.
+///
+/// `compute_discovery` returns `Some(...)` whenever the rare_node is in
+/// `rare_states`. Inside that, the two cases are:
+/// 1. `invoked_analogy = false` — no candidates available (CORE/EDGE empty),
+///    sequential `attempt_discovery` did not call `find_analogy` either.
+///    Equivalent to "skip analogy_engine stats bump, just wait_count++".
+/// 2. `invoked_analogy = true` — candidates non-empty; `compute_analogy` was
+///    invoked and the result (or `None` if source not registered in analogy
+///    engine) is in `analogy_result`. Caller bumps `analogy_engine`'s
+///    `discovery_attempts` and applies the result if present.
+#[derive(Clone, Debug)]
+pub struct DiscoveryOutcome {
+    pub invoked_analogy: bool,
+    pub analogy_result: Option<AnalogyComputeResult>,
+}
+
+impl DiscoveryOutcome {
+    /// Returns `Some((target, score))` iff the best mapping is within the
+    /// Claim 47–48 sandwich band `[θ_L, θ_U]`. Mirrors the spoke_up check in
+    /// the sequential `attempt_discovery`.
+    pub fn spoke_up(&self, theta_l: f64, theta_u: f64) -> Option<(u32, f64)> {
+        let mapping = self.analogy_result.as_ref()?.best_mapping.as_ref()?;
+        let s = mapping.overall_score;
+        if s >= theta_l && s <= theta_u {
+            mapping.target_node.parse().ok().map(|tgt| (tgt, s))
+        } else {
+            None
+        }
+    }
+}
 
 /// Review phase for RARE nodes in Rev.12
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -316,18 +354,19 @@ impl KdfProcessorRev12 {
         self.decay_manager.initialize(classification);
     }
 
-    /// Attempt analogy discovery for a RARE node
+    /// Pure discovery computation (Step 4 parallelization entry point).
     ///
-    /// Returns true if analogy found (spoke_up), false otherwise
-    pub fn attempt_discovery(&mut self, rare_node: u32) -> bool {
-        self.stats.discovery_attempts += 1;
+    /// Read-only over `&self`: gathers candidates, calls
+    /// `analogy_engine.compute_analogy`, and packages the result into a
+    /// `DiscoveryOutcome` that the caller applies sequentially. Returns
+    /// `None` only when `rare_node` is not in `rare_states` (sentinel
+    /// matching the early-return in the sequential `attempt_discovery`).
+    pub fn compute_discovery(&self, rare_node: u32) -> Option<DiscoveryOutcome> {
+        if !self.rare_states.contains_key(&rare_node) {
+            return None;
+        }
 
-        let state = match self.rare_states.get_mut(&rare_node) {
-            Some(s) => s,
-            None => return false,
-        };
-
-        // Get candidate nodes (CORE and EDGE nodes)
+        // Get candidate nodes (CORE and EDGE layers).
         let candidates: Vec<String> = self
             .decay_manager
             .classification
@@ -342,72 +381,123 @@ impl KdfProcessorRev12 {
             .unwrap_or_default();
 
         if candidates.is_empty() {
-            state.wait_count += 1;
-            return false;
+            return Some(DiscoveryOutcome {
+                invoked_analogy: false,
+                analogy_result: None,
+            });
         }
 
-        // Attempt analogy discovery
-        let result = self
+        let analogy_result = self
             .analogy_engine
-            .find_analogy(&rare_node.to_string(), &candidates);
+            .compute_analogy(&rare_node.to_string(), &candidates);
 
-        if let Some(mapping) = result {
-            // Claim 47-48: sandwich acceptance band  θ_L ≤ S ≤ θ_U
-            //   θ_L = 0.70 (lower bound — reject too-dissimilar nodes)
-            //   θ_U = 0.80 (upper bound — reject suspiciously high scores that
-            //   typically indicate duplicate/trivial matches, "上げすぎ逆転").
-            let s = mapping.overall_score;
-            if s >= self.discovery_threshold && s <= self.discovery_threshold_upper {
-                // spoke_up: Found analogy within admissible band
-                state.spoke_up = true;
-                state.analogy_target = mapping.target_node.parse().ok();
-                state.analogy_score = s;
-                state.phase = ReviewPhase::Complete;
-
-                self.stats.spoke_up_count += 1;
-                self.stats.successful_discoveries += 1;
-                return true;
-            }
-        }
-
-        // No analogy found - increment wait count
-        state.wait_count += 1;
-        false
+        Some(DiscoveryOutcome {
+            invoked_analogy: true,
+            analogy_result,
+        })
     }
 
-    /// Process review cycle for all RARE nodes
+    /// Apply the side effects of a `DiscoveryOutcome` to the rev12 + analogy
+    /// engine state. Mirrors the mutation phase of the sequential
+    /// `attempt_discovery` and is shared between `attempt_discovery` and the
+    /// parallel `process_review_cycle`.
     ///
-    /// Returns list of (node, action) where action is "promote" or "demote"
+    /// Returns `true` when the rare node spoke_up (Claim 47–48 band match).
+    fn apply_discovery_outcome(&mut self, rare_node: u32, outcome: &DiscoveryOutcome) -> bool {
+        if outcome.invoked_analogy {
+            self.analogy_engine.record_discovery_attempt();
+            if let Some(ref result) = outcome.analogy_result {
+                self.analogy_engine.apply_compute_result(result);
+            }
+        }
+
+        let band = outcome.spoke_up(self.discovery_threshold, self.discovery_threshold_upper);
+        let state = self
+            .rare_states
+            .get_mut(&rare_node)
+            .expect("apply_discovery_outcome requires rare_node in rare_states");
+
+        if let Some((target, score)) = band {
+            // Claim 47-48 sandwich match: spoke_up.
+            state.spoke_up = true;
+            state.analogy_target = Some(target);
+            state.analogy_score = score;
+            state.phase = ReviewPhase::Complete;
+            self.stats.spoke_up_count += 1;
+            self.stats.successful_discoveries += 1;
+            true
+        } else {
+            state.wait_count += 1;
+            false
+        }
+    }
+
+    /// Attempt analogy discovery for a RARE node.
+    ///
+    /// Returns true if analogy found (spoke_up), false otherwise.
+    ///
+    /// Equivalent to: pure `compute_discovery` followed by sequential
+    /// `apply_discovery_outcome`. Kept for API compatibility — the parallel
+    /// `process_review_cycle` does not call this; it dispatches
+    /// `compute_discovery` via `par_iter` and aggregates outcomes itself.
+    pub fn attempt_discovery(&mut self, rare_node: u32) -> bool {
+        self.stats.discovery_attempts += 1;
+        let outcome = match self.compute_discovery(rare_node) {
+            Some(o) => o,
+            None => return false,
+        };
+        self.apply_discovery_outcome(rare_node, &outcome)
+    }
+
+    /// Process review cycle for all RARE nodes.
+    ///
+    /// Returns list of (node, action) where action is "promote" or "demote".
+    ///
+    /// # Parallelism (rayon, Step 4)
+    ///
+    /// Each RARE node's `compute_discovery` is independent and read-only over
+    /// `&self`, so the heavy O(N_candidates) per-node work runs through
+    /// `par_iter`. Outcomes are reassembled in sorted-node-id order — strictly
+    /// more deterministic than the previous `HashMap::keys()` iteration —
+    /// and applied sequentially via `apply_discovery_outcome` so that
+    /// `discovery_history.push`, stats counters, and phase transitions all
+    /// run in a fixed order. Counters are commutative; the deterministic
+    /// `discovery_history` order is a strict improvement over the previous
+    /// behavior.
     pub fn process_review_cycle(&mut self) -> Vec<(u32, &'static str)> {
         let mut actions = Vec::new();
-        let rare_nodes: Vec<u32> = self.rare_states.keys().copied().collect();
 
-        for node in rare_nodes {
-            // Skip already completed nodes
-            let phase = self.rare_states.get(&node).map(|s| s.phase);
-            if phase == Some(ReviewPhase::Complete) {
-                continue;
-            }
+        // Active nodes in deterministic (sorted) order.
+        let mut active_nodes: Vec<u32> = self
+            .rare_states
+            .iter()
+            .filter(|(_, s)| s.phase != ReviewPhase::Complete)
+            .map(|(&n, _)| n)
+            .collect();
+        active_nodes.sort();
 
-            // Attempt discovery
-            let found = self.attempt_discovery(node);
+        // Parallel pure compute: per-node, read-only, heavy O(N_candidates).
+        let outcomes: Vec<(u32, DiscoveryOutcome)> = active_nodes
+            .par_iter()
+            .filter_map(|&node| self.compute_discovery(node).map(|o| (node, o)))
+            .collect();
+
+        // Sequential mutation phase (deterministic order).
+        for (node, outcome) in outcomes {
+            self.stats.discovery_attempts += 1;
+            let found = self.apply_discovery_outcome(node, &outcome);
 
             if found {
-                // spoke_up - will be promoted
                 actions.push((node, "promote"));
                 self.stats.promoted_count += 1;
             } else {
-                // Check phase transitions
                 let state = self.rare_states.get_mut(&node).unwrap();
-
                 match state.phase {
                     ReviewPhase::Phase1 if state.wait_count >= self.t_wait1 => {
-                        // Transition to Phase 2
                         state.phase = ReviewPhase::Phase2;
                         state.wait_count = 0;
                     }
                     ReviewPhase::Phase2 if state.wait_count >= self.t_wait2 => {
-                        // Demote to GARBAGE
                         state.phase = ReviewPhase::Complete;
                         actions.push((node, "demote"));
                         self.stats.demoted_count += 1;

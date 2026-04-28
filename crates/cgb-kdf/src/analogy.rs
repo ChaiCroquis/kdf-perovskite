@@ -124,6 +124,25 @@ pub struct DiscoveryStats {
     pub successful_discoveries: u64,
 }
 
+/// Result of `AnalogyDiscoveryEngine::compute_analogy`.
+///
+/// Carries the pure compute output plus the metadata needed by
+/// `apply_compute_result` to reproduce the side effects of the sequential
+/// `find_analogy`. Used by Step 4 rev12 parallelization.
+#[derive(Clone, Debug)]
+pub struct AnalogyComputeResult {
+    /// Best structural mapping among candidates (regardless of threshold),
+    /// or `None` when the candidate set is empty after fingerprint lookup.
+    pub best_mapping: Option<StructuralMapping>,
+    /// Whether pre-screening was applied (input N > 10 and screening enabled).
+    pub screening_applied: bool,
+    /// Number of candidates supplied to screening (or to scoring if no screening).
+    pub candidates_before: usize,
+    /// Number of candidates that survived screening (or `candidates_before`
+    /// when screening was skipped).
+    pub candidates_after: usize,
+}
+
 impl DiscoveryStats {
     pub fn discovery_rate(&self) -> f64 {
         if self.discovery_attempts == 0 {
@@ -342,19 +361,51 @@ impl AnalogyDiscoveryEngine {
         base_vector
     }
 
-    /// Find best analogy for source node among target candidates
+    /// Find best analogy for source node among target candidates.
+    ///
+    /// Equivalent to: `compute_analogy(...)` followed by `apply_compute_result(...)`
+    /// and the threshold filter. Kept for API compatibility; for parallel
+    /// dispatch see `compute_analogy` (Step 4).
     pub fn find_analogy(
         &mut self,
         source_node: &str,
         target_candidates: &[String],
     ) -> Option<StructuralMapping> {
         self.stats.discovery_attempts += 1;
+        let result = self.compute_analogy(source_node, target_candidates)?;
+        if result.screening_applied {
+            self.screening_optimizer
+                .record_screening(result.candidates_before, result.candidates_after);
+        }
+        let mapping = result.best_mapping?;
+        if mapping.overall_score >= self.discovery_threshold {
+            self.stats.successful_discoveries += 1;
+            self.discovery_history.push(mapping.clone());
+            Some(mapping)
+        } else {
+            None
+        }
+    }
 
+    /// Pure analogy computation (Step 4 parallelization entry point).
+    ///
+    /// Returns the best structural mapping (regardless of threshold) plus the
+    /// information needed by `apply_compute_result` to reproduce the side
+    /// effects of the sequential `find_analogy`. Returns `None` only when the
+    /// `source_node` is not registered.
+    ///
+    /// This is the rev12 equivalent of the Step 2/3 pattern: pure compute
+    /// over `&self`, sequential aggregation by the caller.
+    pub fn compute_analogy(
+        &self,
+        source_node: &str,
+        target_candidates: &[String],
+    ) -> Option<AnalogyComputeResult> {
         let source_features = self.node_features.get(source_node)?;
         let source_fp = source_features.fingerprint.clone();
 
         // Prepare candidates with fingerprints
-        let mut candidates_with_fp: Vec<Candidate> = target_candidates
+        let candidates_with_fp: Vec<Candidate> = target_candidates
             .iter()
             .filter_map(|target| {
                 self.node_features.get(target).map(|f| Candidate {
@@ -365,19 +416,24 @@ impl AnalogyDiscoveryEngine {
             .collect();
 
         if candidates_with_fp.is_empty() {
-            return None;
+            return Some(AnalogyComputeResult {
+                best_mapping: None,
+                screening_applied: false,
+                candidates_before: 0,
+                candidates_after: 0,
+            });
         }
 
-        let candidates_screened = candidates_with_fp.len();
-
-        // Apply pre-screening if enabled
-        if self.screening_enabled && candidates_with_fp.len() > 10 {
-            candidates_with_fp = self
-                .screening_optimizer
-                .screen_candidates(&source_fp, candidates_with_fp);
-        }
-
-        let candidates_evaluated = candidates_with_fp.len();
+        let candidates_before = candidates_with_fp.len();
+        let mut screening_applied = false;
+        let candidates_with_fp = if self.screening_enabled && candidates_with_fp.len() > 10 {
+            screening_applied = true;
+            self.screening_optimizer
+                .screen_candidates_pure(&source_fp, candidates_with_fp)
+        } else {
+            candidates_with_fp
+        };
+        let candidates_after = candidates_with_fp.len();
 
         // Find best match using full similarity
         let mut best_mapping: Option<StructuralMapping> = None;
@@ -411,22 +467,54 @@ impl AnalogyDiscoveryEngine {
                 mapping.overall_score = overall;
                 mapping.confidence = (overall * 1.2).min(1.0);
                 mapping.screening_applied = self.screening_enabled;
-                mapping.candidates_screened = candidates_screened;
-                mapping.candidates_evaluated = candidates_evaluated;
+                mapping.candidates_screened = candidates_before;
+                mapping.candidates_evaluated = candidates_after;
 
                 best_mapping = Some(mapping);
             }
         }
 
-        if let Some(ref mapping) = best_mapping
+        Some(AnalogyComputeResult {
+            best_mapping,
+            screening_applied,
+            candidates_before,
+            candidates_after,
+        })
+    }
+
+    /// Apply the side effects of a `compute_analogy` result.
+    ///
+    /// Mirrors the stats / history mutations that the sequential `find_analogy`
+    /// performs after computing the best match. Callers that dispatched
+    /// `compute_analogy` in parallel should call this once per result, in a
+    /// deterministic sequential order, to keep `discovery_history` and the
+    /// stats counters reproducible.
+    ///
+    /// Note: does **not** increment `discovery_attempts` — that counter
+    /// is owned by `find_analogy` (which always increments) and by the
+    /// rev12 caller via `record_discovery_attempt`. Splitting the bump from
+    /// the result-application lets callers replay the exact same conditional
+    /// (`bump only when candidates was non-empty`) as the sequential path.
+    pub fn apply_compute_result(&mut self, result: &AnalogyComputeResult) {
+        if result.screening_applied {
+            self.screening_optimizer
+                .record_screening(result.candidates_before, result.candidates_after);
+        }
+        if let Some(ref mapping) = result.best_mapping
             && mapping.overall_score >= self.discovery_threshold
         {
             self.stats.successful_discoveries += 1;
             self.discovery_history.push(mapping.clone());
-            return best_mapping;
         }
+    }
 
-        None
+    /// Record one analogy discovery attempt without computing anything.
+    ///
+    /// Used by parallel callers (rev12) to mirror the unconditional
+    /// `stats.discovery_attempts += 1` at the top of the sequential
+    /// `find_analogy` after their own pure compute path has returned.
+    pub fn record_discovery_attempt(&mut self) {
+        self.stats.discovery_attempts += 1;
     }
 
     /// Compute attribute similarity between two nodes
