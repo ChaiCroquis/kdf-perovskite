@@ -16,6 +16,7 @@
 
 use super::{ClassificationStats, Layer, NodeClassification};
 use crate::fingerprint::Fingerprint;
+use rayon::prelude::*;
 use std::collections::HashMap;
 
 /// Master specification parameters for edge-based decay
@@ -313,33 +314,54 @@ impl DecayManager {
     /// results across platforms/runs (HashMap's default iteration order is
     /// non-deterministic; relying on it would violate Claim 15 determinism
     /// semantics when combined with probabilistic pruning).
+    ///
+    /// # Parallelism (rayon)
+    ///
+    /// Each edge update is a pure function of the current weight, the endpoint
+    /// degrees, and the per-layer parameters — completely independent across
+    /// edges. The new weights are computed with `par_iter` over the *sorted*
+    /// key list, preserving input order in the output `Vec` (rayon's indexed
+    /// `par_iter().collect()` is order-preserving), and applied sequentially
+    /// at the end. Bit-exact equivalence with the sequential version is
+    /// preserved because no f64 reduction happens — every output edge weight
+    /// is computed independently of every other.
     pub fn apply_edge_decay(&mut self) {
         if let Some(ref class) = self.classification {
             let mut edges: Vec<_> = self.edge_weights.keys().cloned().collect();
             edges.sort(); // Determinism: sort by (u, v)
-            for (u, v) in edges {
-                // Get layer from endpoint nodes (use higher priority)
-                let layer_u = class.layers.get(&u).copied().unwrap_or(Layer::Edge);
-                let layer_v = class.layers.get(&v).copied().unwrap_or(Layer::Edge);
-                let layer = if layer_u.priority() > layer_v.priority() {
-                    layer_u
-                } else {
-                    layer_v
-                };
 
-                let lambda = self
-                    .master_params
-                    .lambda(self.compute_edge_congestion(u, v), layer);
-                let dt = self.master_params.dt_for_layer(layer);
-                let survival = (-lambda * dt).exp();
-                if let Some(weight) = self.edge_weights.get_mut(&(u, v)) {
-                    *weight *= survival;
+            // Compute new weights in parallel (per-edge pure function, no shared mutable state).
+            let updates: Vec<((u32, u32), f64)> = edges
+                .par_iter()
+                .filter_map(|&(u, v)| {
+                    let current = *self.edge_weights.get(&(u, v))?;
+                    let layer_u = class.layers.get(&u).copied().unwrap_or(Layer::Edge);
+                    let layer_v = class.layers.get(&v).copied().unwrap_or(Layer::Edge);
+                    let layer = if layer_u.priority() > layer_v.priority() {
+                        layer_u
+                    } else {
+                        layer_v
+                    };
+                    let lambda = self
+                        .master_params
+                        .lambda(self.compute_edge_congestion(u, v), layer);
+                    let dt = self.master_params.dt_for_layer(layer);
+                    let survival = (-lambda * dt).exp();
+                    let mut new_w = current * survival;
                     // Flush denormals: below 2^-970 the arithmetic becomes
                     // platform-dependent (subnormals). Treat as 0 to preserve
                     // Claim 15-style bit-exact reproducibility.
-                    if weight.abs() < 1e-290 {
-                        *weight = 0.0;
+                    if new_w.abs() < 1e-290 {
+                        new_w = 0.0;
                     }
+                    Some(((u, v), new_w))
+                })
+                .collect();
+
+            // Apply sequentially (HashMap mutation cannot be safely parallelized).
+            for (key, new_w) in updates {
+                if let Some(weight) = self.edge_weights.get_mut(&key) {
+                    *weight = new_w;
                 }
             }
         }

@@ -8,6 +8,8 @@ license-file = "../../LICENSE"
 [dependencies]
 # Linear Algebra (固有値計算)
 nalgebra = "0.33"
+# Parallelism (Step 2/3 hotspot parallelization for apply_edge_decay and batch_compute)
+rayon = { workspace = true }
 # RNG (deterministic, defensible).
 # rand_chacha unifies the two xorshift64 implementations that previously
 # lived in fingerprint/rng.rs and causal/estimators/ksg.rs. ChaCha8 gives
