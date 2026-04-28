@@ -94,7 +94,7 @@ fn prioritize_reviews(changes: &[CodeChange], threshold: f64) -> Vec<ReviewRecom
     }
 
     // Sort by priority (Critical first)
-    recommendations.sort_by(|a, b| a.priority.cmp(&b.priority));
+    recommendations.sort_by_key(|a| a.priority);
 
     recommendations
 }

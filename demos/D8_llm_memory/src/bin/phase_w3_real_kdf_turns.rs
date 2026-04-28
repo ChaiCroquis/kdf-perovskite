@@ -158,7 +158,7 @@ fn kdf_select(n: usize, edges: &[(u32, u32, f64)], keep: usize) -> HashSet<u32> 
             )
         })
         .collect();
-    scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+    scored.sort_by_key(|x| (std::cmp::Reverse(x.1), x.0));
     scored.into_iter().take(keep).map(|(i, _)| i).collect()
 }
 

@@ -72,7 +72,7 @@ fn select_full(
             )
         })
         .collect();
-    scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+    scored.sort_by_key(|x| (std::cmp::Reverse(x.1), x.0));
     scored.into_iter().take(budget).map(|(i, _)| i).collect()
 }
 
@@ -92,7 +92,7 @@ fn select_no_rare(
     let mut scored: Vec<(u32, i32)> = (0..ds.n_nodes as u32)
         .map(|id| (id, score(layers.get(&id).copied().unwrap_or(Layer::Edge))))
         .collect();
-    scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+    scored.sort_by_key(|x| (std::cmp::Reverse(x.1), x.0));
     scored.into_iter().take(budget).map(|(i, _)| i).collect()
 }
 
@@ -112,7 +112,7 @@ fn select_no_core(
     let mut scored: Vec<(u32, i32)> = (0..ds.n_nodes as u32)
         .map(|id| (id, score(layers.get(&id).copied().unwrap_or(Layer::Edge))))
         .collect();
-    scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+    scored.sort_by_key(|x| (std::cmp::Reverse(x.1), x.0));
     scored.into_iter().take(budget).map(|(i, _)| i).collect()
 }
 
@@ -132,7 +132,7 @@ fn select_keep_garbage(
     let mut scored: Vec<(u32, i32)> = (0..ds.n_nodes as u32)
         .map(|id| (id, score(layers.get(&id).copied().unwrap_or(Layer::Edge))))
         .collect();
-    scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+    scored.sort_by_key(|x| (std::cmp::Reverse(x.1), x.0));
     scored.into_iter().take(budget).map(|(i, _)| i).collect()
 }
 

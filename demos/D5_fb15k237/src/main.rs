@@ -374,7 +374,7 @@ fn sample_kdf(ds: &Dataset) -> HashSet<u32> {
             )
         })
         .collect();
-    scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+    scored.sort_by_key(|x| (std::cmp::Reverse(x.1), x.0));
     scored.into_iter().take(budget).map(|(id, _)| id).collect()
 }
 
@@ -439,7 +439,7 @@ fn sample_kdf_with_analogy(ds: &Dataset) -> HashSet<u32> {
             )
         })
         .collect();
-    scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+    scored.sort_by_key(|x| (std::cmp::Reverse(x.1), x.0));
     let mut out: HashSet<u32> = scored
         .into_iter()
         .take(layer_budget)

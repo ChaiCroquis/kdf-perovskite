@@ -74,7 +74,7 @@ fn kdf_select(
             )
         })
         .collect();
-    scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+    scored.sort_by_key(|x| (std::cmp::Reverse(x.1), x.0));
 
     let selected: Vec<u32> = scored.iter().take(keep).map(|(id, _)| *id).collect();
 

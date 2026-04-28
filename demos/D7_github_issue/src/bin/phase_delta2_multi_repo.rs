@@ -166,7 +166,7 @@ fn run_one(repo: &'static str, dir: &str) -> Option<Result_> {
             )
         })
         .collect();
-    scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+    scored.sort_by_key(|x| (std::cmp::Reverse(x.1), x.0));
     let sel_kdf: HashSet<u32> = scored.into_iter().take(keep).map(|(i, _)| i).collect();
     let r_kdf = recall(&sel_kdf);
 

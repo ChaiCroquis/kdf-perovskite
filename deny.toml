@@ -1,0 +1,49 @@
+# cargo-deny configuration for KDF workspace
+#
+# Purpose: license audit + advisory check + duplicate-version warning.
+# Run locally: cargo deny check
+# Run in CI:   .github/workflows/rust-quality.yml job "cargo deny"
+
+[graph]
+all-features = true
+
+[licenses]
+# Standard permissive OSS licenses we accept for transitive dependencies.
+# (Workspace own license = PolyForm-Noncommercial-1.0.0 is handled by
+#  `private = { ignore = true }` below — it shouldn't apply to consumers.)
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "0BSD",
+    "Unlicense",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "MPL-2.0",
+    "Zlib",
+    "CC0-1.0",
+    # Workspace own license (no crates.io crate uses this — only our own members)
+    "PolyForm-Noncommercial-1.0.0",
+]
+confidence-threshold = 0.8
+
+# Workspace-internal crates carry the PolyForm-Noncommercial-1.0.0 license
+# (intentionally non-OSS). Don't apply OSS-license rules to them.
+private = { ignore = true }
+
+[bans]
+multiple-versions = "warn"
+wildcards = "warn"
+deny = []
+
+[advisories]
+yanked = "warn"
+ignore = []
+
+[sources]
+unknown-registry = "warn"
+unknown-git = "warn"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
