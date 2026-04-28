@@ -24,6 +24,11 @@ rand_chacha = "0.3"
 
 [dev-dependencies]
 proptest = "1.5"
+criterion = { version = "0.5", default-features = false }
+
+[[bench]]
+name = "decay_bench"
+harness = false
 
 [lints]
 workspace = true

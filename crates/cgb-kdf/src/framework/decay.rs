@@ -13,11 +13,25 @@
 //! - Rare:  α=0.3, γ=0.010
 //! - Core:  α=2.0, γ=0.008
 //! - Meta:  α=0.5, γ=0.005
+//!
+//! ## Internal representation (2026-04-29 refactor)
+//!
+//! HashMap-based maps replaced by sorted-Vec + dense-Vec layouts:
+//! - `degrees`, `access_counts`: dense `Vec` indexed by `node_id`
+//! - `edges`: single `Vec<EdgeRecord>` sorted by `(u, v)` with `u < v` invariant
+//! - `edge_index`: `HashMap<(u32, u32), usize>` for O(1) per-edge lookup
+//!
+//! Benefits: cache locality (one cache line per edge in hot loop), no hashing
+//! in apply_edge_decay, no per-step sort, and `par_iter_mut` directly over the
+//! sorted Vec for trivially deterministic parallel mutation. The `edge_index`
+//! HashMap is consulted by per-edge lookups only (record_edge_access,
+//! get_edge_weight, compute_time_component) so binary_search latency on a 1M
+//! Vec is avoided. `apply_edge_decay_local` (Claim 17) is unchanged in API.
 
 use super::{ClassificationStats, Layer, NodeClassification};
 use crate::fingerprint::Fingerprint;
 use rayon::prelude::*;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 /// Master specification parameters for edge-based decay
 ///
@@ -113,21 +127,39 @@ impl MasterSpecParams {
     }
 }
 
+/// Per-edge record (sorted-Vec backing).
+///
+/// Invariant: `u < v` (canonicalized at insertion time).
+#[derive(Clone, Copy, Debug)]
+struct EdgeRecord {
+    u: u32,
+    v: u32,
+    weight: f64,
+    /// Claim 5: last-access tick (0 ≡ never accessed)
+    last_access: u64,
+    /// Claim 4: reference count
+    access_count: u64,
+}
+
 /// Decay Manager - Tracks and applies decay to knowledge
 #[derive(Clone)]
 pub struct DecayManager {
     /// Current layer classification
     pub(super) classification: Option<NodeClassification>,
-    /// Access count per node (for dynamic decay)
-    access_counts: HashMap<u32, u64>,
-    /// Access count per edge (for edge-based decay)
-    edge_access_counts: HashMap<(u32, u32), u64>,
-    /// Edge weights (for edge-based processing)
-    edge_weights: HashMap<(u32, u32), f64>,
-    /// Node degrees (cached for efficiency)
-    degrees: HashMap<u32, usize>,
-    /// Claim 4-5: last access step per edge (time-series metadata).
-    last_access_step: HashMap<(u32, u32), u64>,
+    /// Per-node access count (dense). Index = node_id.
+    access_counts: Vec<u64>,
+    /// Per-node degree (dense). Index = node_id.
+    degrees: Vec<usize>,
+    /// Edge records, sorted by `(u, v)` with `u < v`.
+    /// Single allocation keeps weight + last_access + access_count co-located
+    /// for cache-friendly iteration in `apply_edge_decay`.
+    edges: Vec<EdgeRecord>,
+    /// O(1) `(u, v) → edge index` lookup table. Co-maintained with `edges`
+    /// at build time; consulted by every per-edge query (record_edge_access,
+    /// get_edge_weight, compute_time_component, …). Without this auxiliary
+    /// map a 1M-edge `binary_search` costs ~20 cache misses per call, which
+    /// regressed the lookup benchmarks ~4-7× vs the legacy HashMap layout.
+    edge_index: HashMap<(u32, u32), usize>,
     /// Claim 4-5: global tick counter used as the reference "current time".
     current_step: u64,
     /// Claim 5: staleness reference scale τ_ref (ticks). Larger → slower time
@@ -149,11 +181,10 @@ impl Default for DecayManager {
     fn default() -> Self {
         Self {
             classification: None,
-            access_counts: HashMap::new(),
-            edge_access_counts: HashMap::new(),
-            edge_weights: HashMap::new(),
-            degrees: HashMap::new(),
-            last_access_step: HashMap::new(),
+            access_counts: Vec::new(),
+            degrees: Vec::new(),
+            edges: Vec::new(),
+            edge_index: HashMap::new(),
             current_step: 0,
             tau_ref: 100.0,
             kappa_time: 1.0,
@@ -177,27 +208,56 @@ impl DecayManager {
     pub fn initialize(&mut self, classification: NodeClassification) {
         self.classification = Some(classification);
         self.access_counts.clear();
-        self.edge_access_counts.clear();
     }
 
-    /// Initialize with edges for edge-based processing
+    /// Initialize with edges for edge-based processing.
+    ///
+    /// Duplicate `(u, v)` entries follow last-write-wins semantics (matching the
+    /// previous `HashMap` behavior). Endpoint degrees are computed from the raw
+    /// input list (every entry counts) so duplicates inflate degree, again
+    /// matching the historical HashMap version.
     pub fn initialize_with_edges(
         &mut self,
         classification: NodeClassification,
         edges: &[(u32, u32, f64)],
     ) {
         self.classification = Some(classification);
-        self.access_counts.clear();
-        self.edge_access_counts.clear();
 
-        // Initialize edge weights and compute degrees
-        self.edge_weights.clear();
+        let max_node = edges.iter().map(|&(u, v, _)| u.max(v)).max().unwrap_or(0);
+        let n_nodes = (max_node as usize) + 1;
         self.degrees.clear();
+        self.degrees.resize(n_nodes, 0);
+        self.access_counts.clear();
+        self.access_counts.resize(n_nodes, 0);
 
+        // Degrees: count every raw edge entry (HashMap parity for duplicates).
+        for &(u, v, _) in edges {
+            self.degrees[u as usize] += 1;
+            self.degrees[v as usize] += 1;
+        }
+
+        // Edges: dedup with last-write-wins via BTreeMap, then collect sorted.
+        let mut by_key: BTreeMap<(u32, u32), f64> = BTreeMap::new();
         for &(u, v, w) in edges {
-            self.edge_weights.insert((u, v), w);
-            *self.degrees.entry(u).or_insert(0) += 1;
-            *self.degrees.entry(v).or_insert(0) += 1;
+            let (a, b) = if u < v { (u, v) } else { (v, u) };
+            by_key.insert((a, b), w);
+        }
+        self.edges = by_key
+            .into_iter()
+            .map(|((u, v), w)| EdgeRecord {
+                u,
+                v,
+                weight: w,
+                last_access: 0,
+                access_count: 0,
+            })
+            .collect();
+
+        // Build the O(1) lookup index in lock-step with `self.edges`.
+        self.edge_index.clear();
+        self.edge_index.reserve(self.edges.len());
+        for (idx, e) in self.edges.iter().enumerate() {
+            self.edge_index.insert((e.u, e.v), idx);
         }
     }
 
@@ -228,15 +288,26 @@ impl DecayManager {
 
     /// Record access to a node (for dynamic decay tracking)
     pub fn record_access(&mut self, node: u32) {
-        *self.access_counts.entry(node).or_insert(0) += 1;
+        let idx = node as usize;
+        if self.access_counts.len() <= idx {
+            self.access_counts.resize(idx + 1, 0);
+        }
+        self.access_counts[idx] += 1;
     }
 
-    /// Record access to an edge (for edge-based decay tracking)
+    /// Record access to an edge (for edge-based decay tracking).
+    ///
+    /// No-op if the edge does not exist (call `initialize_with_edges` first).
+    /// This matches every existing caller in the codebase, which always inits
+    /// edges before recording accesses; previously the HashMap would lazily
+    /// create a phantom access entry, which only the legacy time-component
+    /// query consumed.
     pub fn record_edge_access(&mut self, u: u32, v: u32) {
-        let key = if u < v { (u, v) } else { (v, u) };
-        *self.edge_access_counts.entry(key).or_insert(0) += 1;
-        // Claim 5: timestamp the event so the time evaluation component stays fresh.
-        self.last_access_step.insert(key, self.current_step);
+        let (a, b) = if u < v { (u, v) } else { (v, u) };
+        if let Some(&idx) = self.edge_index.get(&(a, b)) {
+            self.edges[idx].access_count += 1;
+            self.edges[idx].last_access = self.current_step;
+        }
     }
 
     /// Claim 5: advance the global time step by one tick. Time evaluation
@@ -263,8 +334,12 @@ impl DecayManager {
     /// Edges that have never been accessed are treated as stale from step 0,
     /// matching the spirit of Claim 4 (generation time counts as an access).
     pub fn compute_time_component(&self, u: u32, v: u32) -> f64 {
-        let key = if u < v { (u, v) } else { (v, u) };
-        let last = self.last_access_step.get(&key).copied().unwrap_or(0);
+        let (a, b) = if u < v { (u, v) } else { (v, u) };
+        let last = self
+            .edge_index
+            .get(&(a, b))
+            .map(|&i| self.edges[i].last_access)
+            .unwrap_or(0);
         let dt = self.current_step.saturating_sub(last) as f64;
         1.0 - (-dt / self.tau_ref).exp()
     }
@@ -286,8 +361,8 @@ impl DecayManager {
 
     /// Compute edge congestion: C_(u,v) = deg(u) + deg(v)
     pub fn compute_edge_congestion(&self, u: u32, v: u32) -> f64 {
-        let deg_u = self.degrees.get(&u).copied().unwrap_or(0);
-        let deg_v = self.degrees.get(&v).copied().unwrap_or(0);
+        let deg_u = self.degrees.get(u as usize).copied().unwrap_or(0);
+        let deg_v = self.degrees.get(v as usize).copied().unwrap_or(0);
         (deg_u + deg_v) as f64
     }
 
@@ -310,61 +385,59 @@ impl DecayManager {
     ///
     /// # Determinism
     ///
-    /// Edge iteration order is sorted by (u, v) to guarantee reproducible
-    /// results across platforms/runs (HashMap's default iteration order is
-    /// non-deterministic; relying on it would violate Claim 15 determinism
-    /// semantics when combined with probabilistic pruning).
+    /// Edges live in a `Vec` sorted by `(u, v)` (invariant maintained by
+    /// `initialize_with_edges`). Iterating the Vec is therefore deterministic
+    /// without an explicit per-call sort, eliminating the prior O(|E| log |E|)
+    /// sort overhead while preserving Claim 15 reproducibility.
     ///
     /// # Parallelism (rayon)
     ///
     /// Each edge update is a pure function of the current weight, the endpoint
     /// degrees, and the per-layer parameters — completely independent across
-    /// edges. The new weights are computed with `par_iter` over the *sorted*
-    /// key list, preserving input order in the output `Vec` (rayon's indexed
-    /// `par_iter().collect()` is order-preserving), and applied sequentially
-    /// at the end. Bit-exact equivalence with the sequential version is
-    /// preserved because no f64 reduction happens — every output edge weight
-    /// is computed independently of every other.
+    /// edges. We use `par_iter_mut()` directly on the sorted Vec; bit-exact
+    /// equivalence with the sequential version is preserved because no f64
+    /// reduction happens — every output edge weight is computed independently
+    /// of every other from disjoint slot mutations.
     pub fn apply_edge_decay(&mut self) {
-        if let Some(ref class) = self.classification {
-            let mut edges: Vec<_> = self.edge_weights.keys().cloned().collect();
-            edges.sort(); // Determinism: sort by (u, v)
+        // Disjoint-field reborrow so the closure can hold immutable refs to
+        // classification/degrees/master_params alongside the mutable iteration
+        // over `edges`.
+        let Self {
+            classification,
+            edges,
+            degrees,
+            master_params,
+            ..
+        } = self;
+        let class = match classification.as_ref() {
+            Some(c) => c,
+            None => return,
+        };
+        let degrees_ref: &[usize] = degrees;
+        let params: &MasterSpecParams = master_params;
 
-            // Compute new weights in parallel (per-edge pure function, no shared mutable state).
-            let updates: Vec<((u32, u32), f64)> = edges
-                .par_iter()
-                .filter_map(|&(u, v)| {
-                    let current = *self.edge_weights.get(&(u, v))?;
-                    let layer_u = class.layers.get(&u).copied().unwrap_or(Layer::Edge);
-                    let layer_v = class.layers.get(&v).copied().unwrap_or(Layer::Edge);
-                    let layer = if layer_u.priority() > layer_v.priority() {
-                        layer_u
-                    } else {
-                        layer_v
-                    };
-                    let lambda = self
-                        .master_params
-                        .lambda(self.compute_edge_congestion(u, v), layer);
-                    let dt = self.master_params.dt_for_layer(layer);
-                    let survival = (-lambda * dt).exp();
-                    let mut new_w = current * survival;
-                    // Flush denormals: below 2^-970 the arithmetic becomes
-                    // platform-dependent (subnormals). Treat as 0 to preserve
-                    // Claim 15-style bit-exact reproducibility.
-                    if new_w.abs() < 1e-290 {
-                        new_w = 0.0;
-                    }
-                    Some(((u, v), new_w))
-                })
-                .collect();
-
-            // Apply sequentially (HashMap mutation cannot be safely parallelized).
-            for (key, new_w) in updates {
-                if let Some(weight) = self.edge_weights.get_mut(&key) {
-                    *weight = new_w;
-                }
+        edges.par_iter_mut().for_each(|e| {
+            let layer_u = class.layers.get(&e.u).copied().unwrap_or(Layer::Edge);
+            let layer_v = class.layers.get(&e.v).copied().unwrap_or(Layer::Edge);
+            let layer = if layer_u.priority() > layer_v.priority() {
+                layer_u
+            } else {
+                layer_v
+            };
+            let deg_u = degrees_ref.get(e.u as usize).copied().unwrap_or(0);
+            let deg_v = degrees_ref.get(e.v as usize).copied().unwrap_or(0);
+            let congestion = (deg_u + deg_v) as f64;
+            let lambda = params.lambda(congestion, layer);
+            let dt = params.dt_for_layer(layer);
+            let survival = (-lambda * dt).exp();
+            e.weight *= survival;
+            // Flush denormals: below 2^-970 the arithmetic becomes
+            // platform-dependent (subnormals). Treat as 0 to preserve
+            // Claim 15-style bit-exact reproducibility.
+            if e.weight.abs() < 1e-290 {
+                e.weight = 0.0;
             }
-        }
+        });
     }
 
     /// Claim 11 & 12 — probabilistic pruning.
@@ -386,9 +459,9 @@ impl DecayManager {
             Some(c) => c,
             None => return pruned,
         };
-        for (&(u, v), _w) in self.edge_weights.iter() {
-            let layer_u = class.layers.get(&u).copied().unwrap_or(Layer::Edge);
-            let layer_v = class.layers.get(&v).copied().unwrap_or(Layer::Edge);
+        for e in &self.edges {
+            let layer_u = class.layers.get(&e.u).copied().unwrap_or(Layer::Edge);
+            let layer_v = class.layers.get(&e.v).copied().unwrap_or(Layer::Edge);
             if layer_u.is_protected() || layer_v.is_protected() {
                 continue; // Claim 15/18 protection
             }
@@ -398,22 +471,65 @@ impl DecayManager {
                 layer_v
             };
             let p_decay = self
-                .compute_edge_decay_probability(u, v, layer)
+                .compute_edge_decay_probability(e.u, e.v, layer)
                 .clamp(0.0, 1.0);
             let r = rng();
             if r <= p_decay {
-                pruned.push((u, v));
+                pruned.push((e.u, e.v));
             }
         }
         pruned
     }
 
-    /// Get edge weight
+    /// Get edge weight (queryable in either orientation; storage is canonicalized).
     pub fn get_edge_weight(&self, u: u32, v: u32) -> Option<f64> {
-        self.edge_weights
-            .get(&(u, v))
-            .or_else(|| self.edge_weights.get(&(v, u)))
-            .copied()
+        let (a, b) = if u < v { (u, v) } else { (v, u) };
+        self.edge_index.get(&(a, b)).map(|&i| self.edges[i].weight)
+    }
+
+    /// Returns the per-edge access count, if the edge exists. Replaces the
+    /// historical `edge_access_counts` HashMap query.
+    pub fn get_access_count(&self, u: u32, v: u32) -> Option<u64> {
+        let (a, b) = if u < v { (u, v) } else { (v, u) };
+        self.edge_index
+            .get(&(a, b))
+            .map(|&i| self.edges[i].access_count)
+    }
+
+    /// Returns the last-access tick recorded for the edge, if any. Replaces the
+    /// historical `last_access_step` HashMap query.
+    pub fn get_last_access(&self, u: u32, v: u32) -> Option<u64> {
+        let (a, b) = if u < v { (u, v) } else { (v, u) };
+        self.edge_index
+            .get(&(a, b))
+            .map(|&i| self.edges[i].last_access)
+    }
+
+    /// Total stored edges.
+    pub fn edge_count(&self) -> usize {
+        self.edges.len()
+    }
+
+    /// Allocated node slots (degree-vector length); not all slots may be in use.
+    pub fn node_count(&self) -> usize {
+        self.degrees.len()
+    }
+
+    /// Iterate edges as `((u, v), weight)`. Order is sorted by `(u, v)`.
+    pub fn iter_edges(&self) -> impl Iterator<Item = ((u32, u32), f64)> + '_ {
+        self.edges.iter().map(|e| ((e.u, e.v), e.weight))
+    }
+
+    /// Test/internal helper: directly set the degree for `node`. Grows the
+    /// degree vector if needed. Mirrors the legacy `manager.degrees.insert(...)`
+    /// pattern used by claim-pinning unit tests.
+    #[cfg(test)]
+    pub(super) fn set_degree_for_test(&mut self, node: u32, degree: usize) {
+        let idx = node as usize;
+        if self.degrees.len() <= idx {
+            self.degrees.resize(idx + 1, 0);
+        }
+        self.degrees[idx] = degree;
     }
 
     /// Claim 17 — compute decay updates for a *locally owned* edge subset.
@@ -461,10 +577,10 @@ impl DecayManager {
 
     /// Get edges to process (both endpoints must be processable)
     pub fn processable_edges(&self) -> Vec<(u32, u32)> {
-        self.edge_weights
-            .keys()
-            .filter(|&&(u, v)| !self.should_skip_edge(u, v))
-            .cloned()
+        self.edges
+            .iter()
+            .filter(|e| !self.should_skip_edge(e.u, e.v))
+            .map(|e| (e.u, e.v))
             .collect()
     }
 
@@ -491,8 +607,8 @@ mod tests {
     #[test]
     fn test_edge_congestion() {
         let mut manager = DecayManager::master_spec();
-        manager.degrees.insert(0, 3);
-        manager.degrees.insert(1, 2);
+        manager.set_degree_for_test(0, 3);
+        manager.set_degree_for_test(1, 2);
 
         let congestion = manager.compute_edge_congestion(0, 1);
         assert_eq!(congestion, 5.0);
@@ -502,8 +618,8 @@ mod tests {
     fn test_edge_decay_probability_exp_form() {
         // Claim 14: P_decay is derived from continuous-time exp(-λdt).
         let mut manager = DecayManager::master_spec();
-        manager.degrees.insert(0, 3);
-        manager.degrees.insert(1, 2);
+        manager.set_degree_for_test(0, 3);
+        manager.set_degree_for_test(1, 2);
 
         // Edge layer: β=0.01, γ=0.015, α=1.5, C=5, dt=0.005
         let lambda = 0.01 * (1.0 + 0.015 * 5.0_f64.powf(1.5));
@@ -540,8 +656,8 @@ mod tests {
         manager.initialize_with_edges(class, &[(0, 1, 1.0)]);
 
         // Force P_decay high via a very connected toy degree override.
-        manager.degrees.insert(0, 100);
-        manager.degrees.insert(1, 100);
+        manager.set_degree_for_test(0, 100);
+        manager.set_degree_for_test(1, 100);
 
         // r=0 always <= p ⇒ always pruned
         let pruned_all = manager.probabilistic_prune(|| 0.0);
@@ -581,11 +697,7 @@ mod tests {
         // Snapshot degrees *before* mutation so both paths see identical input.
         let mut global_mgr = manager.clone();
         global_mgr.apply_edge_decay();
-        let globals: Vec<_> = global_mgr
-            .edge_weights
-            .iter()
-            .map(|(&k, &v)| (k, v))
-            .collect();
+        let globals: Vec<((u32, u32), f64)> = global_mgr.iter_edges().collect();
 
         // Local: split into two halves, process independently, merge.
         let half = edges.len() / 2;
@@ -629,8 +741,8 @@ mod tests {
             stats: ClassificationStats::default(),
         };
         manager.initialize_with_edges(class, &[(0, 1, 1.0)]);
-        manager.degrees.insert(0, 100);
-        manager.degrees.insert(1, 100);
+        manager.set_degree_for_test(0, 100);
+        manager.set_degree_for_test(1, 100);
         let pruned = manager.probabilistic_prune(|| 0.0);
         assert!(
             pruned.is_empty(),
@@ -642,6 +754,7 @@ mod tests {
     fn test_claim5_time_component_zero_at_access() {
         // Claim 5: just-accessed edge has T(e) ≈ 0.
         use super::super::{ClassificationStats, NodeClassification};
+        use std::collections::HashMap;
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
         layers.insert(0u32, Layer::Edge);
@@ -665,6 +778,7 @@ mod tests {
     fn test_claim5_time_component_grows_with_staleness() {
         // Claim 5: T(e) must be monotonically non-decreasing in elapsed ticks.
         use super::super::{ClassificationStats, NodeClassification};
+        use std::collections::HashMap;
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
         layers.insert(0u32, Layer::Edge);
@@ -702,6 +816,7 @@ mod tests {
         // evaluation component. Two edges with identical C but different
         // staleness must produce different evaluation values.
         use super::super::{ClassificationStats, NodeClassification};
+        use std::collections::HashMap;
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
         for n in 0..4u32 {
@@ -817,6 +932,7 @@ mod tests {
     fn test_claim2_graph_structure_nodes_and_edges() {
         // Claim 2: data structure is a graph — nodes + edges
         use super::super::{ClassificationStats, NodeClassification};
+        use std::collections::HashMap;
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
         layers.insert(0u32, Layer::Edge);
@@ -829,20 +945,17 @@ mod tests {
         };
         manager.initialize_with_edges(class, &[(0, 1, 1.0), (1, 2, 1.0)]);
         // Node count and edge count must be explicit and queryable.
-        assert_eq!(
-            manager.edge_weights.len(),
-            2,
-            "Claim 2: edges must be stored"
-        );
-        assert_eq!(manager.degrees.len(), 3, "Claim 2: nodes must be stored");
+        assert_eq!(manager.edge_count(), 2, "Claim 2: edges must be stored");
+        assert_eq!(manager.node_count(), 3, "Claim 2: nodes must be stored");
     }
 
     #[test]
     fn test_claim3_edge_parameter_is_strength_like() {
         // Claim 3: relation info has strength/frequency/reliability parameters.
-        // edge_weights carries the strength parameter; record_edge_access
-        // provides the frequency parameter.
+        // Edge weight carries the strength parameter; record_edge_access
+        // updates the per-edge frequency parameter.
         use super::super::{ClassificationStats, NodeClassification};
+        use std::collections::HashMap;
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
         layers.insert(0u32, Layer::Edge);
@@ -861,8 +974,8 @@ mod tests {
         manager.record_edge_access(0, 1);
         manager.record_edge_access(0, 1);
         assert_eq!(
-            *manager.edge_access_counts.get(&(0, 1)).unwrap(),
-            2,
+            manager.get_access_count(0, 1),
+            Some(2),
             "Claim 3: frequency param stored"
         );
     }
@@ -871,9 +984,10 @@ mod tests {
     fn test_claim4_time_series_metadata_present() {
         // Claim 4: 時間系メタデータ must include at least one of:
         //   generation_time, update_time, reference_time, reference_count, input_count.
-        // Implementation: `edge_access_counts` = reference_count; `last_access_step`
-        // = reference_time (derived from tick counter).
+        // Implementation: per-edge `access_count` = reference_count;
+        // `last_access` = reference_time (derived from tick counter).
         use super::super::{ClassificationStats, NodeClassification};
+        use std::collections::HashMap;
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
         layers.insert(0u32, Layer::Edge);
@@ -892,10 +1006,13 @@ mod tests {
             2,
             "Claim 4: global reference time tracked"
         );
-        let stored_time = *manager.last_access_step.get(&(0u32, 1u32)).unwrap();
-        assert_eq!(stored_time, 2, "Claim 4: per-edge reference_time stored");
+        assert_eq!(
+            manager.get_last_access(0, 1),
+            Some(2),
+            "Claim 4: per-edge reference_time stored"
+        );
         assert!(
-            manager.edge_access_counts.contains_key(&(0u32, 1u32)),
+            manager.get_access_count(0, 1).is_some_and(|c| c > 0),
             "Claim 4: reference_count stored"
         );
     }
@@ -904,6 +1021,7 @@ mod tests {
     fn test_claim6_local_congestion_from_connection_count() {
         // Claim 6: 局所混雑度指標 based on 接続量 (degree/connection count).
         use super::super::{ClassificationStats, NodeClassification};
+        use std::collections::HashMap;
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
         for n in 0..5u32 {
@@ -920,7 +1038,7 @@ mod tests {
         // (0,1): deg(0)=4, deg(1)=1 → 5. (3,4): deg(3)=1, deg(4)=1 → 2.
         assert_eq!(c_hub, 5.0);
         // Leaf edge does not exist in this graph; query returns 0 + 0 = 2 only
-        // because both endpoint degrees come from HashMap defaults. Just
+        // because both endpoint degrees come from defaulted slots. Just
         // assert hub > leaf regardless.
         assert!(
             c_hub > c_leaf,
@@ -932,8 +1050,8 @@ mod tests {
     fn test_claim7_congestion_is_sum_of_endpoint_degrees() {
         // Claim 7: C = deg(u) + deg(v)
         let mut manager = DecayManager::master_spec();
-        manager.degrees.insert(0, 7);
-        manager.degrees.insert(1, 3);
+        manager.set_degree_for_test(0, 7);
+        manager.set_degree_for_test(1, 3);
         let c = manager.compute_edge_congestion(0, 1);
         assert_eq!(c, 10.0, "Claim 7: congestion must equal deg(u)+deg(v)");
     }
@@ -982,6 +1100,7 @@ mod tests {
         // (threshold-style via denormal flush) and probabilistic_prune does
         // Bernoulli selection.
         use super::super::{ClassificationStats, NodeClassification};
+        use std::collections::HashMap;
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
         layers.insert(0u32, Layer::Edge);
@@ -1025,6 +1144,7 @@ mod tests {
         // Claim 15: isolated node that would be garbage-collected stays when
         // it is classified Rare.
         use super::super::{ClassificationStats, NodeClassification};
+        use std::collections::HashMap;
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
         layers.insert(0u32, Layer::Rare);
@@ -1035,8 +1155,8 @@ mod tests {
             stats: ClassificationStats::default(),
         };
         manager.initialize_with_edges(class, &[(0, 1, 1.0)]);
-        manager.degrees.insert(0, 1); // hi-decay scenario
-        manager.degrees.insert(1, 100);
+        manager.set_degree_for_test(0, 1); // hi-decay scenario
+        manager.set_degree_for_test(1, 100);
         let pruned = manager.probabilistic_prune(|| 0.0); // r=0 ⇒ always prune otherwise
         assert!(
             pruned.is_empty(),
@@ -1050,11 +1170,11 @@ mod tests {
         // (no full-graph scan). compute_edge_decay_probability only reads the
         // endpoint degrees and the per-layer parameters — no global reduction.
         let mut manager = DecayManager::master_spec();
-        manager.degrees.insert(0, 3);
-        manager.degrees.insert(1, 4);
+        manager.set_degree_for_test(0, 3);
+        manager.set_degree_for_test(1, 4);
         // Add an unrelated 10,000 nodes; the result for (0,1) must not change.
         for n in 100..10_100u32 {
-            manager.degrees.insert(n, 50);
+            manager.set_degree_for_test(n, 50);
         }
         let p = manager.compute_edge_decay_probability(0, 1, Layer::Edge);
         // Compute the reference value using only the endpoint data.
@@ -1072,6 +1192,7 @@ mod tests {
         // Claim 18: a node carrying the protection attribute must NOT be
         // subject to exclusion / archiving.
         use super::super::{ClassificationStats, NodeClassification};
+        use std::collections::HashMap;
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
         layers.insert(0u32, Layer::Rare); // Rare = protected (Layer::is_protected)
@@ -1087,8 +1208,8 @@ mod tests {
             manager.is_protected(0),
             "Claim 18: protected flag must be queryable"
         );
-        manager.degrees.insert(0, 100);
-        manager.degrees.insert(1, 100);
+        manager.set_degree_for_test(0, 100);
+        manager.set_degree_for_test(1, 100);
         let pruned = manager.probabilistic_prune(|| 0.0);
         assert!(
             pruned.is_empty(),
@@ -1101,6 +1222,7 @@ mod tests {
         // Claim 19: system must expose indicators that record processing
         // results. We expose `processable_nodes`, `processable_edges`, `stats`.
         use super::super::{ClassificationStats, NodeClassification};
+        use std::collections::HashMap;
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
         for n in 0..4u32 {
