@@ -36,6 +36,21 @@ cargo run --release -p sota-comparison
 #    "Claim 29: δk^4 scaling proof test"
 ```
 
+### Pre-commit hook(推奨)
+
+ステップ 4 の `fmt + clippy` を commit 前に自動実行する hook を用意:
+
+```bash
+# 一回だけ実行(以後 commit 時に自動で fmt + clippy が走る)
+./tools/install-hooks.sh
+
+# 違反でブロックされたら 'cargo fmt --all' で fix → 再 commit
+# 緊急時のみ bypass:
+git commit --no-verify
+```
+
+**経緯**: 2026-04-28 に過去 commit 蓄積の rustfmt 169 file + clippy 208 件を CI が一気に検出した事故の再発防止策。`tools/pre-commit.sh` が CI の `rust-quality.yml` と同じチェックを走らせる。
+
 ### PR チェックリスト
 
 以下を PR description に含めること:
