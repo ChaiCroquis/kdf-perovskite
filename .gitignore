@@ -49,6 +49,9 @@ docs/*_internal.md
 **/CUSTOMER_LIST*
 **/NEGOTIATION*
 
+# Claude Code (worktrees, session state)
+.claude/
+
 # IDE / editor
 .vscode/
 .idea/
