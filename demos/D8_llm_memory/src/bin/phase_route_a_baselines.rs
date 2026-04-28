@@ -17,6 +17,7 @@ use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct Turn {
     role: String,
     content: String,
@@ -25,9 +26,12 @@ struct Turn {
 
 #[derive(Deserialize, Debug)]
 struct Question {
-    #[allow(dead_code)] question_id: String,
+    #[allow(dead_code)]
+    question_id: String,
     question: String,
-    #[allow(dead_code)] #[serde(default)] answer: serde_json::Value,
+    #[allow(dead_code)]
+    #[serde(default)]
+    answer: serde_json::Value,
     haystack_session_ids: Vec<String>,
     haystack_sessions: Vec<Vec<Turn>>,
     answer_session_ids: Vec<String>,
@@ -69,34 +73,54 @@ fn build_flat(q: &Question) -> (Vec<(String, String)>, Vec<(u32, u32, f64)>, Has
 fn tfidf_select(flat: &[(String, String)], query: &str, keep: usize) -> HashSet<u32> {
     let docs: Vec<Vec<String>> = flat.iter().map(|(_, c)| tokenize(c)).collect();
     let q_tokens = tokenize(query);
-    if q_tokens.is_empty() { return HashSet::new(); }
+    if q_tokens.is_empty() {
+        return HashSet::new();
+    }
 
     let n = docs.len() as f64;
     let mut df: HashMap<String, u32> = HashMap::new();
     for doc in &docs {
         let unique: HashSet<&String> = doc.iter().collect();
-        for w in unique { *df.entry(w.clone()).or_insert(0) += 1; }
+        for w in unique {
+            *df.entry(w.clone()).or_insert(0) += 1;
+        }
     }
     let idf = |w: &str| (n / (*df.get(w).unwrap_or(&1) as f64)).ln().max(0.0);
 
     // Query vector (binary TF * idf)
-    let q_idf: HashMap<String, f64> = q_tokens.iter().collect::<HashSet<_>>()
-        .iter().map(|&w| (w.clone(), idf(w))).collect();
+    let q_idf: HashMap<String, f64> = q_tokens
+        .iter()
+        .collect::<HashSet<_>>()
+        .iter()
+        .map(|&w| (w.clone(), idf(w)))
+        .collect();
     let q_norm: f64 = q_idf.values().map(|v| v * v).sum::<f64>().sqrt().max(1e-9);
 
     // Score each doc
-    let mut scored: Vec<(u32, f64)> = docs.iter().enumerate().map(|(i, doc)| {
-        let mut tf: HashMap<String, f64> = HashMap::new();
-        for w in doc { *tf.entry(w.clone()).or_insert(0.0) += 1.0; }
-        let len = doc.len() as f64;
-        let d_vec: HashMap<String, f64> = tf.into_iter()
-            .map(|(w, c)| { let v = (c / len.max(1.0)) * idf(&w); (w, v) }).collect();
-        let d_norm: f64 = d_vec.values().map(|v| v * v).sum::<f64>().sqrt().max(1e-9);
-        let dot: f64 = q_idf.iter()
-            .filter_map(|(w, qv)| d_vec.get(w).map(|dv| qv * dv))
-            .sum();
-        (i as u32, dot / (q_norm * d_norm))
-    }).collect();
+    let mut scored: Vec<(u32, f64)> = docs
+        .iter()
+        .enumerate()
+        .map(|(i, doc)| {
+            let mut tf: HashMap<String, f64> = HashMap::new();
+            for w in doc {
+                *tf.entry(w.clone()).or_insert(0.0) += 1.0;
+            }
+            let len = doc.len() as f64;
+            let d_vec: HashMap<String, f64> = tf
+                .into_iter()
+                .map(|(w, c)| {
+                    let v = (c / len.max(1.0)) * idf(&w);
+                    (w, v)
+                })
+                .collect();
+            let d_norm: f64 = d_vec.values().map(|v| v * v).sum::<f64>().sqrt().max(1e-9);
+            let dot: f64 = q_idf
+                .iter()
+                .filter_map(|(w, qv)| d_vec.get(w).map(|dv| qv * dv))
+                .sum();
+            (i as u32, dot / (q_norm * d_norm))
+        })
+        .collect();
     scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
     scored.into_iter().take(keep).map(|(i, _)| i).collect()
 }
@@ -105,7 +129,9 @@ fn tfidf_select(flat: &[(String, String)], query: &str, keep: usize) -> HashSet<
 fn bm25_select(flat: &[(String, String)], query: &str, keep: usize) -> HashSet<u32> {
     let docs: Vec<Vec<String>> = flat.iter().map(|(_, c)| tokenize(c)).collect();
     let q_tokens = tokenize(query);
-    if q_tokens.is_empty() { return HashSet::new(); }
+    if q_tokens.is_empty() {
+        return HashSet::new();
+    }
 
     let n = docs.len() as f64;
     let avgdl: f64 = docs.iter().map(|d| d.len() as f64).sum::<f64>() / n.max(1.0);
@@ -115,27 +141,35 @@ fn bm25_select(flat: &[(String, String)], query: &str, keep: usize) -> HashSet<u
     let mut df: HashMap<String, u32> = HashMap::new();
     for doc in &docs {
         let unique: HashSet<&String> = doc.iter().collect();
-        for w in unique { *df.entry(w.clone()).or_insert(0) += 1; }
+        for w in unique {
+            *df.entry(w.clone()).or_insert(0) += 1;
+        }
     }
     let idf = |w: &str| -> f64 {
         let df_w = *df.get(w).unwrap_or(&0) as f64;
         ((n - df_w + 0.5) / (df_w + 0.5) + 1.0).ln()
     };
 
-    let mut scored: Vec<(u32, f64)> = docs.iter().enumerate().map(|(i, doc)| {
-        let dl = doc.len() as f64;
-        let mut tf: HashMap<String, f64> = HashMap::new();
-        for w in doc { *tf.entry(w.clone()).or_insert(0.0) += 1.0; }
+    let mut scored: Vec<(u32, f64)> = docs
+        .iter()
+        .enumerate()
+        .map(|(i, doc)| {
+            let dl = doc.len() as f64;
+            let mut tf: HashMap<String, f64> = HashMap::new();
+            for w in doc {
+                *tf.entry(w.clone()).or_insert(0.0) += 1.0;
+            }
 
-        let mut score = 0.0;
-        for qw in &q_tokens {
-            let f_qd = *tf.get(qw).unwrap_or(&0.0);
-            let num = f_qd * (k1 + 1.0);
-            let den = f_qd + k1 * (1.0 - b + b * dl / avgdl.max(1e-9));
-            score += idf(qw) * num / den.max(1e-9);
-        }
-        (i as u32, score)
-    }).collect();
+            let mut score = 0.0;
+            for qw in &q_tokens {
+                let f_qd = *tf.get(qw).unwrap_or(&0.0);
+                let num = f_qd * (k1 + 1.0);
+                let den = f_qd + k1 * (1.0 - b + b * dl / avgdl.max(1e-9));
+                score += idf(qw) * num / den.max(1e-9);
+            }
+            (i as u32, score)
+        })
+        .collect();
     scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
     scored.into_iter().take(keep).map(|(i, _)| i).collect()
 }
@@ -145,10 +179,20 @@ fn kdf_select(n: usize, edges: &[(u32, u32, f64)], keep: usize) -> HashSet<u32> 
     let mut c = NodeClassifier::default();
     let class = c.classify(n, edges);
     let score = |l: Layer| -> i32 {
-        match l { Layer::Rare => 3, Layer::Core => 2, Layer::Edge => 1, Layer::Garbage => 0 }
+        match l {
+            Layer::Rare => 3,
+            Layer::Core => 2,
+            Layer::Edge => 1,
+            Layer::Garbage => 0,
+        }
     };
     let mut scored: Vec<(u32, i32)> = (0..n as u32)
-        .map(|id| (id, score(class.layers.get(&id).copied().unwrap_or(Layer::Edge))))
+        .map(|id| {
+            (
+                id,
+                score(class.layers.get(&id).copied().unwrap_or(Layer::Edge)),
+            )
+        })
         .collect();
     scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
     scored.into_iter().take(keep).map(|(i, _)| i).collect()
@@ -170,8 +214,11 @@ fn main() {
 
     let sample_size = 100.min(questions.len());
     let sample: Vec<&Question> = questions.iter().take(sample_size).collect();
-    println!("Loaded {} questions. Evaluating first {}, keep rate = 30%\n",
-        questions.len(), sample_size);
+    println!(
+        "Loaded {} questions. Evaluating first {}, keep rate = 30%\n",
+        questions.len(),
+        sample_size
+    );
     println!("| Method | uses query? | uses LLM? | answer_turn_recall | wall_ms/q |");
     println!("|---|:---:|:---:|---:|---:|");
 
@@ -187,7 +234,7 @@ fn main() {
         let mut recalls = Vec::new();
         let mut walls = Vec::new();
         for (i, q) in sample.iter().enumerate() {
-            let (flat, edges, answer_turns) = build_flat(*q);
+            let (flat, edges, answer_turns) = build_flat(q);
             let n = flat.len();
             let keep = (n as f64 * 0.30).ceil() as usize;
 
@@ -202,7 +249,9 @@ fn main() {
             let ms = t0.elapsed().as_secs_f64() * 1000.0;
 
             let hit = sel.intersection(&answer_turns).count() as f64;
-            let recall = if answer_turns.is_empty() { 1.0 } else {
+            let recall = if answer_turns.is_empty() {
+                1.0
+            } else {
                 hit / answer_turns.len() as f64
             };
             recalls.push(recall);
@@ -212,7 +261,10 @@ fn main() {
         let w: f64 = walls.iter().sum::<f64>() / walls.len() as f64;
         let qmark = if *uses_query { "✓" } else { "✗" };
         let lmark = if *uses_llm { "✓" } else { "✗" };
-        println!("| {} | {} | {} | {:.3} | {:.2} |", method, qmark, lmark, r, w);
+        println!(
+            "| {} | {} | {} | {:.3} | {:.2} |",
+            method, qmark, lmark, r, w
+        );
         stored_recalls.insert(method, r);
     }
 
@@ -226,8 +278,14 @@ fn main() {
     println!("- TF-IDF / BM25 は **query を見て** 関連 turn を検索(query-aware advantage)");
     println!();
     println!("**重要な comparison:**");
-    println!("- KDF vs Random(両方 query-blind): KDF/Random = ×{:.2}", kdf / random.max(1e-9));
-    println!("- KDF vs TF-IDF: KDF/TF-IDF = ×{:.2}", kdf / tfidf.max(1e-9));
+    println!(
+        "- KDF vs Random(両方 query-blind): KDF/Random = ×{:.2}",
+        kdf / random.max(1e-9)
+    );
+    println!(
+        "- KDF vs TF-IDF: KDF/TF-IDF = ×{:.2}",
+        kdf / tfidf.max(1e-9)
+    );
     println!("- KDF vs BM25: KDF/BM25 = ×{:.2}", kdf / bm25.max(1e-9));
     println!();
 
@@ -245,8 +303,10 @@ fn main() {
     }
 
     println!("\n## Mem0 / Mastra / OMEGA との位置付け\n");
-    println!("TF-IDF recall ({:.3}) と BM25 recall ({:.3}) は**LLM を使わない上限**に近い。",
-        tfidf, bm25);
+    println!(
+        "TF-IDF recall ({:.3}) と BM25 recall ({:.3}) は**LLM を使わない上限**に近い。",
+        tfidf, bm25
+    );
     println!("Mem0/Mastra/OMEGA は追加で LLM fact extraction + embedding を使い、");
     println!("それにより public benchmark で 93-95% final accuracy を達成している。");
     println!();

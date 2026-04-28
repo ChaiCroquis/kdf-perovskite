@@ -108,7 +108,13 @@ fn build_graph(q: &Question) -> Graph {
         }
     }
     let max_session = session_of.iter().copied().max().unwrap_or(0);
-    Graph { n, edges, session_of, answer_turns, max_session }
+    Graph {
+        n,
+        edges,
+        session_of,
+        answer_turns,
+        max_session,
+    }
 }
 
 // --- temporal score variants ---
@@ -179,7 +185,11 @@ fn kdf_with_temporal(g: &Graph, keep: usize, temporal: &[f64], gamma: f64) -> Ha
     let mut c = NodeClassifier::default();
     let class = c.classify(g.n, &g.edges);
     let layer_of: HashMap<u32, Layer> = class.layers;
-    let weights = MultiModalWeights { alpha: 1.0 - gamma, beta: 0.0, gamma };
+    let weights = MultiModalWeights {
+        alpha: 1.0 - gamma,
+        beta: 0.0,
+        gamma,
+    };
     select_top_k_multi_modal(g.n, &layer_of, None, Some(temporal), keep, &weights)
 }
 
@@ -209,9 +219,13 @@ fn claim17_parity_check(g: &Graph) -> (f64, f64) {
         .map(|&(u, v, w)| {
             let layer_u = layer_of.get(&u).copied().unwrap_or(Layer::Edge);
             let layer_v = layer_of.get(&v).copied().unwrap_or(Layer::Edge);
-            let layer = if layer_u.priority() > layer_v.priority() { layer_u } else { layer_v };
-            let c = (degrees.get(&u).copied().unwrap_or(0)
-                + degrees.get(&v).copied().unwrap_or(0)) as f64;
+            let layer = if layer_u.priority() > layer_v.priority() {
+                layer_u
+            } else {
+                layer_v
+            };
+            let c = (degrees.get(&u).copied().unwrap_or(0) + degrees.get(&v).copied().unwrap_or(0))
+                as f64;
             ((u, v), w, c, layer)
         })
         .collect();
@@ -233,11 +247,17 @@ fn claim17_parity_check(g: &Graph) -> (f64, f64) {
 // --- main ---
 
 fn mean(v: &[f64]) -> f64 {
-    if v.is_empty() { 0.0 } else { v.iter().sum::<f64>() / v.len() as f64 }
+    if v.is_empty() {
+        0.0
+    } else {
+        v.iter().sum::<f64>() / v.len() as f64
+    }
 }
 
 fn stderr(v: &[f64]) -> f64 {
-    if v.len() < 2 { return 0.0; }
+    if v.len() < 2 {
+        return 0.0;
+    }
     let m = mean(v);
     let var = v.iter().map(|x| (x - m).powi(2)).sum::<f64>() / (v.len() - 1) as f64;
     (var / v.len() as f64).sqrt()
@@ -245,19 +265,27 @@ fn stderr(v: &[f64]) -> f64 {
 
 fn main() {
     let path = "demos/D8_llm_memory/data/locomo/locomo_oracle_temporal_all.json";
-    println!("# Phase X Step 1 — Claim 5/14/17 realistic time-series benchmark on LoCoMo temporal\n");
+    println!(
+        "# Phase X Step 1 — Claim 5/14/17 realistic time-series benchmark on LoCoMo temporal\n"
+    );
 
     let data = std::fs::read_to_string(path).expect("Load LoCoMo temporal JSON");
     let questions: Vec<Question> = serde_json::from_str(&data).expect("Parse LoCoMo JSON");
-    println!("Loaded {} temporal questions from LoCoMo oracle\n", questions.len());
+    println!(
+        "Loaded {} temporal questions from LoCoMo oracle\n",
+        questions.len()
+    );
 
     let keep_rate = 0.30_f64;
     // Hyperparameters for temporal score (chosen to span the age range [0, 30]):
-    let lambda = 0.10;    // decay rate per session
-    let tau_ref = 10.0;   // staleness scale in sessions
-    let kappa = 1.0;      // weight for time component in eval formula
+    let lambda = 0.10; // decay rate per session
+    let tau_ref = 10.0; // staleness scale in sessions
+    let kappa = 1.0; // weight for time component in eval formula
 
-    println!("Config: keep_rate={}, λ={}, τ_ref={}, κ={}\n", keep_rate, lambda, tau_ref, kappa);
+    println!(
+        "Config: keep_rate={}, λ={}, τ_ref={}, κ={}\n",
+        keep_rate, lambda, tau_ref, kappa
+    );
 
     struct Res {
         name: String,
@@ -280,7 +308,11 @@ fn main() {
     }
     let mut results: Vec<Res> = method_names
         .iter()
-        .map(|n| Res { name: n.clone(), recalls: Vec::new(), walls_ms: Vec::new() })
+        .map(|n| Res {
+            name: n.clone(),
+            recalls: Vec::new(),
+            walls_ms: Vec::new(),
+        })
         .collect();
 
     // Claim 17 parity accumulator
@@ -355,23 +387,50 @@ fn main() {
     println!("| Method | Δ | n positive | n tie | n negative |");
     println!("|---|---:|---:|---:|---:|");
     for (mi, r) in results.iter().enumerate() {
-        if mi == static_idx { continue; }
+        if mi == static_idx {
+            continue;
+        }
         let m = mean(&r.recalls);
-        let n_pos = r.recalls.iter().zip(&results[static_idx].recalls)
-            .filter(|(a, b)| a > b).count();
-        let n_tie = r.recalls.iter().zip(&results[static_idx].recalls)
-            .filter(|(a, b)| a == b).count();
-        let n_neg = r.recalls.iter().zip(&results[static_idx].recalls)
-            .filter(|(a, b)| a < b).count();
-        println!("| {} | {:+.4} | {} | {} | {} |", r.name, m - m_static, n_pos, n_tie, n_neg);
+        let n_pos = r
+            .recalls
+            .iter()
+            .zip(&results[static_idx].recalls)
+            .filter(|(a, b)| a > b)
+            .count();
+        let n_tie = r
+            .recalls
+            .iter()
+            .zip(&results[static_idx].recalls)
+            .filter(|(a, b)| a == b)
+            .count();
+        let n_neg = r
+            .recalls
+            .iter()
+            .zip(&results[static_idx].recalls)
+            .filter(|(a, b)| a < b)
+            .count();
+        println!(
+            "| {} | {:+.4} | {} | {} | {} |",
+            r.name,
+            m - m_static,
+            n_pos,
+            n_tie,
+            n_neg
+        );
     }
 
     // Claim 17 parity report
     let max_parity = parity_max_diffs.iter().cloned().fold(0f64, f64::max);
     println!();
     println!("## Claim 17 parity check (global vs local decay, 10 sampled questions)");
-    println!("- Max absolute edge-weight diff across all sampled graphs: **{:.3e}**", max_parity);
-    println!("- {} (threshold 1e-10)", if max_parity < 1e-10 { "PASS" } else { "FAIL" });
+    println!(
+        "- Max absolute edge-weight diff across all sampled graphs: **{:.3e}**",
+        max_parity
+    );
+    println!(
+        "- {} (threshold 1e-10)",
+        if max_parity < 1e-10 { "PASS" } else { "FAIL" }
+    );
 
     println!();
     println!("## Interpretation notes");

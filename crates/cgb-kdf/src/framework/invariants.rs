@@ -46,10 +46,8 @@ pub fn inspect(p: &MasterSpecParams) -> ParamCheckReport {
         findings.push("dt values must be strictly positive");
     }
 
-    let gamma_positive_ok = p.gamma_edge > 0.0
-        && p.gamma_rare > 0.0
-        && p.gamma_core > 0.0
-        && p.gamma_meta > 0.0;
+    let gamma_positive_ok =
+        p.gamma_edge > 0.0 && p.gamma_rare > 0.0 && p.gamma_core > 0.0 && p.gamma_meta > 0.0;
     if !gamma_positive_ok {
         findings.push("γ values must be strictly positive");
     }
@@ -71,13 +69,20 @@ mod tests {
     fn default_params_satisfy_all_invariants() {
         let p = MasterSpecParams::default();
         let r = inspect(&p);
-        assert!(r.is_ok(), "default params must satisfy invariants, findings={:?}", r.findings);
+        assert!(
+            r.is_ok(),
+            "default params must satisfy invariants, findings={:?}",
+            r.findings
+        );
         assert!(r.findings.is_empty());
     }
 
     #[test]
     fn detects_alpha_disorder() {
-        let p = MasterSpecParams { alpha_edge: 0.1, ..MasterSpecParams::default() };
+        let p = MasterSpecParams {
+            alpha_edge: 0.1,
+            ..MasterSpecParams::default()
+        };
         let r = inspect(&p);
         assert!(!r.alpha_order_ok);
         assert!(r.findings.iter().any(|f| f.contains("alpha")));
@@ -85,14 +90,20 @@ mod tests {
 
     #[test]
     fn detects_negative_dt() {
-        let p = MasterSpecParams { dt_rare: -0.001, ..MasterSpecParams::default() };
+        let p = MasterSpecParams {
+            dt_rare: -0.001,
+            ..MasterSpecParams::default()
+        };
         let r = inspect(&p);
         assert!(!r.dt_positive_ok);
     }
 
     #[test]
     fn detects_zero_gamma() {
-        let p = MasterSpecParams { gamma_meta: 0.0, ..MasterSpecParams::default() };
+        let p = MasterSpecParams {
+            gamma_meta: 0.0,
+            ..MasterSpecParams::default()
+        };
         let r = inspect(&p);
         assert!(!r.gamma_positive_ok);
     }

@@ -6,3 +6,6 @@ description = "Basic types for Cognitive Gap Bridge"
 license-file = "../../LICENSE"
 
 [dependencies]
+
+[lints]
+workspace = true

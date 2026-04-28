@@ -14,9 +14,9 @@
 //! - Core:  α=2.0, γ=0.008
 //! - Meta:  α=0.5, γ=0.005
 
-use std::collections::HashMap;
 use super::{ClassificationStats, Layer, NodeClassification};
 use crate::fingerprint::Fingerprint;
+use std::collections::HashMap;
 
 /// Master specification parameters for edge-based decay
 ///
@@ -158,7 +158,7 @@ impl Default for DecayManager {
             kappa_time: 1.0,
             decay_rate: 0.1,
             master_params: MasterSpecParams::default(),
-            use_edge_based: true,  // Default: Master spec compliant edge-based
+            use_edge_based: true, // Default: Master spec compliant edge-based
         }
     }
 }
@@ -180,7 +180,11 @@ impl DecayManager {
     }
 
     /// Initialize with edges for edge-based processing
-    pub fn initialize_with_edges(&mut self, classification: NodeClassification, edges: &[(u32, u32, f64)]) {
+    pub fn initialize_with_edges(
+        &mut self,
+        classification: NodeClassification,
+        edges: &[(u32, u32, f64)],
+    ) {
         self.classification = Some(classification);
         self.access_counts.clear();
         self.edge_access_counts.clear();
@@ -292,7 +296,9 @@ impl DecayManager {
     ///
     /// For small λ·dt this is ≈ λ·dt, but the exp form is required by Claim 14.
     pub fn compute_edge_decay_probability(&self, u: u32, v: u32, layer: Layer) -> f64 {
-        let lambda = self.master_params.lambda(self.compute_edge_congestion(u, v), layer);
+        let lambda = self
+            .master_params
+            .lambda(self.compute_edge_congestion(u, v), layer);
         let dt = self.master_params.dt_for_layer(layer);
         1.0 - (-lambda * dt).exp()
     }
@@ -315,9 +321,15 @@ impl DecayManager {
                 // Get layer from endpoint nodes (use higher priority)
                 let layer_u = class.layers.get(&u).copied().unwrap_or(Layer::Edge);
                 let layer_v = class.layers.get(&v).copied().unwrap_or(Layer::Edge);
-                let layer = if layer_u.priority() > layer_v.priority() { layer_u } else { layer_v };
+                let layer = if layer_u.priority() > layer_v.priority() {
+                    layer_u
+                } else {
+                    layer_v
+                };
 
-                let lambda = self.master_params.lambda(self.compute_edge_congestion(u, v), layer);
+                let lambda = self
+                    .master_params
+                    .lambda(self.compute_edge_congestion(u, v), layer);
                 let dt = self.master_params.dt_for_layer(layer);
                 let survival = (-lambda * dt).exp();
                 if let Some(weight) = self.edge_weights.get_mut(&(u, v)) {
@@ -325,7 +337,9 @@ impl DecayManager {
                     // Flush denormals: below 2^-970 the arithmetic becomes
                     // platform-dependent (subnormals). Treat as 0 to preserve
                     // Claim 15-style bit-exact reproducibility.
-                    if weight.abs() < 1e-290 { *weight = 0.0; }
+                    if weight.abs() < 1e-290 {
+                        *weight = 0.0;
+                    }
                 }
             }
         }
@@ -356,8 +370,14 @@ impl DecayManager {
             if layer_u.is_protected() || layer_v.is_protected() {
                 continue; // Claim 15/18 protection
             }
-            let layer = if layer_u.priority() > layer_v.priority() { layer_u } else { layer_v };
-            let p_decay = self.compute_edge_decay_probability(u, v, layer).clamp(0.0, 1.0);
+            let layer = if layer_u.priority() > layer_v.priority() {
+                layer_u
+            } else {
+                layer_v
+            };
+            let p_decay = self
+                .compute_edge_decay_probability(u, v, layer)
+                .clamp(0.0, 1.0);
             let r = rng();
             if r <= p_decay {
                 pruned.push((u, v));
@@ -368,7 +388,10 @@ impl DecayManager {
 
     /// Get edge weight
     pub fn get_edge_weight(&self, u: u32, v: u32) -> Option<f64> {
-        self.edge_weights.get(&(u, v)).or_else(|| self.edge_weights.get(&(v, u))).copied()
+        self.edge_weights
+            .get(&(u, v))
+            .or_else(|| self.edge_weights.get(&(v, u)))
+            .copied()
     }
 
     /// Claim 17 — compute decay updates for a *locally owned* edge subset.
@@ -403,7 +426,9 @@ impl DecayManager {
     /// Get nodes to process (non-GARBAGE, respecting protection)
     pub fn processable_nodes(&self) -> Vec<u32> {
         if let Some(ref class) = self.classification {
-            class.layers.iter()
+            class
+                .layers
+                .iter()
                 .filter(|(_, layer)| layer.should_process())
                 .map(|(&id, _)| id)
                 .collect()
@@ -463,7 +488,10 @@ mod tests {
         let dt = 0.005;
         let expected = 1.0 - (-lambda * dt).exp();
         let actual = manager.compute_edge_decay_probability(0, 1, Layer::Edge);
-        assert!((actual - expected).abs() < 1e-12, "P_decay must follow Claim 14 exp form");
+        assert!(
+            (actual - expected).abs() < 1e-12,
+            "P_decay must follow Claim 14 exp form"
+        );
     }
 
     #[test]
@@ -476,7 +504,7 @@ mod tests {
 
     #[test]
     fn test_claim12_probabilistic_pruning_rand_comparison() {
-        use super::super::{NodeClassification, ClassificationStats};
+        use super::super::{ClassificationStats, NodeClassification};
         use std::collections::HashMap;
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
@@ -506,28 +534,41 @@ mod tests {
     fn test_claim17_local_decay_matches_global() {
         // Global decay applied to the whole graph must equal per-partition
         // local decay composed back together (Claim 17 distributed semantics).
-        use super::super::{NodeClassification, ClassificationStats};
+        use super::super::{ClassificationStats, NodeClassification};
         use std::collections::HashMap;
 
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
-        for i in 0..6u32 { layers.insert(i, Layer::Edge); }
+        for i in 0..6u32 {
+            layers.insert(i, Layer::Edge);
+        }
         let class = NodeClassification {
             layers,
             rare_fingerprints: HashMap::new(),
             stats: ClassificationStats::default(),
         };
-        let edges = vec![(0, 1, 1.0), (1, 2, 1.0), (2, 3, 1.0), (3, 4, 1.0), (4, 5, 1.0)];
+        let edges = vec![
+            (0, 1, 1.0),
+            (1, 2, 1.0),
+            (2, 3, 1.0),
+            (3, 4, 1.0),
+            (4, 5, 1.0),
+        ];
         manager.initialize_with_edges(class, &edges);
 
         // Snapshot degrees *before* mutation so both paths see identical input.
         let mut global_mgr = manager.clone();
         global_mgr.apply_edge_decay();
-        let globals: Vec<_> = global_mgr.edge_weights.iter().map(|(&k, &v)| (k, v)).collect();
+        let globals: Vec<_> = global_mgr
+            .edge_weights
+            .iter()
+            .map(|(&k, &v)| (k, v))
+            .collect();
 
         // Local: split into two halves, process independently, merge.
         let half = edges.len() / 2;
-        let local_input: Vec<_> = edges.iter()
+        let local_input: Vec<_> = edges
+            .iter()
             .map(|&(u, v, w)| {
                 let c = manager.compute_edge_congestion(u, v);
                 ((u, v), w, c, Layer::Edge)
@@ -536,17 +577,25 @@ mod tests {
         let partition_a = manager.apply_edge_decay_local(local_input[..half].iter().cloned());
         let partition_b = manager.apply_edge_decay_local(local_input[half..].iter().cloned());
         let mut locals: HashMap<(u32, u32), f64> = HashMap::new();
-        for (e, w) in partition_a.into_iter().chain(partition_b) { locals.insert(e, w); }
+        for (e, w) in partition_a.into_iter().chain(partition_b) {
+            locals.insert(e, w);
+        }
 
         for (edge, g_w) in globals {
             let l_w: f64 = locals.get(&edge).copied().unwrap_or(0.0);
-            assert!((l_w - g_w).abs() < 1e-12, "local≠global for {:?}: local={}, global={}", edge, l_w, g_w);
+            assert!(
+                (l_w - g_w).abs() < 1e-12,
+                "local≠global for {:?}: local={}, global={}",
+                edge,
+                l_w,
+                g_w
+            );
         }
     }
 
     #[test]
     fn test_claim12_protects_rare() {
-        use super::super::{NodeClassification, ClassificationStats};
+        use super::super::{ClassificationStats, NodeClassification};
         use std::collections::HashMap;
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
@@ -561,13 +610,16 @@ mod tests {
         manager.degrees.insert(0, 100);
         manager.degrees.insert(1, 100);
         let pruned = manager.probabilistic_prune(|| 0.0);
-        assert!(pruned.is_empty(), "Rare endpoints must be protected (Claim 15, 18)");
+        assert!(
+            pruned.is_empty(),
+            "Rare endpoints must be protected (Claim 15, 18)"
+        );
     }
 
     #[test]
     fn test_claim5_time_component_zero_at_access() {
         // Claim 5: just-accessed edge has T(e) ≈ 0.
-        use super::super::{NodeClassification, ClassificationStats};
+        use super::super::{ClassificationStats, NodeClassification};
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
         layers.insert(0u32, Layer::Edge);
@@ -580,13 +632,17 @@ mod tests {
         manager.initialize_with_edges(class, &[(0, 1, 1.0)]);
         manager.record_edge_access(0, 1);
         let t = manager.compute_time_component(0, 1);
-        assert!(t.abs() < 1e-12, "freshly-accessed edge must have T≈0, got {}", t);
+        assert!(
+            t.abs() < 1e-12,
+            "freshly-accessed edge must have T≈0, got {}",
+            t
+        );
     }
 
     #[test]
     fn test_claim5_time_component_grows_with_staleness() {
         // Claim 5: T(e) must be monotonically non-decreasing in elapsed ticks.
-        use super::super::{NodeClassification, ClassificationStats};
+        use super::super::{ClassificationStats, NodeClassification};
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
         layers.insert(0u32, Layer::Edge);
@@ -599,13 +655,22 @@ mod tests {
         manager.initialize_with_edges(class, &[(0, 1, 1.0)]);
         manager.record_edge_access(0, 1);
         let t0 = manager.compute_time_component(0, 1);
-        for _ in 0..50 { manager.tick(); }
+        for _ in 0..50 {
+            manager.tick();
+        }
         let t1 = manager.compute_time_component(0, 1);
-        for _ in 0..500 { manager.tick(); }
+        for _ in 0..500 {
+            manager.tick();
+        }
         let t2 = manager.compute_time_component(0, 1);
 
         assert!(t1 > t0, "T must grow after 50 ticks: {} vs {}", t1, t0);
-        assert!(t2 > t1, "T must keep growing after 500 ticks: {} vs {}", t2, t1);
+        assert!(
+            t2 > t1,
+            "T must keep growing after 500 ticks: {} vs {}",
+            t2,
+            t1
+        );
         assert!(t2 < 1.0 + 1e-12, "T is bounded by 1, got {}", t2);
     }
 
@@ -614,10 +679,12 @@ mod tests {
         // Claim 5 core invariant: V(e) must strictly depend on the time
         // evaluation component. Two edges with identical C but different
         // staleness must produce different evaluation values.
-        use super::super::{NodeClassification, ClassificationStats};
+        use super::super::{ClassificationStats, NodeClassification};
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
-        for n in 0..4u32 { layers.insert(n, Layer::Edge); }
+        for n in 0..4u32 {
+            layers.insert(n, Layer::Edge);
+        }
         let class = NodeClassification {
             layers,
             rare_fingerprints: HashMap::new(),
@@ -633,7 +700,12 @@ mod tests {
         }
         let fresh = manager.compute_evaluation_value(0, 1, Layer::Edge);
         let stale = manager.compute_evaluation_value(2, 3, Layer::Edge);
-        assert!(stale > fresh, "stale edge must evaluate higher: fresh={}, stale={}", fresh, stale);
+        assert!(
+            stale > fresh,
+            "stale edge must evaluate higher: fresh={}, stale={}",
+            fresh,
+            stale
+        );
     }
 
     #[test]
@@ -655,8 +727,13 @@ mod tests {
             let c = 5.0;
             let expected = p.beta * (1.0 + gamma * c * c); // γC²
             let actual = p.lambda(c, layer);
-            assert!((actual - expected).abs() < 1e-12,
-                "Claim 10 α=2: λ({:?},C=5) expected {}, got {}", layer, expected, actual);
+            assert!(
+                (actual - expected).abs() < 1e-12,
+                "Claim 10 α=2: λ({:?},C=5) expected {}, got {}",
+                layer,
+                expected,
+                actual
+            );
         }
     }
 
@@ -679,8 +756,12 @@ mod tests {
         // Node 6: isolated (no edges) → Garbage
         let n = 7;
         let edges: Vec<(u32, u32, f64)> = vec![
-            (0, 1, 1.0), (0, 2, 1.0), (0, 3, 1.0), (0, 4, 1.0),
-            (2, 3, 1.0), (3, 4, 1.0),
+            (0, 1, 1.0),
+            (0, 2, 1.0),
+            (0, 3, 1.0),
+            (0, 4, 1.0),
+            (2, 3, 1.0),
+            (3, 4, 1.0),
         ];
         let mut c = NodeClassifier::default();
         let cls = c.classify(n, &edges);
@@ -689,13 +770,20 @@ mod tests {
         let layer_isolated = cls.layers.get(&6u32).copied().unwrap();
         // Three distinct connection counts must produce at least 2 distinct
         // layers (in practice all 3 distinct).
-        assert_ne!(layer_hub, layer_isolated,
-            "Claim 33: well-connected vs isolated must differ by isolation metric");
-        assert_ne!(layer_leaf, layer_isolated,
-            "Claim 33: single-connection vs isolated must differ by isolation metric");
+        assert_ne!(
+            layer_hub, layer_isolated,
+            "Claim 33: well-connected vs isolated must differ by isolation metric"
+        );
+        assert_ne!(
+            layer_leaf, layer_isolated,
+            "Claim 33: single-connection vs isolated must differ by isolation metric"
+        );
         // Specific: isolated → Garbage (the spec's floor of isolation)
-        assert_eq!(layer_isolated, Layer::Garbage,
-            "Claim 33: isolation metric at its extreme must produce Garbage");
+        assert_eq!(
+            layer_isolated,
+            Layer::Garbage,
+            "Claim 33: isolation metric at its extreme must produce Garbage"
+        );
     }
 
     // ------------------------------------------------------------
@@ -706,16 +794,24 @@ mod tests {
     #[test]
     fn test_claim2_graph_structure_nodes_and_edges() {
         // Claim 2: data structure is a graph — nodes + edges
-        use super::super::{NodeClassification, ClassificationStats};
+        use super::super::{ClassificationStats, NodeClassification};
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
         layers.insert(0u32, Layer::Edge);
         layers.insert(1u32, Layer::Edge);
         layers.insert(2u32, Layer::Edge);
-        let class = NodeClassification { layers, rare_fingerprints: HashMap::new(), stats: ClassificationStats::default() };
+        let class = NodeClassification {
+            layers,
+            rare_fingerprints: HashMap::new(),
+            stats: ClassificationStats::default(),
+        };
         manager.initialize_with_edges(class, &[(0, 1, 1.0), (1, 2, 1.0)]);
         // Node count and edge count must be explicit and queryable.
-        assert_eq!(manager.edge_weights.len(), 2, "Claim 2: edges must be stored");
+        assert_eq!(
+            manager.edge_weights.len(),
+            2,
+            "Claim 2: edges must be stored"
+        );
         assert_eq!(manager.degrees.len(), 3, "Claim 2: nodes must be stored");
     }
 
@@ -724,18 +820,29 @@ mod tests {
         // Claim 3: relation info has strength/frequency/reliability parameters.
         // edge_weights carries the strength parameter; record_edge_access
         // provides the frequency parameter.
-        use super::super::{NodeClassification, ClassificationStats};
+        use super::super::{ClassificationStats, NodeClassification};
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
         layers.insert(0u32, Layer::Edge);
         layers.insert(1u32, Layer::Edge);
-        let class = NodeClassification { layers, rare_fingerprints: HashMap::new(), stats: ClassificationStats::default() };
+        let class = NodeClassification {
+            layers,
+            rare_fingerprints: HashMap::new(),
+            stats: ClassificationStats::default(),
+        };
         manager.initialize_with_edges(class, &[(0, 1, 0.73)]);
-        assert_eq!(manager.get_edge_weight(0, 1), Some(0.73), "Claim 3: strength param stored");
+        assert_eq!(
+            manager.get_edge_weight(0, 1),
+            Some(0.73),
+            "Claim 3: strength param stored"
+        );
         manager.record_edge_access(0, 1);
         manager.record_edge_access(0, 1);
-        assert_eq!(*manager.edge_access_counts.get(&(0, 1)).unwrap(), 2,
-            "Claim 3: frequency param stored");
+        assert_eq!(
+            *manager.edge_access_counts.get(&(0, 1)).unwrap(),
+            2,
+            "Claim 3: frequency param stored"
+        );
     }
 
     #[test]
@@ -744,31 +851,47 @@ mod tests {
         //   generation_time, update_time, reference_time, reference_count, input_count.
         // Implementation: `edge_access_counts` = reference_count; `last_access_step`
         // = reference_time (derived from tick counter).
-        use super::super::{NodeClassification, ClassificationStats};
+        use super::super::{ClassificationStats, NodeClassification};
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
         layers.insert(0u32, Layer::Edge);
         layers.insert(1u32, Layer::Edge);
-        let class = NodeClassification { layers, rare_fingerprints: HashMap::new(), stats: ClassificationStats::default() };
+        let class = NodeClassification {
+            layers,
+            rare_fingerprints: HashMap::new(),
+            stats: ClassificationStats::default(),
+        };
         manager.initialize_with_edges(class, &[(0, 1, 1.0)]);
         manager.tick();
         manager.tick();
         manager.record_edge_access(0, 1);
-        assert_eq!(manager.current_step(), 2, "Claim 4: global reference time tracked");
+        assert_eq!(
+            manager.current_step(),
+            2,
+            "Claim 4: global reference time tracked"
+        );
         let stored_time = *manager.last_access_step.get(&(0u32, 1u32)).unwrap();
         assert_eq!(stored_time, 2, "Claim 4: per-edge reference_time stored");
-        assert!(manager.edge_access_counts.contains_key(&(0u32, 1u32)),
-            "Claim 4: reference_count stored");
+        assert!(
+            manager.edge_access_counts.contains_key(&(0u32, 1u32)),
+            "Claim 4: reference_count stored"
+        );
     }
 
     #[test]
     fn test_claim6_local_congestion_from_connection_count() {
         // Claim 6: 局所混雑度指標 based on 接続量 (degree/connection count).
-        use super::super::{NodeClassification, ClassificationStats};
+        use super::super::{ClassificationStats, NodeClassification};
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
-        for n in 0..5u32 { layers.insert(n, Layer::Edge); }
-        let class = NodeClassification { layers, rare_fingerprints: HashMap::new(), stats: ClassificationStats::default() };
+        for n in 0..5u32 {
+            layers.insert(n, Layer::Edge);
+        }
+        let class = NodeClassification {
+            layers,
+            rare_fingerprints: HashMap::new(),
+            stats: ClassificationStats::default(),
+        };
         manager.initialize_with_edges(class, &[(0, 1, 1.0), (0, 2, 1.0), (0, 3, 1.0), (0, 4, 1.0)]);
         let c_hub = manager.compute_edge_congestion(0, 1);
         let c_leaf = manager.compute_edge_congestion(3, 4);
@@ -777,7 +900,10 @@ mod tests {
         // Leaf edge does not exist in this graph; query returns 0 + 0 = 2 only
         // because both endpoint degrees come from HashMap defaults. Just
         // assert hub > leaf regardless.
-        assert!(c_hub > c_leaf, "Claim 6: congestion must rank by connection count");
+        assert!(
+            c_hub > c_leaf,
+            "Claim 6: congestion must rank by connection count"
+        );
     }
 
     #[test]
@@ -797,7 +923,11 @@ mod tests {
         let mut last = p.lambda(0.0, Layer::Edge);
         for c in 1..100 {
             let next = p.lambda(c as f64, Layer::Edge);
-            assert!(next >= last - 1e-12, "Claim 8: λ must be monotone, broke at C={}", c);
+            assert!(
+                next >= last - 1e-12,
+                "Claim 8: λ must be monotone, broke at C={}",
+                c
+            );
             last = next;
         }
     }
@@ -815,8 +945,12 @@ mod tests {
         let power_term_2 = (lam2 / p.beta) - 1.0;
         let ratio = power_term_2 / power_term_1; // = 2^α
         let expected = 2f64.powf(p.alpha_edge);
-        assert!((ratio - expected).abs() < 1e-9,
-            "Claim 9: power term exponent must be α (got ratio {}, expected {})", ratio, expected);
+        assert!(
+            (ratio - expected).abs() < 1e-9,
+            "Claim 9: power term exponent must be α (got ratio {}, expected {})",
+            ratio,
+            expected
+        );
     }
 
     #[test]
@@ -825,17 +959,24 @@ mod tests {
         // one. We have both: apply_edge_decay drives weights toward 0
         // (threshold-style via denormal flush) and probabilistic_prune does
         // Bernoulli selection.
-        use super::super::{NodeClassification, ClassificationStats};
+        use super::super::{ClassificationStats, NodeClassification};
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
         layers.insert(0u32, Layer::Edge);
         layers.insert(1u32, Layer::Edge);
-        let class = NodeClassification { layers, rare_fingerprints: HashMap::new(), stats: ClassificationStats::default() };
+        let class = NodeClassification {
+            layers,
+            rare_fingerprints: HashMap::new(),
+            stats: ClassificationStats::default(),
+        };
         manager.initialize_with_edges(class, &[(0, 1, 1.0)]);
         // Threshold path: apply_edge_decay reduces weight deterministically.
         manager.apply_edge_decay();
         let w_after = manager.get_edge_weight(0, 1).unwrap();
-        assert!(w_after < 1.0, "Claim 11 threshold path: weight must decrease");
+        assert!(
+            w_after < 1.0,
+            "Claim 11 threshold path: weight must decrease"
+        );
         // Probabilistic path: probabilistic_prune returns a decision list.
         let _ = manager.probabilistic_prune(|| 0.5);
     }
@@ -847,27 +988,38 @@ mod tests {
         let lam = p.lambda(5.0, Layer::Edge);
         let dt = p.dt_for_layer(Layer::Edge);
         let mut w = 1.0_f64;
-        for _ in 0..10 { w *= (-lam * dt).exp(); }
+        for _ in 0..10 {
+            w *= (-lam * dt).exp();
+        }
         let expected = (-lam * dt * 10.0).exp();
-        assert!((w - expected).abs() < 1e-12, "Claim 13: decay must be exp form");
+        assert!(
+            (w - expected).abs() < 1e-12,
+            "Claim 13: decay must be exp form"
+        );
     }
 
     #[test]
     fn test_claim15_rare_isolated_node_preserved() {
         // Claim 15: isolated node that would be garbage-collected stays when
         // it is classified Rare.
-        use super::super::{NodeClassification, ClassificationStats};
+        use super::super::{ClassificationStats, NodeClassification};
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
         layers.insert(0u32, Layer::Rare);
         layers.insert(1u32, Layer::Edge);
-        let class = NodeClassification { layers, rare_fingerprints: HashMap::new(), stats: ClassificationStats::default() };
+        let class = NodeClassification {
+            layers,
+            rare_fingerprints: HashMap::new(),
+            stats: ClassificationStats::default(),
+        };
         manager.initialize_with_edges(class, &[(0, 1, 1.0)]);
-        manager.degrees.insert(0, 1);  // hi-decay scenario
+        manager.degrees.insert(0, 1); // hi-decay scenario
         manager.degrees.insert(1, 100);
         let pruned = manager.probabilistic_prune(|| 0.0); // r=0 ⇒ always prune otherwise
-        assert!(pruned.is_empty(),
-            "Claim 15: edges touching Rare node must be protected from pruning");
+        assert!(
+            pruned.is_empty(),
+            "Claim 15: edges touching Rare node must be protected from pruning"
+        );
     }
 
     #[test]
@@ -879,51 +1031,80 @@ mod tests {
         manager.degrees.insert(0, 3);
         manager.degrees.insert(1, 4);
         // Add an unrelated 10,000 nodes; the result for (0,1) must not change.
-        for n in 100..10_100u32 { manager.degrees.insert(n, 50); }
+        for n in 100..10_100u32 {
+            manager.degrees.insert(n, 50);
+        }
         let p = manager.compute_edge_decay_probability(0, 1, Layer::Edge);
         // Compute the reference value using only the endpoint data.
         let lam = manager.master_params.lambda(7.0, Layer::Edge);
         let dt = manager.master_params.dt_for_layer(Layer::Edge);
         let expected = 1.0 - (-lam * dt).exp();
-        assert!((p - expected).abs() < 1e-12,
-            "Claim 16: evaluation must depend only on local endpoint stats");
+        assert!(
+            (p - expected).abs() < 1e-12,
+            "Claim 16: evaluation must depend only on local endpoint stats"
+        );
     }
 
     #[test]
     fn test_claim18_protected_attribute_prevents_pruning() {
         // Claim 18: a node carrying the protection attribute must NOT be
         // subject to exclusion / archiving.
-        use super::super::{NodeClassification, ClassificationStats};
+        use super::super::{ClassificationStats, NodeClassification};
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
-        layers.insert(0u32, Layer::Rare);  // Rare = protected (Layer::is_protected)
+        layers.insert(0u32, Layer::Rare); // Rare = protected (Layer::is_protected)
         layers.insert(1u32, Layer::Edge);
         assert!(layers[&0u32].is_protected());
-        let class = NodeClassification { layers, rare_fingerprints: HashMap::new(), stats: ClassificationStats::default() };
+        let class = NodeClassification {
+            layers,
+            rare_fingerprints: HashMap::new(),
+            stats: ClassificationStats::default(),
+        };
         manager.initialize_with_edges(class, &[(0, 1, 1.0)]);
-        assert!(manager.is_protected(0), "Claim 18: protected flag must be queryable");
-        manager.degrees.insert(0, 100); manager.degrees.insert(1, 100);
+        assert!(
+            manager.is_protected(0),
+            "Claim 18: protected flag must be queryable"
+        );
+        manager.degrees.insert(0, 100);
+        manager.degrees.insert(1, 100);
         let pruned = manager.probabilistic_prune(|| 0.0);
-        assert!(pruned.is_empty(), "Claim 18: protected nodes escape pruning");
+        assert!(
+            pruned.is_empty(),
+            "Claim 18: protected nodes escape pruning"
+        );
     }
 
     #[test]
     fn test_claim19_processable_nodes_recorded_and_queryable() {
         // Claim 19: system must expose indicators that record processing
         // results. We expose `processable_nodes`, `processable_edges`, `stats`.
-        use super::super::{NodeClassification, ClassificationStats};
+        use super::super::{ClassificationStats, NodeClassification};
         let mut manager = DecayManager::master_spec();
         let mut layers = HashMap::new();
-        for n in 0..4u32 { layers.insert(n, Layer::Edge); }
+        for n in 0..4u32 {
+            layers.insert(n, Layer::Edge);
+        }
         layers.insert(4u32, Layer::Garbage);
-        let stats = ClassificationStats { core_count: 0, edge_count: 4, rare_count: 0, garbage_count: 1 };
-        let class = NodeClassification { layers, rare_fingerprints: HashMap::new(), stats };
+        let stats = ClassificationStats {
+            core_count: 0,
+            edge_count: 4,
+            rare_count: 0,
+            garbage_count: 1,
+        };
+        let class = NodeClassification {
+            layers,
+            rare_fingerprints: HashMap::new(),
+            stats,
+        };
         manager.initialize_with_edges(class, &[(0, 1, 1.0), (1, 2, 1.0)]);
         let nodes = manager.processable_nodes();
         let edges = manager.processable_edges();
         assert_eq!(nodes.len(), 4, "Claim 19: processable nodes recorded");
         assert!(!edges.is_empty(), "Claim 19: processable edges recorded");
-        assert!(manager.stats().is_some(), "Claim 19: stats output available");
+        assert!(
+            manager.stats().is_some(),
+            "Claim 19: stats output available"
+        );
     }
 
     #[test]
@@ -938,6 +1119,9 @@ mod tests {
             w *= (-lambda * dt).exp();
         }
         let expected = (-lambda * dt * n as f64).exp();
-        assert!((w - expected).abs() < 1e-10, "discrete exp iteration must equal closed-form exp(-Nλdt)");
+        assert!(
+            (w - expected).abs() < 1e-10,
+            "discrete exp iteration must equal closed-form exp(-Nλdt)"
+        );
     }
 }

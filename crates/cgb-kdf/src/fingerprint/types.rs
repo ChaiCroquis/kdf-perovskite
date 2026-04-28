@@ -1,7 +1,7 @@
 //! Core types for fingerprinting
 
-use std::hash::{Hash, Hasher};
 use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
 /// Fingerprint vector type
 pub type Fingerprint = Vec<f64>;

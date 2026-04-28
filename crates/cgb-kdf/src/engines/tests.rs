@@ -1,7 +1,7 @@
 //! Tests for KDF engines
 
-use super::*;
 use super::graph::SimpleGraph;
+use super::*;
 use crate::framework::Layer;
 use std::collections::HashMap;
 
@@ -540,19 +540,31 @@ fn test_sleep_engine_process_all_task_types() {
     assert_eq!(results.len(), 4);
 
     // Check each task type processed correctly
-    let crystal = results.iter().find(|r| r.task_type == TaskType::Crystallization).unwrap();
+    let crystal = results
+        .iter()
+        .find(|r| r.task_type == TaskType::Crystallization)
+        .unwrap();
     assert!(crystal.success);
     assert!(crystal.message.contains("Crystallization"));
 
-    let relearn = results.iter().find(|r| r.task_type == TaskType::KdfRelearn).unwrap();
+    let relearn = results
+        .iter()
+        .find(|r| r.task_type == TaskType::KdfRelearn)
+        .unwrap();
     assert!(relearn.success);
     assert!(relearn.message.contains("Relearn"));
 
-    let consolidation = results.iter().find(|r| r.task_type == TaskType::Consolidation).unwrap();
+    let consolidation = results
+        .iter()
+        .find(|r| r.task_type == TaskType::Consolidation)
+        .unwrap();
     assert!(consolidation.success);
     assert!(consolidation.message.contains("Consolidation"));
 
-    let unknown = results.iter().find(|r| r.task_type == TaskType::Unknown).unwrap();
+    let unknown = results
+        .iter()
+        .find(|r| r.task_type == TaskType::Unknown)
+        .unwrap();
     assert!(!unknown.success);
     assert!(unknown.message.contains("Unknown"));
 }
@@ -651,9 +663,7 @@ fn test_nrem_optimization_with_partition() {
 fn test_nrem_optimization_updates_stats() {
     let mut engine = KDFSleepEngine::default();
 
-    let edges = vec![
-        ("a".to_string(), "b".to_string(), 1.0),
-    ];
+    let edges = vec![("a".to_string(), "b".to_string(), 1.0)];
 
     let _ = engine.run_nrem_optimization(&edges, None);
     let _ = engine.run_nrem_optimization(&edges, None);

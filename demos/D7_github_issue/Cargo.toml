@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 license-file = "../../LICENSE"
 description = "KDF Showcase D7 — GitHub issue archive with analogy-based reopen candidate detection"
+default-run = "demo-d7-github-issue"
 
 [[bin]]
 name = "demo-d7-github-issue"
@@ -18,3 +19,6 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 ureq = "2.10"
 urlencoding = "2.1"
+
+[lints]
+workspace = true

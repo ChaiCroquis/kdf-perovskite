@@ -30,12 +30,36 @@ fn lyapunov_100k_steps_default_params() {
         sum_alpha_e += params.alpha_edge;
 
         // Sanity at every step
-        assert!(params.alpha_edge.is_finite(), "α_E diverged to NaN/Inf at step {}", t);
-        assert!(params.alpha_core.is_finite(), "α_C diverged to NaN/Inf at step {}", t);
-        assert!(params.alpha_edge >= mc.alpha_edge_bounds.0, "α_E below bound at step {}", t);
-        assert!(params.alpha_edge <= mc.alpha_edge_bounds.1, "α_E above bound at step {}", t);
-        assert!(params.alpha_core >= mc.alpha_core_bounds.0, "α_C below bound at step {}", t);
-        assert!(params.alpha_core <= mc.alpha_core_bounds.1, "α_C above bound at step {}", t);
+        assert!(
+            params.alpha_edge.is_finite(),
+            "α_E diverged to NaN/Inf at step {}",
+            t
+        );
+        assert!(
+            params.alpha_core.is_finite(),
+            "α_C diverged to NaN/Inf at step {}",
+            t
+        );
+        assert!(
+            params.alpha_edge >= mc.alpha_edge_bounds.0,
+            "α_E below bound at step {}",
+            t
+        );
+        assert!(
+            params.alpha_edge <= mc.alpha_edge_bounds.1,
+            "α_E above bound at step {}",
+            t
+        );
+        assert!(
+            params.alpha_core >= mc.alpha_core_bounds.0,
+            "α_C below bound at step {}",
+            t
+        );
+        assert!(
+            params.alpha_core <= mc.alpha_core_bounds.1,
+            "α_C above bound at step {}",
+            t
+        );
     }
 
     let range_e = max_alpha_e - min_alpha_e;
@@ -55,7 +79,10 @@ fn lyapunov_100k_steps_default_params() {
     // Mean α_E should not drift to one extreme (oscillation should center somewhere)
     let center_e = (mc.alpha_edge_bounds.0 + mc.alpha_edge_bounds.1) / 2.0;
     let drift_e = (mean_alpha_e - center_e).abs();
-    assert!(drift_e < allowed_width_e, "α_E mean drifted too far from center");
+    assert!(
+        drift_e < allowed_width_e,
+        "α_E mean drifted too far from center"
+    );
 }
 
 #[test]
@@ -67,7 +94,9 @@ fn lyapunov_100k_steps_noisy_signal() {
     // Deterministic pseudo-noise via LCG
     let mut lcg: u64 = 0xDEADBEEF;
     let mut noise = || -> f64 {
-        lcg = lcg.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        lcg = lcg
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         ((lcg >> 33) as f64 / (u32::MAX as f64 / 2.0)) - 1.0
     };
 
@@ -76,14 +105,19 @@ fn lyapunov_100k_steps_noisy_signal() {
         let avg_k_edge = 8.0 + 4.0 * noise();
         let avg_k_core = 4.0 + 2.0 * noise();
         mc.step(&mut params, avg_k_edge, avg_k_core);
-        assert!(params.alpha_edge.is_finite() && params.alpha_core.is_finite(),
-            "NaN/Inf at step {}", t);
+        assert!(
+            params.alpha_edge.is_finite() && params.alpha_core.is_finite(),
+            "NaN/Inf at step {}",
+            t
+        );
         assert!(params.alpha_edge >= mc.alpha_edge_bounds.0);
         assert!(params.alpha_edge <= mc.alpha_edge_bounds.1);
     }
 
-    println!("100k-step with noisy input: α_E={:.3}, α_C={:.3} (bounded throughout)",
-        params.alpha_edge, params.alpha_core);
+    println!(
+        "100k-step with noisy input: α_E={:.3}, α_C={:.3} (bounded throughout)",
+        params.alpha_edge, params.alpha_core
+    );
 }
 
 #[test]
@@ -98,7 +132,10 @@ fn lyapunov_adversarial_extreme_spikes() {
         assert!(params.alpha_edge >= mc.alpha_edge_bounds.0);
         assert!(params.alpha_edge <= mc.alpha_edge_bounds.1);
     }
-    println!("10k adversarial spikes: α_E={:.3}, α_C={:.3} (bounded)", params.alpha_edge, params.alpha_core);
+    println!(
+        "10k adversarial spikes: α_E={:.3}, α_C={:.3} (bounded)",
+        params.alpha_edge, params.alpha_core
+    );
 }
 
 #[test]
@@ -112,12 +149,22 @@ fn lyapunov_disabled_no_op_even_with_extreme_input() {
     for _ in 0..10_000 {
         mc.step(&mut params, 1000.0, -1000.0);
     }
-    assert_eq!(params.alpha_edge.to_bits(), orig_e.to_bits(), "α_E must be bit-identical when disabled");
-    assert_eq!(params.alpha_core.to_bits(), orig_c.to_bits(), "α_C must be bit-identical when disabled");
+    assert_eq!(
+        params.alpha_edge.to_bits(),
+        orig_e.to_bits(),
+        "α_E must be bit-identical when disabled"
+    );
+    assert_eq!(
+        params.alpha_core.to_bits(),
+        orig_c.to_bits(),
+        "α_C must be bit-identical when disabled"
+    );
 }
 
 #[test]
 fn lyapunov_condition_self_check_passes() {
-    assert!(MetaController::default().check_lyapunov_stability(),
-        "Default η, μ must satisfy η² > μ²");
+    assert!(
+        MetaController::default().check_lyapunov_stability(),
+        "Default η, μ must satisfy η² > μ²"
+    );
 }

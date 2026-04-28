@@ -5,7 +5,7 @@
 //!
 //! Run: cargo run --release --example kdf_lsh_integration_test
 
-use kdf::{Kdf, Layer, cosine_similarity};
+use kdf::{cosine_similarity, Kdf, Layer};
 use std::collections::HashMap;
 use std::time::Instant;
 
@@ -14,6 +14,7 @@ use std::time::Instant;
 // ============================================================================
 
 /// Simple LSH using random hyperplanes for cosine similarity
+#[allow(dead_code)]
 struct CosineLsh {
     hyperplanes: Vec<Vec<f64>>,
     n_bits: usize,
@@ -27,14 +28,18 @@ impl CosineLsh {
                 (0..dim)
                     .map(|j| {
                         // Simple pseudo-random based on seed, i, j
-                        let x = ((seed.wrapping_mul(i as u64 + 1).wrapping_add(j as u64 * 31)) % 1000) as f64;
-                        (x / 500.0) - 1.0  // Range [-1, 1]
+                        let x = ((seed.wrapping_mul(i as u64 + 1).wrapping_add(j as u64 * 31))
+                            % 1000) as f64;
+                        (x / 500.0) - 1.0 // Range [-1, 1]
                     })
                     .collect()
             })
             .collect();
 
-        Self { hyperplanes, n_bits }
+        Self {
+            hyperplanes,
+            n_bits,
+        }
     }
 
     fn hash(&self, point: &[f64]) -> u64 {
@@ -50,6 +55,7 @@ impl CosineLsh {
 }
 
 /// LSH-accelerated KDF result
+#[allow(dead_code)]
 struct LshKdfResult {
     selected: Vec<usize>,
     layers: Vec<Layer>,
@@ -62,7 +68,7 @@ fn process_with_lsh(
     data: &[Vec<f64>],
     threshold: f64,
     n_bits: usize,
-    n_tables: usize,  // Multiple hash tables for better recall
+    n_tables: usize, // Multiple hash tables for better recall
 ) -> LshKdfResult {
     let n = data.len();
     if n == 0 {
@@ -129,17 +135,20 @@ fn process_with_lsh(
         0.0
     };
 
-    let layers: Vec<Layer> = degrees.iter().map(|&deg| {
-        if deg == 0 {
-            Layer::Rare
-        } else if (deg as f64) > avg_degree * 1.5 {
-            Layer::Core
-        } else if (deg as f64) < avg_degree * 0.3 {
-            Layer::Rare
-        } else {
-            Layer::Edge
-        }
-    }).collect();
+    let layers: Vec<Layer> = degrees
+        .iter()
+        .map(|&deg| {
+            if deg == 0 {
+                Layer::Rare
+            } else if (deg as f64) > avg_degree * 1.5 {
+                Layer::Core
+            } else if (deg as f64) < avg_degree * 0.3 {
+                Layer::Rare
+            } else {
+                Layer::Edge
+            }
+        })
+        .collect();
 
     // Simple selection: Rare + Edge + Core representatives
     let mut selected = Vec::new();
@@ -242,7 +251,8 @@ fn generate_diverse(n: usize, dim: usize) -> Vec<Vec<f64>> {
 // ============================================================================
 
 fn evaluate_rare_recall(true_layers: &[Layer], predicted_layers: &[Layer]) -> f64 {
-    let true_rare: std::collections::HashSet<usize> = true_layers.iter()
+    let true_rare: std::collections::HashSet<usize> = true_layers
+        .iter()
         .enumerate()
         .filter(|(_, &l)| l == Layer::Rare)
         .map(|(i, _)| i)
@@ -252,7 +262,8 @@ fn evaluate_rare_recall(true_layers: &[Layer], predicted_layers: &[Layer]) -> f6
         return 1.0;
     }
 
-    let predicted_rare: std::collections::HashSet<usize> = predicted_layers.iter()
+    let predicted_rare: std::collections::HashSet<usize> = predicted_layers
+        .iter()
         .enumerate()
         .filter(|(_, &l)| l == Layer::Rare)
         .map(|(i, _)| i)
@@ -285,11 +296,11 @@ fn main() {
 
             // Standard KDF
             let start = Instant::now();
-            let (std_selected, std_layers, std_comp) = process_standard(&data, threshold);
+            let (_std_selected, std_layers, std_comp) = process_standard(&data, threshold);
             let std_time = start.elapsed().as_secs_f64() * 1000.0;
 
             // LSH-accelerated (tuned parameters)
-            let n_bits = 12;  // More bits = more buckets = fewer false positives
+            let n_bits = 12; // More bits = more buckets = fewer false positives
             let n_tables = 4; // More tables = better recall
             let start = Instant::now();
             let lsh_result = process_with_lsh(&data, threshold, n_bits, n_tables);
@@ -299,12 +310,18 @@ fn main() {
             let comp_reduction = 1.0 - (lsh_result.comparisons as f64 / std_comp as f64);
             let rare_recall = evaluate_rare_recall(&std_layers, &lsh_result.layers);
 
-            println!("| {} | {} | {:.1}ms | {:.1}ms | {:.2}x | {} | {} | {:.1}% | {:.1}% |",
-                     n, data_type,
-                     std_time, lsh_time, speedup,
-                     std_comp, lsh_result.comparisons,
-                     comp_reduction * 100.0,
-                     rare_recall * 100.0);
+            println!(
+                "| {} | {} | {:.1}ms | {:.1}ms | {:.2}x | {} | {} | {:.1}% | {:.1}% |",
+                n,
+                data_type,
+                std_time,
+                lsh_time,
+                speedup,
+                std_comp,
+                lsh_result.comparisons,
+                comp_reduction * 100.0,
+                rare_recall * 100.0
+            );
         }
     }
 
@@ -312,7 +329,7 @@ fn main() {
 
     let n = 2000;
     let data = generate_redundant(n, dim);
-    let (_, std_layers, std_comp) = process_standard(&data, threshold);
+    let (_, std_layers, _std_comp) = process_standard(&data, threshold);
     let full_comp = n * (n - 1) / 2;
 
     println!("| n_bits | n_tables | Comparisons | Reduction | Rare Recall | Buckets |");
@@ -324,12 +341,15 @@ fn main() {
             let reduction = 1.0 - (result.comparisons as f64 / full_comp as f64);
             let recall = evaluate_rare_recall(&std_layers, &result.layers);
 
-            println!("| {} | {} | {} | {:.1}% | {:.1}% | {} |",
-                     n_bits, n_tables,
-                     result.comparisons,
-                     reduction * 100.0,
-                     recall * 100.0,
-                     result.buckets_used);
+            println!(
+                "| {} | {} | {} | {:.1}% | {:.1}% | {} |",
+                n_bits,
+                n_tables,
+                result.comparisons,
+                reduction * 100.0,
+                recall * 100.0,
+                result.buckets_used
+            );
         }
     }
 
@@ -354,8 +374,10 @@ fn main() {
             "~O(n²)"
         };
 
-        println!("| {} | {} | {} | {} (comp/n={:.1}) |",
-                 n, full_comp, result.comparisons, complexity, ratio);
+        println!(
+            "| {} | {} | {} | {} (comp/n={:.1}) |",
+            n, full_comp, result.comparisons, complexity, ratio
+        );
     }
 
     println!("\n## 4. Conclusion\n");

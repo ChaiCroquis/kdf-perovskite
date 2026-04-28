@@ -82,33 +82,221 @@ impl TextProcessor {
     /// Default Japanese stopwords
     fn default_stopwords() -> HashSet<String> {
         [
-            "の", "に", "は", "を", "た", "が", "で", "て", "と", "し",
-            "れ", "さ", "ある", "いる", "も", "する", "から", "な",
-            "こと", "として", "い", "や", "れる", "など", "なっ", "ない",
-            "この", "ため", "その", "あっ", "よう", "また", "もの", "という",
-            "あり", "まで", "られ", "なる", "へ", "か", "だ", "これ", "によって",
-            "により", "おり", "より", "による", "ず", "なり", "られる", "において",
-            "ば", "なかっ", "なく", "しかし", "について", "せ", "だっ", "その後",
-            "できる", "それ", "う", "ので", "なお", "のみ", "でき", "き", "つ",
-            "における", "および", "いう", "さらに", "でも", "ら", "たり", "その他",
-            "に関する", "たち", "ます", "ん", "なら", "に対して", "特に", "せる",
-            "及び", "これら", "とき", "では", "にて", "ほか", "ながら", "うち",
-            "そして", "とも", "のち", "ただし", "かつて", "それぞれ",
-            "または", "お", "ほど", "ものの", "に対する", "ほとんど", "と共に",
-            "といった", "です", "ください", "あるいは", "そう",
-            "ごとく", "なぜなら", "まま", "なし", "しかも", "それで", "いずれ",
+            "の",
+            "に",
+            "は",
+            "を",
+            "た",
+            "が",
+            "で",
+            "て",
+            "と",
+            "し",
+            "れ",
+            "さ",
+            "ある",
+            "いる",
+            "も",
+            "する",
+            "から",
+            "な",
+            "こと",
+            "として",
+            "い",
+            "や",
+            "れる",
+            "など",
+            "なっ",
+            "ない",
+            "この",
+            "ため",
+            "その",
+            "あっ",
+            "よう",
+            "また",
+            "もの",
+            "という",
+            "あり",
+            "まで",
+            "られ",
+            "なる",
+            "へ",
+            "か",
+            "だ",
+            "これ",
+            "によって",
+            "により",
+            "おり",
+            "より",
+            "による",
+            "ず",
+            "なり",
+            "られる",
+            "において",
+            "ば",
+            "なかっ",
+            "なく",
+            "しかし",
+            "について",
+            "せ",
+            "だっ",
+            "その後",
+            "できる",
+            "それ",
+            "う",
+            "ので",
+            "なお",
+            "のみ",
+            "でき",
+            "き",
+            "つ",
+            "における",
+            "および",
+            "いう",
+            "さらに",
+            "でも",
+            "ら",
+            "たり",
+            "その他",
+            "に関する",
+            "たち",
+            "ます",
+            "ん",
+            "なら",
+            "に対して",
+            "特に",
+            "せる",
+            "及び",
+            "これら",
+            "とき",
+            "では",
+            "にて",
+            "ほか",
+            "ながら",
+            "うち",
+            "そして",
+            "とも",
+            "のち",
+            "ただし",
+            "かつて",
+            "それぞれ",
+            "または",
+            "お",
+            "ほど",
+            "ものの",
+            "に対する",
+            "ほとんど",
+            "と共に",
+            "といった",
+            "です",
+            "ください",
+            "あるいは",
+            "そう",
+            "ごとく",
+            "なぜなら",
+            "まま",
+            "なし",
+            "しかも",
+            "それで",
+            "いずれ",
             // English common stopwords
-            "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
-            "have", "has", "had", "do", "does", "did", "will", "would", "could",
-            "should", "may", "might", "must", "can", "this", "that", "these",
-            "those", "i", "you", "he", "she", "it", "we", "they", "what", "which",
-            "who", "whom", "when", "where", "why", "how", "all", "each", "every",
-            "both", "few", "more", "most", "other", "some", "such", "no", "nor",
-            "not", "only", "own", "same", "so", "than", "too", "very", "just",
-            "and", "but", "if", "or", "because", "as", "until", "while", "of",
-            "at", "by", "for", "with", "about", "against", "between", "into",
-            "through", "during", "before", "after", "above", "below", "to",
-            "from", "up", "down", "in", "out", "on", "off", "over", "under",
+            "the",
+            "a",
+            "an",
+            "is",
+            "are",
+            "was",
+            "were",
+            "be",
+            "been",
+            "being",
+            "have",
+            "has",
+            "had",
+            "do",
+            "does",
+            "did",
+            "will",
+            "would",
+            "could",
+            "should",
+            "may",
+            "might",
+            "must",
+            "can",
+            "this",
+            "that",
+            "these",
+            "those",
+            "i",
+            "you",
+            "he",
+            "she",
+            "it",
+            "we",
+            "they",
+            "what",
+            "which",
+            "who",
+            "whom",
+            "when",
+            "where",
+            "why",
+            "how",
+            "all",
+            "each",
+            "every",
+            "both",
+            "few",
+            "more",
+            "most",
+            "other",
+            "some",
+            "such",
+            "no",
+            "nor",
+            "not",
+            "only",
+            "own",
+            "same",
+            "so",
+            "than",
+            "too",
+            "very",
+            "just",
+            "and",
+            "but",
+            "if",
+            "or",
+            "because",
+            "as",
+            "until",
+            "while",
+            "of",
+            "at",
+            "by",
+            "for",
+            "with",
+            "about",
+            "against",
+            "between",
+            "into",
+            "through",
+            "during",
+            "before",
+            "after",
+            "above",
+            "below",
+            "to",
+            "from",
+            "up",
+            "down",
+            "in",
+            "out",
+            "on",
+            "off",
+            "over",
+            "under",
         ]
         .iter()
         .map(|s| s.to_string())
@@ -154,7 +342,8 @@ impl TextProcessor {
 
         for c in text.chars() {
             // Kanji, Katakana, and English alphabets are treated as nouns
-            let char_type = if Self::is_kanji(c) || Self::is_katakana(c) || c.is_ascii_alphabetic() {
+            let char_type = if Self::is_kanji(c) || Self::is_katakana(c) || c.is_ascii_alphabetic()
+            {
                 Some("名詞") // Noun
             } else if Self::is_hiragana(c) {
                 Some("助詞") // Particle for Hiragana
@@ -171,9 +360,7 @@ impl TextProcessor {
                 (Some(_), Some(nt)) => {
                     if !current_token.is_empty() {
                         let pos = current_type.unwrap_or("Unknown");
-                        if filter_pos.is_none()
-                            || filter_pos.unwrap().contains(&pos)
-                        {
+                        if filter_pos.is_none() || filter_pos.unwrap().contains(&pos) {
                             tokens.push(Token::new(&current_token, pos));
                         }
                     }
@@ -183,9 +370,7 @@ impl TextProcessor {
                 (Some(_), None) => {
                     if !current_token.is_empty() {
                         let pos = current_type.unwrap_or("Unknown");
-                        if filter_pos.is_none()
-                            || filter_pos.unwrap().contains(&pos)
-                        {
+                        if filter_pos.is_none() || filter_pos.unwrap().contains(&pos) {
                             tokens.push(Token::new(&current_token, pos));
                         }
                     }
@@ -220,10 +405,7 @@ impl TextProcessor {
     /// * `remove_stopwords` - Whether to remove stopwords
     pub fn extract_nouns(&self, text: &str, remove_stopwords: bool) -> Vec<String> {
         let tokens = self.tokenize(text, Some(&["名詞"]));
-        let mut nouns: Vec<String> = tokens
-            .into_iter()
-            .map(|t| t.base_form)
-            .collect();
+        let mut nouns: Vec<String> = tokens.into_iter().map(|t| t.base_form).collect();
 
         if remove_stopwords {
             nouns.retain(|n| !self.stopwords.contains(n) && n.chars().count() > 1);
@@ -301,12 +483,35 @@ impl DomainClassifier {
 
         // Technology domain
         let tech_keywords: HashSet<String> = [
-            "プログラミング", "コード", "アルゴリズム", "データベース",
-            "システム", "API", "フレームワーク", "ライブラリ", "開発",
-            "テスト", "デバッグ", "リファクタリング", "デプロイ", "サーバー",
-            "実装", "クラス", "関数", "メソッド", "モジュール",
-            "programming", "code", "algorithm", "database", "system",
-            "framework", "library", "development", "testing", "debug",
+            "プログラミング",
+            "コード",
+            "アルゴリズム",
+            "データベース",
+            "システム",
+            "API",
+            "フレームワーク",
+            "ライブラリ",
+            "開発",
+            "テスト",
+            "デバッグ",
+            "リファクタリング",
+            "デプロイ",
+            "サーバー",
+            "実装",
+            "クラス",
+            "関数",
+            "メソッド",
+            "モジュール",
+            "programming",
+            "code",
+            "algorithm",
+            "database",
+            "system",
+            "framework",
+            "library",
+            "development",
+            "testing",
+            "debug",
         ]
         .iter()
         .map(|s| s.to_string())
@@ -315,10 +520,30 @@ impl DomainClassifier {
 
         // Medical domain
         let medical_keywords: HashSet<String> = [
-            "患者", "診断", "治療", "病院", "医師", "看護師", "症状",
-            "薬", "手術", "検査", "健康", "病気", "診療", "カルテ",
-            "patient", "diagnosis", "treatment", "hospital", "doctor",
-            "nurse", "symptom", "medicine", "surgery", "health",
+            "患者",
+            "診断",
+            "治療",
+            "病院",
+            "医師",
+            "看護師",
+            "症状",
+            "薬",
+            "手術",
+            "検査",
+            "健康",
+            "病気",
+            "診療",
+            "カルテ",
+            "patient",
+            "diagnosis",
+            "treatment",
+            "hospital",
+            "doctor",
+            "nurse",
+            "symptom",
+            "medicine",
+            "surgery",
+            "health",
         ]
         .iter()
         .map(|s| s.to_string())
@@ -327,10 +552,29 @@ impl DomainClassifier {
 
         // Business domain
         let business_keywords: HashSet<String> = [
-            "会議", "プロジェクト", "売上", "予算", "契約", "営業",
-            "顧客", "マーケティング", "戦略", "経営", "報告", "提案",
-            "meeting", "project", "sales", "budget", "contract", "business",
-            "customer", "marketing", "strategy", "management", "report",
+            "会議",
+            "プロジェクト",
+            "売上",
+            "予算",
+            "契約",
+            "営業",
+            "顧客",
+            "マーケティング",
+            "戦略",
+            "経営",
+            "報告",
+            "提案",
+            "meeting",
+            "project",
+            "sales",
+            "budget",
+            "contract",
+            "business",
+            "customer",
+            "marketing",
+            "strategy",
+            "management",
+            "report",
         ]
         .iter()
         .map(|s| s.to_string())
@@ -339,10 +583,30 @@ impl DomainClassifier {
 
         // Academic domain
         let academic_keywords: HashSet<String> = [
-            "研究", "論文", "実験", "仮説", "理論", "分析", "考察",
-            "文献", "引用", "学会", "発表", "査読", "データ", "統計",
-            "research", "paper", "experiment", "hypothesis", "theory",
-            "analysis", "literature", "citation", "conference", "statistics",
+            "研究",
+            "論文",
+            "実験",
+            "仮説",
+            "理論",
+            "分析",
+            "考察",
+            "文献",
+            "引用",
+            "学会",
+            "発表",
+            "査読",
+            "データ",
+            "統計",
+            "research",
+            "paper",
+            "experiment",
+            "hypothesis",
+            "theory",
+            "analysis",
+            "literature",
+            "citation",
+            "conference",
+            "statistics",
         ]
         .iter()
         .map(|s| s.to_string())
@@ -351,10 +615,28 @@ impl DomainClassifier {
 
         // Administrative domain
         let admin_keywords: HashSet<String> = [
-            "申請", "窓口", "手続き", "届出", "許可", "認可", "法律",
-            "条例", "規則", "公文書", "行政", "自治体", "市役所",
-            "application", "procedure", "permit", "approval", "law",
-            "regulation", "document", "administration", "government",
+            "申請",
+            "窓口",
+            "手続き",
+            "届出",
+            "許可",
+            "認可",
+            "法律",
+            "条例",
+            "規則",
+            "公文書",
+            "行政",
+            "自治体",
+            "市役所",
+            "application",
+            "procedure",
+            "permit",
+            "approval",
+            "law",
+            "regulation",
+            "document",
+            "administration",
+            "government",
         ]
         .iter()
         .map(|s| s.to_string())
@@ -387,10 +669,7 @@ impl DomainClassifier {
         }
 
         // Find best domain
-        if let Some((&best_domain, &score)) = domain_scores
-            .iter()
-            .max_by_key(|(_, &score)| score)
-        {
+        if let Some((&best_domain, &score)) = domain_scores.iter().max_by_key(|(_, &score)| score) {
             if score > 0 {
                 return best_domain.to_string();
             }
@@ -447,7 +726,8 @@ pub fn extract_keywords(text: &str, max_keywords: usize) -> Vec<String> {
     let mut items: Vec<(String, usize)> = freq.drain().collect();
     items.sort_by(|a, b| b.1.cmp(&a.1));
 
-    items.into_iter()
+    items
+        .into_iter()
         .take(max_keywords)
         .map(|(word, _)| word)
         .collect()
@@ -515,9 +795,7 @@ mod tests {
     #[test]
     fn test_word_frequency() {
         let processor = TextProcessor::new();
-        let texts = ["プログラミング開発",
-            "プログラミング設計",
-            "システム開発"];
+        let texts = ["プログラミング開発", "プログラミング設計", "システム開発"];
 
         let freq = processor.get_word_frequency(&texts);
 

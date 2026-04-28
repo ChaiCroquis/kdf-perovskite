@@ -22,7 +22,9 @@ pub fn high_degree_rare(n: usize, rare_degree: usize, seed: u64) -> Dataset {
 
     // Dense hubs
     for u in 0..n_hubs as u32 {
-        for v in (u + 1)..n_hubs as u32 { edges.push((u, v, 1.0)); }
+        for v in (u + 1)..n_hubs as u32 {
+            edges.push((u, v, 1.0));
+        }
     }
 
     // Rare nodes with rare_degree connections — defeats deg=1 heuristic
@@ -31,7 +33,9 @@ pub fn high_degree_rare(n: usize, rare_degree: usize, seed: u64) -> Dataset {
         let mut used = HashSet::new();
         for _ in 0..rare_degree {
             let h = rng.gen_range(0..n_hubs) as u32;
-            if used.insert(h) { edges.push((id, h, 1.0)); }
+            if used.insert(h) {
+                edges.push((id, h, 1.0));
+            }
         }
         rare.insert(id);
     }
@@ -47,7 +51,9 @@ pub fn high_degree_rare(n: usize, rare_degree: usize, seed: u64) -> Dataset {
 
     Dataset {
         name: format!("Adv_A_HighDegRare_deg{}", rare_degree),
-        n_nodes: n, edges, rare_ground_truth: rare,
+        n_nodes: n,
+        edges,
+        rare_ground_truth: rare,
         description: format!(
             "Adversarial (A): rare nodes have degree {} (defeats deg-1 heuristic)",
             rare_degree
@@ -67,7 +73,9 @@ pub fn structurally_isolated(n: usize, rare_degree: usize, seed: u64) -> Dataset
 
     // Main component (hubs + tail)
     for u in 0..n_hubs as u32 {
-        for v in (u + 1)..n_hubs as u32 { edges.push((u, v, 1.0)); }
+        for v in (u + 1)..n_hubs as u32 {
+            edges.push((u, v, 1.0));
+        }
     }
     for i in (n_hubs + n_rare)..n {
         let id = i as u32;
@@ -93,8 +101,13 @@ pub fn structurally_isolated(n: usize, rare_degree: usize, seed: u64) -> Dataset
 
     Dataset {
         name: format!("Adv_B_Isolated_deg{}", rare_degree),
-        n_nodes: n, edges, rare_ground_truth: rare,
-        description: format!("Adversarial (B): rare forms an isolated component of degree {}", rare_degree),
+        n_nodes: n,
+        edges,
+        rare_ground_truth: rare,
+        description: format!(
+            "Adversarial (B): rare forms an isolated component of degree {}",
+            rare_degree
+        ),
     }
 }
 
@@ -107,20 +120,31 @@ pub fn zero_redundancy(n: usize, seed: u64) -> Dataset {
     while edges.len() < 2 * n {
         let u = rng.gen_range(0..n) as u32;
         let v = rng.gen_range(0..n) as u32;
-        if u == v { continue; }
+        if u == v {
+            continue;
+        }
         let key = if u < v { (u, v) } else { (v, u) };
-        if seen.insert(key) { edges.push((u, v, 1.0)); }
+        if seen.insert(key) {
+            edges.push((u, v, 1.0));
+        }
     }
     // Rare = nodes with degree 1 (naturally occurring in sparse random graph)
     let mut deg = vec![0u32; n];
-    for &(u, v, _) in &edges { deg[u as usize] += 1; deg[v as usize] += 1; }
-    let rare: HashSet<u32> = deg.iter().enumerate()
+    for &(u, v, _) in &edges {
+        deg[u as usize] += 1;
+        deg[v as usize] += 1;
+    }
+    let rare: HashSet<u32> = deg
+        .iter()
+        .enumerate()
         .filter(|(_, &d)| d == 1)
         .map(|(i, _)| i as u32)
         .collect();
     Dataset {
         name: "Adv_C_ZeroRedundancy".to_string(),
-        n_nodes: n, edges, rare_ground_truth: rare,
+        n_nodes: n,
+        edges,
+        rare_ground_truth: rare,
         description: "Adversarial (C): sparse random graph, no duplicate clusters".to_string(),
     }
 }
@@ -133,10 +157,15 @@ pub fn noisy_edges(n: usize, noise_rate: f64, seed: u64) -> Dataset {
     for _ in 0..n_noise {
         let u = rng.gen_range(0..n) as u32;
         let v = rng.gen_range(0..n) as u32;
-        if u != v { base.edges.push((u, v, 0.5)); }
+        if u != v {
+            base.edges.push((u, v, 0.5));
+        }
     }
     base.name = format!("Adv_D_Noise{}pct", (noise_rate * 100.0) as usize);
-    base.description = format!("Adversarial (D): high-deg-rare graph + {}% random noise edges", noise_rate * 100.0);
+    base.description = format!(
+        "Adversarial (D): high-deg-rare graph + {}% random noise edges",
+        noise_rate * 100.0
+    );
     base
 }
 
@@ -151,7 +180,9 @@ pub fn temporal_snapshots(n: usize, n_steps: usize, seed: u64) -> Vec<Dataset> {
 
     // Initialize with hubs
     for u in 0..n_hubs as u32 {
-        for v in (u + 1)..n_hubs as u32 { edges.push((u, v, 1.0)); }
+        for v in (u + 1)..n_hubs as u32 {
+            edges.push((u, v, 1.0));
+        }
     }
 
     for step in 0..n_steps {
@@ -168,13 +199,20 @@ pub fn temporal_snapshots(n: usize, n_steps: usize, seed: u64) -> Vec<Dataset> {
         }
         // Also random edge decay (30% of oldest edges removed per step)
         let keep = (edges.len() as f64 * 0.85) as usize;
-        if edges.len() > keep { edges.drain(..edges.len() - keep); }
+        if edges.len() > keep {
+            edges.drain(..edges.len() - keep);
+        }
 
         let rare: HashSet<u32> = ((n_hubs as u32)..((n_hubs + n_rare) as u32)).collect();
         snapshots.push(Dataset {
             name: format!("Adv_E_Temporal_t{}", step),
-            n_nodes: end, edges: edges.clone(), rare_ground_truth: rare,
-            description: format!("Adversarial (E): temporal snapshot at t={}/{}", step, n_steps),
+            n_nodes: end,
+            edges: edges.clone(),
+            rare_ground_truth: rare,
+            description: format!(
+                "Adversarial (E): temporal snapshot at t={}/{}",
+                step, n_steps
+            ),
         });
     }
     snapshots

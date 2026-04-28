@@ -5,7 +5,7 @@
 //! which is expected to scale quadratically.
 
 use adversarial_bench as adv;
-use real_data_bench::selectors::{KdfSel, KMedoidsSel, RandomSel, Selector};
+use real_data_bench::selectors::{KMedoidsSel, KdfSel, RandomSel, Selector};
 use std::time::Instant;
 
 fn main() {
@@ -17,7 +17,9 @@ fn main() {
         ("KDF".to_string(), Box::new(KdfSel)),
     ];
 
-    println!("| n | method | build_ms | select_ms | total_ms | selected | ns/node | ns/(n·log2 n) |");
+    println!(
+        "| n | method | build_ms | select_ms | total_ms | selected | ns/node | ns/(n·log2 n) |"
+    );
     println!("|---:|---|---:|---:|---:|---:|---:|---:|");
 
     for &n in &sizes {
@@ -34,8 +36,14 @@ fn main() {
             let ns_per_nlogn = (sel_ms * 1e6) / (n_f * n_f.log2());
             println!(
                 "| {} | {} | {:.2} | {:.2} | {:.2} | {} | {:.1} | {:.2} |",
-                n, name, build_ms, sel_ms, build_ms + sel_ms, selected.len(),
-                ns_per_node, ns_per_nlogn
+                n,
+                name,
+                build_ms,
+                sel_ms,
+                build_ms + sel_ms,
+                selected.len(),
+                ns_per_node,
+                ns_per_nlogn
             );
         }
     }

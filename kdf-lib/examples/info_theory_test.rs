@@ -1,5 +1,5 @@
 //! Information-theoretic foundation demonstration
-use kdf::{Kdf, KdfParams, cosine_similarity, TheoreticalBounds};
+use kdf::{cosine_similarity, Kdf, KdfParams, TheoreticalBounds};
 
 fn main() {
     println!("=== KDF Information-Theoretic Foundation ===\n");
@@ -17,9 +17,9 @@ fn main() {
         vec![0.05, 0.98, 0.0],
         vec![0.1, 0.97, 0.0],
         // Rare items (high information content)
-        vec![-1.0, 0.0, 0.0],    // Unique direction
-        vec![0.0, 0.0, 1.0],     // Unique direction
-        vec![0.5, 0.5, 0.5],     // Unique position
+        vec![-1.0, 0.0, 0.0], // Unique direction
+        vec![0.0, 0.0, 1.0],  // Unique direction
+        vec![0.5, 0.5, 0.5],  // Unique position
     ];
 
     let kdf = Kdf::with_defaults();
@@ -33,18 +33,33 @@ fn main() {
     let metrics = result.info_metrics();
 
     println!("   Entropy Analysis:");
-    println!("   - Original entropy:  {:.3} bits", metrics.original_entropy);
-    println!("   - Selected entropy:  {:.3} bits", metrics.selected_entropy);
-    println!("   - Info preserved:    {:.1}%", metrics.information_preserved * 100.0);
+    println!(
+        "   - Original entropy:  {:.3} bits",
+        metrics.original_entropy
+    );
+    println!(
+        "   - Selected entropy:  {:.3} bits",
+        metrics.selected_entropy
+    );
+    println!(
+        "   - Info preserved:    {:.1}%",
+        metrics.information_preserved * 100.0
+    );
 
     println!("\n   Compression:");
     println!("   - Compression ratio: {:.2}x", metrics.compression_ratio);
     println!("   - MDL original:      {:.2} bits", metrics.mdl_original);
     println!("   - MDL selected:      {:.2} bits", metrics.mdl_selected);
-    println!("   - Redundancy removed: {:.2} bits", metrics.redundancy_removed);
+    println!(
+        "   - Redundancy removed: {:.2} bits",
+        metrics.redundancy_removed
+    );
 
     println!("\n   Rare Item Contribution:");
-    println!("   - Rare information:  {:.2} bits", metrics.rare_information);
+    println!(
+        "   - Rare information:  {:.2} bits",
+        metrics.rare_information
+    );
 
     // ========================================================================
     // 2. Per-Item Information Content
@@ -71,8 +86,19 @@ fn main() {
     println!("   Top 5 highest-information items:");
     for (i, (idx, info)) in ranked.iter().take(5).enumerate() {
         let layer = result.layers[*idx];
-        let selected = if result.is_selected(*idx) { "selected" } else { "filtered" };
-        println!("   {}. Item {} ({:.3} bits) - {:?}, {}", i + 1, idx, info, layer, selected);
+        let selected = if result.is_selected(*idx) {
+            "selected"
+        } else {
+            "filtered"
+        };
+        println!(
+            "   {}. Item {} ({:.3} bits) - {:?}, {}",
+            i + 1,
+            idx,
+            info,
+            layer,
+            selected
+        );
     }
 
     // ========================================================================
@@ -82,7 +108,10 @@ fn main() {
 
     // Rare preservation guarantee
     let rare_preserved = TheoreticalBounds::verify_rare_preservation(&result);
-    println!("   Rare preservation verified: {}", if rare_preserved { "✅ YES" } else { "❌ NO" });
+    println!(
+        "   Rare preservation verified: {}",
+        if rare_preserved { "✅ YES" } else { "❌ NO" }
+    );
 
     // Maximum information loss
     let max_loss = TheoreticalBounds::max_information_loss(&result);
@@ -91,7 +120,10 @@ fn main() {
     // Convergence iterations
     let params = KdfParams::default();
     let conv_iter = TheoreticalBounds::convergence_iterations(&params);
-    println!("   Convergence iterations: {} (using {})", conv_iter, params.iterations);
+    println!(
+        "   Convergence iterations: {} (using {})",
+        conv_iter, params.iterations
+    );
 
     // ========================================================================
     // 5. Theoretical Justification
@@ -102,7 +134,10 @@ fn main() {
     println!("   ");
     println!("   1. MINIMIZE redundancy (maximize compression)");
     println!("      - Items with high connectivity → fast decay → filtered");
-    println!("      - Compression achieved: {:.1}x", metrics.compression_ratio);
+    println!(
+        "      - Compression achieved: {:.1}x",
+        metrics.compression_ratio
+    );
     println!("   ");
     println!("   2. MAXIMIZE rare preservation (minimize information loss)");
     println!("      - Items with zero connectivity → slow decay → preserved");

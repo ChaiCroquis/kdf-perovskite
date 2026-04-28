@@ -10,3 +10,6 @@ real-data-bench = { path = "../real_data" }
 rand = { version = "0.8", features = ["small_rng"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+[lints]
+workspace = true

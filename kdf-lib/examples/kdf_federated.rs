@@ -48,16 +48,20 @@ fn demo_noniid_aggregation() {
     let mut client_kdf_results: Vec<ClientKdfResult> = Vec::new();
 
     for (i, client) in clients.iter().enumerate() {
-        let result = kdf.process(&client.data, 0.85, euclidean_similarity);
+        let result = kdf.process(&client.data, 0.85, |a, b| euclidean_similarity(a, b));
 
         let rare_count = result.rare_items().len();
         let total = client.data.len();
 
-        println!("   Client {}: {} 件 (主クラス: {}, Rare: {} 件)",
-                 i, total, client.dominant_class, rare_count);
+        println!(
+            "   Client {}: {} 件 (主クラス: {}, Rare: {} 件)",
+            i, total, client.dominant_class, rare_count
+        );
 
         // Rare層の特徴を記録
-        let rare_features: Vec<Vec<f64>> = result.rare_items().iter()
+        let rare_features: Vec<Vec<f64>> = result
+            .rare_items()
+            .iter()
             .map(|&idx| client.data[idx].clone())
             .collect();
 
@@ -84,11 +88,29 @@ fn demo_noniid_aggregation() {
     let kdf_agg = aggregate_kdf_priority(&client_kdf_results, 50);
     let kdf_rare_coverage = calculate_rare_coverage(&kdf_agg, &client_kdf_results);
 
-    println!("   {:>20} {:>15} {:>20}", "戦略", "集約サンプル数", "Rare層カバレッジ");
+    println!(
+        "   {:>20} {:>15} {:>20}",
+        "戦略", "集約サンプル数", "Rare層カバレッジ"
+    );
     println!("   {}", "-".repeat(55));
-    println!("   {:>20} {:>15} {:>19.1}%", "ランダム", random_agg.len(), random_rare_coverage * 100.0);
-    println!("   {:>20} {:>15} {:>19.1}%", "均等 (per client)", uniform_agg.len(), uniform_rare_coverage * 100.0);
-    println!("   {:>20} {:>15} {:>19.1}%", "KDF優先", kdf_agg.len(), kdf_rare_coverage * 100.0);
+    println!(
+        "   {:>20} {:>15} {:>19.1}%",
+        "ランダム",
+        random_agg.len(),
+        random_rare_coverage * 100.0
+    );
+    println!(
+        "   {:>20} {:>15} {:>19.1}%",
+        "均等 (per client)",
+        uniform_agg.len(),
+        uniform_rare_coverage * 100.0
+    );
+    println!(
+        "   {:>20} {:>15} {:>19.1}%",
+        "KDF優先",
+        kdf_agg.len(),
+        kdf_rare_coverage * 100.0
+    );
 
     println!("\n   【発見】KDF優先集約は少ないサンプル数で高いRareカバレッジを達成");
 }
@@ -103,8 +125,10 @@ fn demo_rare_preservation() {
     let mut client_kdf_results: Vec<ClientKdfResult> = Vec::new();
 
     for (i, client) in clients.iter().enumerate() {
-        let result = kdf.process(&client.data, 0.85, euclidean_similarity);
-        let rare_features: Vec<Vec<f64>> = result.rare_items().iter()
+        let result = kdf.process(&client.data, 0.85, |a, b| euclidean_similarity(a, b));
+        let rare_features: Vec<Vec<f64>> = result
+            .rare_items()
+            .iter()
             .map(|&idx| client.data[idx].clone())
             .collect();
 
@@ -124,40 +148,50 @@ fn demo_rare_preservation() {
     ];
 
     println!("   クライアント別Rare保持率:\n");
-    println!("   {:>12} {:>12} {:>12} {:>12} {:>12} {:>12}",
-             "戦略", "Client 0", "Client 1", "Client 2", "Client 3", "Client 4");
+    println!(
+        "   {:>12} {:>12} {:>12} {:>12} {:>12} {:>12}",
+        "戦略", "Client 0", "Client 1", "Client 2", "Client 3", "Client 4"
+    );
     println!("   {}", "-".repeat(75));
 
     for (name, aggregated) in &strategies {
         let mut rates = Vec::new();
 
         for client_result in &client_kdf_results {
-            let rate = calculate_client_rare_rate(&aggregated, client_result);
+            let rate = calculate_client_rare_rate(aggregated, client_result);
             rates.push(rate);
         }
 
-        println!("   {:>12} {:>11.0}% {:>11.0}% {:>11.0}% {:>11.0}% {:>11.0}%",
-                 name,
-                 rates[0] * 100.0,
-                 rates[1] * 100.0,
-                 rates[2] * 100.0,
-                 rates[3] * 100.0,
-                 rates[4] * 100.0);
+        println!(
+            "   {:>12} {:>11.0}% {:>11.0}% {:>11.0}% {:>11.0}% {:>11.0}%",
+            name,
+            rates[0] * 100.0,
+            rates[1] * 100.0,
+            rates[2] * 100.0,
+            rates[3] * 100.0,
+            rates[4] * 100.0
+        );
     }
 
     // 公平性指標
     println!("\n   公平性指標 (標準偏差が小さいほど公平):\n");
 
     for (name, aggregated) in &strategies {
-        let rates: Vec<f64> = client_kdf_results.iter()
-            .map(|cr| calculate_client_rare_rate(&aggregated, cr))
+        let rates: Vec<f64> = client_kdf_results
+            .iter()
+            .map(|cr| calculate_client_rare_rate(aggregated, cr))
             .collect();
 
         let mean = rates.iter().sum::<f64>() / rates.len() as f64;
         let variance = rates.iter().map(|r| (r - mean).powi(2)).sum::<f64>() / rates.len() as f64;
         let std_dev = variance.sqrt();
 
-        println!("   {:>12}: 平均 {:.1}%, 標準偏差 {:.1}%", name, mean * 100.0, std_dev * 100.0);
+        println!(
+            "   {:>12}: 平均 {:.1}%, 標準偏差 {:.1}%",
+            name,
+            mean * 100.0,
+            std_dev * 100.0
+        );
     }
 
     println!("\n   【発見】KDF優先集約はクライアント間で公平にRareを保持");
@@ -175,8 +209,10 @@ fn demo_communication_efficiency() {
     let mut total_rare = 0;
 
     for (i, client) in clients.iter().enumerate() {
-        let result = kdf.process(&client.data, 0.85, euclidean_similarity);
-        let rare_features: Vec<Vec<f64>> = result.rare_items().iter()
+        let result = kdf.process(&client.data, 0.85, |a, b| euclidean_similarity(a, b));
+        let rare_features: Vec<Vec<f64>> = result
+            .rare_items()
+            .iter()
             .map(|&idx| client.data[idx].clone())
             .collect();
 
@@ -197,7 +233,10 @@ fn demo_communication_efficiency() {
     // 異なる集約サイズでの比較
     let sizes = vec![25, 50, 75, 100];
 
-    println!("   {:>10} {:>15} {:>15} {:>15}", "サンプル数", "通信削減率", "Rare保持率", "効率指標");
+    println!(
+        "   {:>10} {:>15} {:>15} {:>15}",
+        "サンプル数", "通信削減率", "Rare保持率", "効率指標"
+    );
     println!("   {}", "-".repeat(60));
 
     for size in sizes {
@@ -206,8 +245,13 @@ fn demo_communication_efficiency() {
         let reduction = 1.0 - (size as f64 / total_data as f64);
         let efficiency = rare_coverage / (1.0 - reduction + 0.01); // Rare保持/送信量
 
-        println!("   {:>10} {:>14.1}% {:>14.1}% {:>15.2}",
-                 size, reduction * 100.0, rare_coverage * 100.0, efficiency);
+        println!(
+            "   {:>10} {:>14.1}% {:>14.1}% {:>15.2}",
+            size,
+            reduction * 100.0,
+            rare_coverage * 100.0,
+            efficiency
+        );
     }
 
     println!("\n   【発見】KDF優先集約は通信量削減しながらRare保持を最大化");
@@ -223,8 +267,10 @@ fn demo_generalization() {
     let mut client_kdf_results: Vec<ClientKdfResult> = Vec::new();
 
     for (i, client) in clients.iter().enumerate() {
-        let result = kdf.process(&client.data, 0.85, euclidean_similarity);
-        let rare_features: Vec<Vec<f64>> = result.rare_items().iter()
+        let result = kdf.process(&client.data, 0.85, |a, b| euclidean_similarity(a, b));
+        let rare_features: Vec<Vec<f64>> = result
+            .rare_items()
+            .iter()
             .map(|&idx| client.data[idx].clone())
             .collect();
 
@@ -250,7 +296,10 @@ fn demo_generalization() {
         ("KDF優先", aggregate_kdf_priority(&client_kdf_results, 50)),
     ];
 
-    println!("   {:>12} {:>15} {:>15} {:>15}", "戦略", "Core認識率", "Rare認識率", "総合精度");
+    println!(
+        "   {:>12} {:>15} {:>15} {:>15}",
+        "戦略", "Core認識率", "Rare認識率", "総合精度"
+    );
     println!("   {}", "-".repeat(60));
 
     for (name, aggregated) in strategies {
@@ -258,8 +307,14 @@ fn demo_generalization() {
 
         let indicator = if rare_acc > 0.7 { "✅" } else { "⚠️" };
 
-        println!("   {:>12} {:>14.1}% {:>14.1}% {:>14.1}% {}",
-                 name, core_acc * 100.0, rare_acc * 100.0, total_acc * 100.0, indicator);
+        println!(
+            "   {:>12} {:>14.1}% {:>14.1}% {:>14.1}% {}",
+            name,
+            core_acc * 100.0,
+            rare_acc * 100.0,
+            total_acc * 100.0,
+            indicator
+        );
     }
 
     println!("\n   【発見】KDF優先集約はRareパターンの認識率を大幅に向上");
@@ -359,9 +414,7 @@ static mut SEED: u64 = 0;
 // ============================================================================
 
 fn aggregate_random(clients: &[Client], n: usize) -> Vec<Vec<f64>> {
-    let mut all_data: Vec<Vec<f64>> = clients.iter()
-        .flat_map(|c| c.data.clone())
-        .collect();
+    let mut all_data: Vec<Vec<f64>> = clients.iter().flat_map(|c| c.data.clone()).collect();
 
     // シャッフル
     let mut seed = 42u64;
@@ -438,9 +491,9 @@ fn calculate_rare_coverage(aggregated: &[Vec<f64>], client_results: &[ClientKdfR
             total_rare += 1;
 
             // 集約データに含まれているか (近似マッチング)
-            let is_covered = aggregated.iter().any(|agg| {
-                euclidean_distance(agg, rare_feat) < 0.1
-            });
+            let is_covered = aggregated
+                .iter()
+                .any(|agg| euclidean_distance(agg, rare_feat) < 0.1);
 
             if is_covered {
                 covered_rare += 1;
@@ -460,11 +513,13 @@ fn calculate_client_rare_rate(aggregated: &[Vec<f64>], client_result: &ClientKdf
         return 1.0; // Rareがなければ100%
     }
 
-    let covered = client_result.rare_features.iter()
+    let covered = client_result
+        .rare_features
+        .iter()
         .filter(|rare_feat| {
-            aggregated.iter().any(|agg| {
-                euclidean_distance(agg, rare_feat) < 0.1
-            })
+            aggregated
+                .iter()
+                .any(|agg| euclidean_distance(agg, rare_feat) < 0.1)
         })
         .count();
 
@@ -497,10 +552,7 @@ fn generate_test_data(client_results: &[ClientKdfResult]) -> Vec<TestSample> {
     test_data
 }
 
-fn simulate_recognition(
-    aggregated: &[Vec<f64>],
-    test_data: &[TestSample],
-) -> (f64, f64, f64) {
+fn simulate_recognition(aggregated: &[Vec<f64>], test_data: &[TestSample]) -> (f64, f64, f64) {
     let mut core_correct = 0;
     let mut core_total = 0;
     let mut rare_correct = 0;
@@ -508,7 +560,8 @@ fn simulate_recognition(
 
     for sample in test_data {
         // 「認識」= 集約データに近いサンプルがあるか
-        let min_dist = aggregated.iter()
+        let min_dist = aggregated
+            .iter()
             .map(|agg| euclidean_distance(agg, &sample.features))
             .fold(f64::INFINITY, f64::min);
 
@@ -529,8 +582,16 @@ fn simulate_recognition(
         }
     }
 
-    let core_acc = if core_total > 0 { core_correct as f64 / core_total as f64 } else { 0.0 };
-    let rare_acc = if rare_total > 0 { rare_correct as f64 / rare_total as f64 } else { 0.0 };
+    let core_acc = if core_total > 0 {
+        core_correct as f64 / core_total as f64
+    } else {
+        0.0
+    };
+    let rare_acc = if rare_total > 0 {
+        rare_correct as f64 / rare_total as f64
+    } else {
+        0.0
+    };
     let total_acc = (core_correct + rare_correct) as f64 / (core_total + rare_total) as f64;
 
     (core_acc, rare_acc, total_acc)
@@ -547,7 +608,7 @@ fn rand_f64() -> f64 {
     }
 }
 
-fn euclidean_similarity(a: &Vec<f64>, b: &Vec<f64>) -> f64 {
+fn euclidean_similarity(a: &[f64], b: &[f64]) -> f64 {
     let dist = euclidean_distance(a, b);
     1.0 / (1.0 + dist)
 }

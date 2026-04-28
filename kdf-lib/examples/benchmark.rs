@@ -5,7 +5,7 @@
 //! 2. HashSet is_selected() vs Vec contains()
 //! 3. Overall process() performance at different scales
 
-use kdf::{Kdf, KdfParams, cosine_similarity, Layer};
+use kdf::{cosine_similarity, Kdf, KdfParams, Layer};
 use std::time::Instant;
 
 fn main() {
@@ -25,26 +25,37 @@ fn benchmark_decay_computation() {
     let n = 1000;
     let iterations = 100;
     let degrees: Vec<usize> = (0..n).map(|i| i % 20).collect();
-    let layers: Vec<Layer> = degrees.iter().map(|&d| {
-        if d == 0 { Layer::Rare }
-        else if d > 10 { Layer::Core }
-        else { Layer::Edge }
-    }).collect();
+    let layers: Vec<Layer> = degrees
+        .iter()
+        .map(|&d| {
+            if d == 0 {
+                Layer::Rare
+            } else if d > 10 {
+                Layer::Core
+            } else {
+                Layer::Edge
+            }
+        })
+        .collect();
 
     let params = KdfParams::default();
 
     // Optimized: pre-compute decay factors
     let start = Instant::now();
     for _ in 0..100 {
-        let decay_factors: Vec<f64> = degrees.iter().zip(&layers).map(|(&deg, &layer)| {
-            let c = deg as f64;
-            let alpha = match layer {
-                Layer::Core => params.alpha_core,
-                Layer::Edge => params.alpha_edge,
-                Layer::Rare => params.alpha_rare,
-            };
-            (1.0 - params.beta * (1.0 + params.gamma * c.powf(alpha))).max(0.0)
-        }).collect();
+        let decay_factors: Vec<f64> = degrees
+            .iter()
+            .zip(&layers)
+            .map(|(&deg, &layer)| {
+                let c = deg as f64;
+                let alpha = match layer {
+                    Layer::Core => params.alpha_core,
+                    Layer::Edge => params.alpha_edge,
+                    Layer::Rare => params.alpha_rare,
+                };
+                (1.0 - params.beta * (1.0 + params.gamma * c.powf(alpha))).max(0.0)
+            })
+            .collect();
 
         let mut weights = vec![1.0f64; n];
         for _ in 0..iterations {
@@ -79,7 +90,10 @@ fn benchmark_decay_computation() {
     println!("   Items: {}, Iterations: {}", n, iterations);
     println!("   Optimized (pre-computed): {:?}", optimized_time);
     println!("   Naive (per-iteration):    {:?}", naive_time);
-    println!("   Speedup: {:.2}x\n", naive_time.as_nanos() as f64 / optimized_time.as_nanos() as f64);
+    println!(
+        "   Speedup: {:.2}x\n",
+        naive_time.as_nanos() as f64 / optimized_time.as_nanos() as f64
+    );
 }
 
 /// Benchmark: HashSet is_selected() vs Vec contains()
@@ -116,7 +130,10 @@ fn benchmark_is_selected() {
         println!("   Size: {}", size);
         println!("   HashSet: {:?}", hashset_time);
         println!("   Vec:     {:?}", vec_time);
-        println!("   Speedup: {:.1}x\n", vec_time.as_nanos() as f64 / hashset_time.as_nanos() as f64);
+        println!(
+            "   Speedup: {:.1}x\n",
+            vec_time.as_nanos() as f64 / hashset_time.as_nanos() as f64
+        );
     }
 }
 
@@ -154,8 +171,14 @@ fn benchmark_process_scaling() {
         let elapsed = start.elapsed();
         let avg_ms = elapsed.as_millis() as f64 / iterations as f64;
 
-        println!("   Size: {:>4} -> {:>6.1} ms/call ({} selected)", size, avg_ms,
-            kdf.process(&items, 0.95, |a, b| cosine_similarity(a, b)).selected.len());
+        println!(
+            "   Size: {:>4} -> {:>6.1} ms/call ({} selected)",
+            size,
+            avg_ms,
+            kdf.process(&items, 0.95, |a, b| cosine_similarity(a, b))
+                .selected
+                .len()
+        );
     }
     println!();
 }
@@ -170,9 +193,9 @@ fn benchmark_reason_calls() {
     let sizes = [100, 500, 1000];
 
     for &size in &sizes {
-        let items: Vec<Vec<f64>> = (0..size).map(|i| {
-            vec![(i as f64).cos(), (i as f64).sin(), i as f64 * 0.01]
-        }).collect();
+        let items: Vec<Vec<f64>> = (0..size)
+            .map(|i| vec![(i as f64).cos(), (i as f64).sin(), i as f64 * 0.01])
+            .collect();
 
         let result = kdf.process(&items, 0.8, |a, b| cosine_similarity(a, b));
 
@@ -185,8 +208,11 @@ fn benchmark_reason_calls() {
         }
         let elapsed = start.elapsed();
 
-        println!("   Size: {:>4} -> {:>6.2} µs per reason() call",
-            size, elapsed.as_nanos() as f64 / (1000 * size) as f64 / 1000.0);
+        println!(
+            "   Size: {:>4} -> {:>6.2} µs per reason() call",
+            size,
+            elapsed.as_nanos() as f64 / (1000 * size) as f64 / 1000.0
+        );
     }
     println!();
 }

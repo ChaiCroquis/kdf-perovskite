@@ -1,8 +1,8 @@
 //! Causal Partition Builder
 
-use std::collections::{HashMap, HashSet};
-use super::types::{TeStrategy, CausalLink};
 use super::engine::CausalEngine;
+use super::types::{CausalLink, TeStrategy};
+use std::collections::{HashMap, HashSet};
 
 /// Causal Cluster
 #[derive(Clone, Debug)]
@@ -174,7 +174,9 @@ impl CausalPartitionBuilder {
                 let source_data = &time_series[source];
                 let target_data = &time_series[target];
 
-                if let Some(link) = engine.compute_pair(source_data, target_data, strategy, source, target) {
+                if let Some(link) =
+                    engine.compute_pair(source_data, target_data, strategy, source, target)
+                {
                     if link.te >= self.te_threshold {
                         causal_links.push(link);
                     }

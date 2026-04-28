@@ -140,7 +140,9 @@ impl<'a> PreScreeningOptimizer<'a> {
 
         for candidate in candidates {
             self.stats.full_similarity_calls += 1;
-            let score = self.fp_engine.full_similarity(source_fp, &candidate.fingerprint);
+            let score = self
+                .fp_engine
+                .full_similarity(source_fp, &candidate.fingerprint);
 
             if score > best_score {
                 best_score = score;
@@ -253,7 +255,9 @@ impl OwnedPreScreeningOptimizer {
 
         for candidate in candidates {
             self.stats.full_similarity_calls += 1;
-            let score = self.fp_engine.full_similarity(source_fp, &candidate.fingerprint);
+            let score = self
+                .fp_engine
+                .full_similarity(source_fp, &candidate.fingerprint);
 
             if score > best_score {
                 best_score = score;

@@ -4,7 +4,7 @@
 //! re-estimate the empirical complexity exponent with more decades.
 
 use adversarial_bench as adv;
-use real_data_bench::selectors::{KdfSel, RandomSel, KMedoidsSel, Selector};
+use real_data_bench::selectors::{KMedoidsSel, KdfSel, RandomSel, Selector};
 use std::time::Instant;
 
 fn main() {
@@ -33,7 +33,12 @@ fn main() {
             let ns_per_nlogn = (sel_ms * 1e6) / (n_f * n_f.log2());
             println!(
                 "| {} | {} | {:.1} | {:.1} | {:.1} | {:.2} |",
-                n, name, build_ms, sel_ms, build_ms + sel_ms, ns_per_nlogn
+                n,
+                name,
+                build_ms,
+                sel_ms,
+                build_ms + sel_ms,
+                ns_per_nlogn
             );
             if name == "KDF" {
                 kdf_ns_per_nlogn.push((n, ns_per_nlogn));
@@ -47,15 +52,21 @@ fn main() {
 
     // We didn't store select_ms; recompute roughly from ns/(n log n)
     // select_ms ≈ ns_per_nlogn * n * log2(n) / 1e6
-    let points: Vec<(f64, f64)> = kdf_ns_per_nlogn.iter().map(|&(n, r)| {
-        let n_f = n as f64;
-        let select_ms = r * n_f * n_f.log2() / 1e6;
-        (n_f.ln(), select_ms.ln())
-    }).collect();
+    let points: Vec<(f64, f64)> = kdf_ns_per_nlogn
+        .iter()
+        .map(|&(n, r)| {
+            let n_f = n as f64;
+            let select_ms = r * n_f * n_f.log2() / 1e6;
+            (n_f.ln(), select_ms.ln())
+        })
+        .collect();
 
     let mean_x: f64 = points.iter().map(|p| p.0).sum::<f64>() / points.len() as f64;
     let mean_y: f64 = points.iter().map(|p| p.1).sum::<f64>() / points.len() as f64;
-    let cov: f64 = points.iter().map(|p| (p.0 - mean_x) * (p.1 - mean_y)).sum::<f64>();
+    let cov: f64 = points
+        .iter()
+        .map(|p| (p.0 - mean_x) * (p.1 - mean_y))
+        .sum::<f64>();
     let var_x: f64 = points.iter().map(|p| (p.0 - mean_x).powi(2)).sum::<f64>();
     let slope = cov / var_x;
 
@@ -63,8 +74,13 @@ fn main() {
     for (n, rate) in &kdf_ns_per_nlogn {
         let n_f = *n as f64;
         let select_ms = rate * n_f * n_f.log2() / 1e6;
-        println!("  n={:>7}  → select_ms={:.2}  (ln n={:.2}, ln ms={:.2})",
-            n, select_ms, n_f.ln(), select_ms.ln());
+        println!(
+            "  n={:>7}  → select_ms={:.2}  (ln n={:.2}, ln ms={:.2})",
+            n,
+            select_ms,
+            n_f.ln(),
+            select_ms.ln()
+        );
     }
     println!("\nEstimated KDF empirical exponent: **O(n^{:.3})**", slope);
     println!("\n- If ≈ 1.0, KDF is truly O(n)");

@@ -1,7 +1,7 @@
 //! VNE monitoring and anomaly detection
 
-use super::types::AnomalyResult;
 use super::entropy::von_neumann_entropy;
+use super::types::AnomalyResult;
 
 /// VNE Monitor for real-time tracking and anomaly detection
 pub struct VNEMonitor {
@@ -80,9 +80,12 @@ impl VNEMonitor {
             return (mean, 0.0);
         }
 
-        let variance: f64 = self.history.iter()
+        let variance: f64 = self
+            .history
+            .iter()
             .map(|&x| (x - mean).powi(2))
-            .sum::<f64>() / (n - 1.0);
+            .sum::<f64>()
+            / (n - 1.0);
 
         (mean, variance.sqrt())
     }

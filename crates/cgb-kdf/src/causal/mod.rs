@@ -22,20 +22,20 @@
 //! - python/kdf/causal_partition.py
 
 // Module declarations
-pub mod types;
-pub mod estimators;
 pub mod engine;
+pub mod estimators;
 pub mod kdf_v3;
-pub mod partition;
 pub mod nrem;
+pub mod partition;
+pub mod types;
 
 #[cfg(test)]
 mod tests;
 
 // Re-export public API
-pub use types::{TeStrategy, TeResult, CausalLink};
-pub use estimators::{GaussianEstimator, SymbolicEstimator, KsgEstimator};
-pub use engine::{CausalEngine, BatchStats};
-pub use kdf_v3::{CausalKdfV3, CausalKdfStats, SleepCycleResult};
-pub use partition::{CausalPartitionBuilder, CausalCluster};
-pub use nrem::{CausalEnhancedNREMOptimizer, CausalNREMStats, CausalNREMResult};
+pub use engine::{BatchStats, CausalEngine};
+pub use estimators::{GaussianEstimator, KsgEstimator, SymbolicEstimator};
+pub use kdf_v3::{CausalKdfStats, CausalKdfV3, SleepCycleResult};
+pub use nrem::{CausalEnhancedNREMOptimizer, CausalNREMResult, CausalNREMStats};
+pub use partition::{CausalCluster, CausalPartitionBuilder};
+pub use types::{CausalLink, TeResult, TeStrategy};

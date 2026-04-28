@@ -1,7 +1,7 @@
 //! Symbolic Transfer Entropy Estimator
 
-use std::collections::HashMap;
 use super::super::types::TeResult;
+use std::collections::HashMap;
 
 /// Symbolic Transfer Entropy Estimator
 ///
@@ -19,7 +19,11 @@ pub struct SymbolicEstimator {
 impl SymbolicEstimator {
     /// Create a new Symbolic estimator
     pub fn new(dim: usize, delay: usize, min_samples: usize) -> Self {
-        Self { dim, delay, min_samples }
+        Self {
+            dim,
+            delay,
+            min_samples,
+        }
     }
 }
 
@@ -39,7 +43,11 @@ impl SymbolicEstimator {
 
         // Create indices sorted by values
         let mut indices: Vec<usize> = (0..n).collect();
-        indices.sort_by(|&a, &b| window[a].partial_cmp(&window[b]).unwrap_or(std::cmp::Ordering::Equal));
+        indices.sort_by(|&a, &b| {
+            window[a]
+                .partial_cmp(&window[b])
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         // Compute pattern rank
         let mut rank = 0;
@@ -66,9 +74,7 @@ impl SymbolicEstimator {
         let mut patterns = Vec::with_capacity(num_patterns);
 
         for i in 0..num_patterns {
-            let window: Vec<f64> = (0..self.dim)
-                .map(|j| series[i + j * self.delay])
-                .collect();
+            let window: Vec<f64> = (0..self.dim).map(|j| series[i + j * self.delay]).collect();
             patterns.push(self.window_to_pattern(&window));
         }
 

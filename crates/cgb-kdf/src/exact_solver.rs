@@ -127,7 +127,8 @@ impl ExactSolver {
         // Use initial partition if provided
         if let Some(ref init) = initial_partition {
             let init_interned = id_map.intern_partition(init);
-            let init_entropy = self.compute_entropy(&init_interned, &adj_matrix, &node_degrees, total_volume);
+            let init_entropy =
+                self.compute_entropy(&init_interned, &adj_matrix, &node_degrees, total_volume);
             if init_entropy < best_entropy {
                 best_entropy = init_entropy;
                 best_assignment = init_interned;
@@ -136,7 +137,8 @@ impl ExactSolver {
 
         // Also try all-in-one module as initial bound
         let all_one: Vec<u32> = vec![0; n];
-        let all_one_entropy = self.compute_entropy(&all_one, &adj_matrix, &node_degrees, total_volume);
+        let all_one_entropy =
+            self.compute_entropy(&all_one, &adj_matrix, &node_degrees, total_volume);
         if all_one_entropy < best_entropy {
             best_entropy = all_one_entropy;
             best_assignment = all_one;
@@ -168,7 +170,8 @@ impl ExactSolver {
             // If all assigned, evaluate
             if node.level == n {
                 let assignment: Vec<u32> = node.assignment.iter().map(|x| x.unwrap()).collect();
-                let entropy = self.compute_entropy(&assignment, &adj_matrix, &node_degrees, total_volume);
+                let entropy =
+                    self.compute_entropy(&assignment, &adj_matrix, &node_degrees, total_volume);
                 if entropy < best_entropy {
                     best_entropy = entropy;
                     best_assignment = assignment;
@@ -194,11 +197,8 @@ impl ExactSolver {
             let next_node_id = node.level;
 
             // First, try existing modules
-            let used_modules: std::collections::HashSet<u32> = node
-                .assignment
-                .iter()
-                .filter_map(|x| *x)
-                .collect();
+            let used_modules: std::collections::HashSet<u32> =
+                node.assignment.iter().filter_map(|x| *x).collect();
 
             for &m in &used_modules {
                 let mut new_assignment = node.assignment.clone();
@@ -456,12 +456,8 @@ impl HybridSolver {
             }
         } else {
             // Use SA then optionally verify subproblems
-            let mut sa = super::sleep_mode::SleepModeOptimizer::new(
-                1.0,
-                0.001,
-                self.sa_max_iterations,
-                100,
-            );
+            let mut sa =
+                super::sleep_mode::SleepModeOptimizer::new(1.0, 0.001, self.sa_max_iterations, 100);
             let start = std::time::Instant::now();
             let sa_result = sa.run_nrem_phase(edges, initial_partition);
             let elapsed = start.elapsed();
@@ -520,8 +516,10 @@ mod tests {
         assert!(result.is_optimal);
         assert!(result.optimal_entropy >= 0.0);
         assert_eq!(result.partition.len(), 5);
-        println!("Exact solution: entropy={:.4}, explored={}",
-                 result.optimal_entropy, result.nodes_explored);
+        println!(
+            "Exact solution: entropy={:.4}, explored={}",
+            result.optimal_entropy, result.nodes_explored
+        );
     }
 
     #[test]
@@ -533,14 +531,18 @@ mod tests {
             ("c".to_string(), 0),
             ("d".to_string(), 1),
             ("e".to_string(), 1),
-        ].into_iter().collect();
+        ]
+        .into_iter()
+        .collect();
 
         let solver = ExactSolver::new();
         let result = solver.solve(&edges, Some(initial));
 
         assert!(result.is_optimal);
-        println!("With initial: entropy={:.4}, pruned={}",
-                 result.optimal_entropy, result.nodes_pruned);
+        println!(
+            "With initial: entropy={:.4}, pruned={}",
+            result.optimal_entropy, result.nodes_pruned
+        );
     }
 
     #[test]
@@ -595,7 +597,9 @@ mod tests {
             ("c".to_string(), 2),
             ("d".to_string(), 3),
             ("e".to_string(), 4),
-        ].into_iter().collect();
+        ]
+        .into_iter()
+        .collect();
 
         let random_entropy = {
             let mut id_map = NodeIdMap::new();
@@ -611,7 +615,10 @@ mod tests {
         let result = solver.solve(&edges, None);
 
         assert!(result.optimal_entropy <= random_entropy);
-        println!("Random: {:.4}, Optimal: {:.4}", random_entropy, result.optimal_entropy);
+        println!(
+            "Random: {:.4}, Optimal: {:.4}",
+            random_entropy, result.optimal_entropy
+        );
     }
 
     #[test]
@@ -636,11 +643,7 @@ mod tests {
 
                 // Sparse inter-cluster edges
                 if c + 1 < clusters {
-                    edges.push((
-                        format!("n{}", start),
-                        format!("n{}", end),
-                        0.1,
-                    ));
+                    edges.push((format!("n{}", start), format!("n{}", end), 0.1));
                 }
             }
             edges
@@ -648,8 +651,10 @@ mod tests {
 
         println!("\nExact vs SA Benchmark");
         println!("=====================");
-        println!("{:<8} {:<12} {:<12} {:<12} {:<10}",
-                 "Nodes", "Exact(ms)", "SA(ms)", "Entropy", "Optimal?");
+        println!(
+            "{:<8} {:<12} {:<12} {:<12} {:<10}",
+            "Nodes", "Exact(ms)", "SA(ms)", "Entropy", "Optimal?"
+        );
         println!("{}", "-".repeat(60));
 
         for &n in &[6, 8, 10, 12, 15] {
@@ -675,7 +680,11 @@ mod tests {
                 exact_time,
                 sa_time,
                 exact_result.optimal_entropy,
-                if is_optimal { "✓ SA=Opt" } else { "SA differs" }
+                if is_optimal {
+                    "✓ SA=Opt"
+                } else {
+                    "SA differs"
+                }
             );
         }
 

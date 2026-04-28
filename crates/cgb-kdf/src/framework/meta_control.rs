@@ -15,8 +15,8 @@
 //! | 31 | Emergency intervention on crisis | [`MetaController::emergency_intervention`] |
 //! | 32 | Mode toggle (enable/disable) | [`MetaController::enabled`] |
 
-use super::Layer;
 use super::decay::MasterSpecParams;
+use super::Layer;
 
 /// Meta-cognitive controller implementing Claim 27-32.
 #[derive(Clone, Debug)]
@@ -107,7 +107,12 @@ impl MetaController {
     ///
     /// Updates `params` in place if `self.enabled`. Returns the Δα applied
     /// to the Edge layer (for logging/testing).
-    pub fn step(&self, params: &mut MasterSpecParams, avg_k_edge: f64, avg_k_core: f64) -> (f64, f64) {
+    pub fn step(
+        &self,
+        params: &mut MasterSpecParams,
+        avg_k_edge: f64,
+        avg_k_core: f64,
+    ) -> (f64, f64) {
         if !self.enabled {
             return (0.0, 0.0);
         }
@@ -195,13 +200,22 @@ mod tests {
         // Under-connected (below target): health high, δk=0 ⇒ Δα driven by −η(H−H_t).
         // With default health_target=0.7 and near-perfect health H≈1.0, Δα = −η·0.3 < 0.
         mc.step(&mut params, 6.0, 4.0); // perfect health, no deviation
-        assert!(params.alpha_edge < original, "health>target must push α down (Claim 30)");
-        assert!(params.alpha_edge >= mc.alpha_edge_bounds.0, "lower bound enforced");
+        assert!(
+            params.alpha_edge < original,
+            "health>target must push α down (Claim 30)"
+        );
+        assert!(
+            params.alpha_edge >= mc.alpha_edge_bounds.0,
+            "lower bound enforced"
+        );
 
         // Over-connected: large δk drives Δα positive via fourth-power term
         let mut params = MasterSpecParams::default();
         mc.step(&mut params, 12.0, 4.0);
-        assert!(params.alpha_edge <= mc.alpha_edge_bounds.1, "upper bound enforced");
+        assert!(
+            params.alpha_edge <= mc.alpha_edge_bounds.1,
+            "upper bound enforced"
+        );
     }
 
     #[test]
@@ -213,11 +227,13 @@ mod tests {
         assert_eq!(mc.emergency_count, 0);
 
         // Crisis: health low, pick 5% of lowest-weight edges
-        let edges = (0..100).map(|i| ((i as u32, (i + 1) as u32), i as f64)).collect::<Vec<_>>();
+        let edges = (0..100)
+            .map(|i| ((i as u32, (i + 1) as u32), i as f64))
+            .collect::<Vec<_>>();
         let picked = mc.emergency_intervention(0.0, edges.into_iter());
         assert_eq!(mc.emergency_count, 1);
         assert_eq!(picked.len(), 5); // 5% of 100
-        // Lowest-weight first
+                                     // Lowest-weight first
         assert_eq!(picked[0], (0, 1));
     }
 
@@ -228,7 +244,10 @@ mod tests {
         let orig_alpha = params.alpha_edge;
         mc.set_enabled(false);
         mc.step(&mut params, 12.0, 4.0);
-        assert_eq!(params.alpha_edge, orig_alpha, "disabled controller must not mutate params");
+        assert_eq!(
+            params.alpha_edge, orig_alpha,
+            "disabled controller must not mutate params"
+        );
     }
 
     #[test]
@@ -239,10 +258,14 @@ mod tests {
         let original_edge = params.alpha_edge;
         let original_core = params.alpha_core;
         let (d_e, d_c) = mc.step(&mut params, 12.0, 4.0); // over-connected edge, balanced core
-        assert!(d_e != 0.0 || d_c != 0.0,
-            "Claim 27: meta-step must produce parameter update when state departs from target");
-        assert!(params.alpha_edge != original_edge || params.alpha_core != original_core,
-            "Claim 27: parameters must be updated in place");
+        assert!(
+            d_e != 0.0 || d_c != 0.0,
+            "Claim 27: meta-step must produce parameter update when state departs from target"
+        );
+        assert!(
+            params.alpha_edge != original_edge || params.alpha_core != original_core,
+            "Claim 27: parameters must be updated in place"
+        );
     }
 
     #[test]
@@ -251,8 +274,10 @@ mod tests {
         // and target connectivity.
         let mc = MetaController::default();
         // Exact match → health = 1
-        assert!((mc.health_index(6.0, 6.0) - 1.0).abs() < 1e-12,
-            "Claim 28: avg=target ⇒ H=1");
+        assert!(
+            (mc.health_index(6.0, 6.0) - 1.0).abs() < 1e-12,
+            "Claim 28: avg=target ⇒ H=1"
+        );
         // Larger gap → smaller health
         let h_close = mc.health_index(7.0, 6.0);
         let h_far = mc.health_index(10.0, 6.0);
@@ -264,8 +289,11 @@ mod tests {
         // Claim 29: δk = max(0, ⟨k⟩ − k_opt) and parameter update is proportional
         // to δk^4. We isolate the fourth-power term via the static positive_deviation.
         // Positive-only property: below target ⇒ δk = 0
-        assert_eq!(MetaController::positive_deviation(4.0, 6.0), 0.0,
-            "Claim 29: δk = max(0, ⟨k⟩-k_opt)");
+        assert_eq!(
+            MetaController::positive_deviation(4.0, 6.0),
+            0.0,
+            "Claim 29: δk = max(0, ⟨k⟩-k_opt)"
+        );
         // Above target ⇒ δk positive
         assert_eq!(MetaController::positive_deviation(10.0, 6.0), 4.0);
         // Doubling δk scales the fourth-power term by 2^4 = 16
@@ -273,14 +301,19 @@ mod tests {
         let dk2 = 2.0_f64;
         let t1 = dk1.powi(4);
         let t2 = dk2.powi(4);
-        assert!((t2 / t1 - 16.0).abs() < 1e-12,
-            "Claim 29: the δk^4 term scales by 2^4 when δk doubles");
+        assert!(
+            (t2 / t1 - 16.0).abs() < 1e-12,
+            "Claim 29: the δk^4 term scales by 2^4 when δk doubles"
+        );
     }
 
     #[test]
     fn test_lyapunov_stability_default() {
         let mc = MetaController::default();
         // 0.15^2 = 0.0225  >  0.08^2 = 0.0064
-        assert!(mc.check_lyapunov_stability(), "default params must satisfy η² > μ²");
+        assert!(
+            mc.check_lyapunov_stability(),
+            "default params must satisfy η² > μ²"
+        );
     }
 }

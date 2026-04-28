@@ -45,17 +45,18 @@ fn extract_keyframes(frames: &[VideoFrame], threshold: f64) -> KeyframeResult {
         match layer {
             Layer::Rare => keyframe_indices.push(i),
             Layer::Edge => transition_indices.push(i),
-            Layer::Core => {}  // Skip redundant frames
+            Layer::Core => {} // Skip redundant frames
         }
     }
 
     // Detect scene changes (consecutive rare frames from different scenes)
     let mut scene_changes = Vec::new();
     for i in 1..frames.len() {
-        if result.layers[i] == Layer::Rare && result.layers[i - 1] != Layer::Rare {
-            if frames[i].scene_label != frames[i - 1].scene_label {
-                scene_changes.push((frames[i - 1].frame_number, frames[i].frame_number));
-            }
+        if result.layers[i] == Layer::Rare
+            && result.layers[i - 1] != Layer::Rare
+            && frames[i].scene_label != frames[i - 1].scene_label
+        {
+            scene_changes.push((frames[i - 1].frame_number, frames[i].frame_number));
         }
     }
 
@@ -81,7 +82,7 @@ fn generate_video_frames() -> Vec<VideoFrame> {
         let variation = (i as f64) * 0.02;
         frames.push(VideoFrame {
             frame_number: frame_num,
-            timestamp_ms: (frame_num as u64) * 33,  // ~30fps
+            timestamp_ms: (frame_num as u64) * 33, // ~30fps
             features: vec![0.8 + variation, 0.2, 0.1, 0.3, 0.1],
             scene_label: "office".into(),
         });
@@ -122,7 +123,7 @@ fn generate_video_frames() -> Vec<VideoFrame> {
     frames.push(VideoFrame {
         frame_number: frame_num,
         timestamp_ms: (frame_num as u64) * 33,
-        features: vec![0.5, 0.9, 0.9, 0.8, 0.7],  // High motion
+        features: vec![0.5, 0.9, 0.9, 0.8, 0.7], // High motion
         scene_label: "nature_action".into(),
     });
     frame_num += 1;
@@ -158,9 +159,11 @@ fn main() {
     println!("=== Video Keyframe Extraction with KDF ===\n");
 
     let frames = generate_video_frames();
-    println!("Total frames: {} ({:.1}s at 30fps)\n",
+    println!(
+        "Total frames: {} ({:.1}s at 30fps)\n",
         frames.len(),
-        frames.len() as f64 / 30.0);
+        frames.len() as f64 / 30.0
+    );
 
     // =========================================================================
     // 1. Basic KDF Analysis
@@ -196,9 +199,18 @@ fn main() {
 
     let extraction = extract_keyframes(&frames, 0.98);
 
-    println!("Keyframes (must include): {:?}", extraction.keyframe_indices);
-    println!("Transitions (optional): {:?}", extraction.transition_indices);
-    println!("Compression ratio: {:.1}%", extraction.compression_ratio * 100.0);
+    println!(
+        "Keyframes (must include): {:?}",
+        extraction.keyframe_indices
+    );
+    println!(
+        "Transitions (optional): {:?}",
+        extraction.transition_indices
+    );
+    println!(
+        "Compression ratio: {:.1}%",
+        extraction.compression_ratio * 100.0
+    );
     println!();
 
     // =========================================================================
@@ -208,10 +220,10 @@ fn main() {
 
     for &idx in &extraction.keyframe_indices {
         let frame = &frames[idx];
-        println!("Frame {}: {}ms - Scene: {}",
-            frame.frame_number,
-            frame.timestamp_ms,
-            frame.scene_label);
+        println!(
+            "Frame {}: {}ms - Scene: {}",
+            frame.frame_number, frame.timestamp_ms, frame.scene_label
+        );
     }
     println!();
 
@@ -235,14 +247,21 @@ fn main() {
     println!("--- Adaptive Sampling ---\n");
 
     // Strategy 1: Minimal (only Rare)
-    let minimal_frames: Vec<u32> = extraction.keyframe_indices.iter()
+    let minimal_frames: Vec<u32> = extraction
+        .keyframe_indices
+        .iter()
         .map(|&i| frames[i].frame_number)
         .collect();
-    println!("Minimal (Rare only): {} frames -> {:?}",
-        minimal_frames.len(), minimal_frames);
+    println!(
+        "Minimal (Rare only): {} frames -> {:?}",
+        minimal_frames.len(),
+        minimal_frames
+    );
 
     // Strategy 2: Standard (Rare + Edge)
-    let standard_frames: Vec<u32> = extraction.keyframe_indices.iter()
+    let standard_frames: Vec<u32> = extraction
+        .keyframe_indices
+        .iter()
         .chain(extraction.transition_indices.iter())
         .map(|&i| frames[i].frame_number)
         .collect();
@@ -254,7 +273,8 @@ fn main() {
         .collect();
 
     // Sample every 5th core frame
-    let sampled_core: Vec<usize> = core_indices.iter()
+    let sampled_core: Vec<usize> = core_indices
+        .iter()
         .enumerate()
         .filter(|(i, _)| i % 5 == 0)
         .map(|(_, &idx)| idx)
@@ -263,7 +283,10 @@ fn main() {
     let balanced_count = extraction.keyframe_indices.len()
         + extraction.transition_indices.len()
         + sampled_core.len();
-    println!("Balanced (Rare+Edge+sampled Core): {} frames", balanced_count);
+    println!(
+        "Balanced (Rare+Edge+sampled Core): {} frames",
+        balanced_count
+    );
     println!();
 
     // =========================================================================
@@ -272,17 +295,21 @@ fn main() {
     println!("--- Thumbnail Generation ---\n");
 
     println!("Recommended thumbnails for video preview:");
-    let thumbnail_candidates: Vec<_> = extraction.keyframe_indices.iter()
+    let thumbnail_candidates: Vec<_> = extraction
+        .keyframe_indices
+        .iter()
         .take(5)
         .map(|&i| &frames[i])
         .collect();
 
     for (i, frame) in thumbnail_candidates.iter().enumerate() {
-        println!("  {}. Frame {} at {:.1}s ({})",
+        println!(
+            "  {}. Frame {} at {:.1}s ({})",
             i + 1,
             frame.frame_number,
             frame.timestamp_ms as f64 / 1000.0,
-            frame.scene_label);
+            frame.scene_label
+        );
     }
     println!();
 

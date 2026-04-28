@@ -1,8 +1,8 @@
 //! Causal-Enhanced NREM Optimizer
 
-use std::collections::{HashMap, HashSet};
-use super::types::CausalLink;
 use super::partition::CausalPartitionBuilder;
+use super::types::CausalLink;
+use std::collections::{HashMap, HashSet};
 
 /// Causal-Enhanced NREM Optimizer
 ///
@@ -71,10 +71,9 @@ impl CausalEnhancedNREMOptimizer {
 
         // Build initial partition
         let (initial_partition, init_type) = if self.use_causal_init && !causal_links.is_empty() {
-            let partition = self.partition_builder.build_partition_from_links(
-                causal_links,
-                Some(&node_list),
-            );
+            let partition = self
+                .partition_builder
+                .build_partition_from_links(causal_links, Some(&node_list));
             self.stats.causal_inits += 1;
             (partition, "causal")
         } else {
@@ -89,12 +88,7 @@ impl CausalEnhancedNREMOptimizer {
         let initial_modules = initial_partition.values().collect::<HashSet<_>>().len();
 
         // Run NREM optimization
-        let mut optimizer = SleepModeOptimizer::new(
-            1.0,
-            0.001,
-            self.nrem_max_iterations,
-            1000,
-        );
+        let mut optimizer = SleepModeOptimizer::new(1.0, 0.001, self.nrem_max_iterations, 1000);
 
         let nrem_result = optimizer.run_nrem_phase(edges, Some(initial_partition.clone()));
 
@@ -108,7 +102,8 @@ impl CausalEnhancedNREMOptimizer {
             let n_without = (self.stats.optimizations - self.stats.causal_inits) as f64;
             if n_without > 0.0 {
                 let avg = self.stats.avg_iterations_without_causal;
-                self.stats.avg_iterations_without_causal = (avg * (n_without - 1.0) + iterations as f64) / n_without;
+                self.stats.avg_iterations_without_causal =
+                    (avg * (n_without - 1.0) + iterations as f64) / n_without;
             }
         }
 
@@ -127,7 +122,6 @@ impl CausalEnhancedNREMOptimizer {
 
     /// Get statistics
     pub fn get_statistics(&self) -> CausalNREMStats {
-
         // Future: speedup estimation when both values are non-zero
         self.stats.clone()
     }

@@ -14,10 +14,20 @@ fn kdf_select_default(ds: &Dataset, keep: usize) -> HashSet<u32> {
     let mut c = NodeClassifier::default();
     let class = c.classify(ds.n_nodes, &ds.edges);
     let score = |l: Layer| -> i32 {
-        match l { Layer::Rare => 3, Layer::Core => 2, Layer::Edge => 1, Layer::Garbage => 0 }
+        match l {
+            Layer::Rare => 3,
+            Layer::Core => 2,
+            Layer::Edge => 1,
+            Layer::Garbage => 0,
+        }
     };
     let mut scored: Vec<(u32, i32)> = (0..ds.n_nodes as u32)
-        .map(|id| (id, score(class.layers.get(&id).copied().unwrap_or(Layer::Edge))))
+        .map(|id| {
+            (
+                id,
+                score(class.layers.get(&id).copied().unwrap_or(Layer::Edge)),
+            )
+        })
         .collect();
     scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
     scored.into_iter().take(keep).map(|(i, _)| i).collect()
@@ -27,10 +37,20 @@ fn kdf_select_fast(ds: &Dataset, keep: usize) -> HashSet<u32> {
     let c = FastNodeClassifier::default();
     let class = c.classify(ds.n_nodes, &ds.edges);
     let score = |l: Layer| -> i32 {
-        match l { Layer::Rare => 3, Layer::Core => 2, Layer::Edge => 1, Layer::Garbage => 0 }
+        match l {
+            Layer::Rare => 3,
+            Layer::Core => 2,
+            Layer::Edge => 1,
+            Layer::Garbage => 0,
+        }
     };
     let mut scored: Vec<(u32, i32)> = (0..ds.n_nodes as u32)
-        .map(|id| (id, score(class.layers.get(&id).copied().unwrap_or(Layer::Edge))))
+        .map(|id| {
+            (
+                id,
+                score(class.layers.get(&id).copied().unwrap_or(Layer::Edge)),
+            )
+        })
         .collect();
     scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
     scored.into_iter().take(keep).map(|(i, _)| i).collect()
@@ -62,11 +82,22 @@ fn main() {
         let _ = kdf_select_fast(&ds, keep);
         let fast_ms = t0.elapsed().as_secs_f64() * 1000.0;
 
-        let speedup = if def_ms.is_nan() { f64::NAN } else { def_ms / fast_ms };
-        println!("| {} | {:.1} | {:.1} | {:.1}x |",
+        let speedup = if def_ms.is_nan() {
+            f64::NAN
+        } else {
+            def_ms / fast_ms
+        };
+        println!(
+            "| {} | {:.1} | {:.1} | {:.1}x |",
             n,
-            if def_ms.is_nan() { f64::INFINITY } else { def_ms },
-            fast_ms, speedup);
+            if def_ms.is_nan() {
+                f64::INFINITY
+            } else {
+                def_ms
+            },
+            fast_ms,
+            speedup
+        );
 
         if !def_ms.is_nan() {
             default_pts.push(((n as f64).ln(), def_ms.ln()));

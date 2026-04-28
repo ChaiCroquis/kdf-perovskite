@@ -1,13 +1,19 @@
 //! Markdown report generator (common template for all demos).
 
-use std::collections::BTreeMap;
 use super::{Axis, DemoReport};
+use std::collections::BTreeMap;
 
 pub fn render_markdown(report: &DemoReport) -> String {
     let mut out = String::new();
     out.push_str(&format!("# Demo {}: {}\n\n", report.demo_id, report.title));
-    out.push_str(&format!("**Dataset:** {} (n={})\n\n", report.dataset_name, report.n_items));
-    out.push_str(&format!("**Patent section:** {}\n\n", report.patent_section));
+    out.push_str(&format!(
+        "**Dataset:** {} (n={})\n\n",
+        report.dataset_name, report.n_items
+    ));
+    out.push_str(&format!(
+        "**Patent section:** {}\n\n",
+        report.patent_section
+    ));
 
     // Metric legend
     out.push_str("## 測定指標の3軸フレーム\n\n");
@@ -27,8 +33,16 @@ pub fn render_markdown(report: &DemoReport) -> String {
         out.push_str(&format!("### {}\n\n", group_name));
         for m in ms {
             let dir = if m.higher_is_better { "↑" } else { "↓" };
-            out.push_str(&format!("- `{}` {}: {}\n", m.name, dir,
-                if m.higher_is_better { "高い方が良い" } else { "低い方が良い" }));
+            out.push_str(&format!(
+                "- `{}` {}: {}\n",
+                m.name,
+                dir,
+                if m.higher_is_better {
+                    "高い方が良い"
+                } else {
+                    "低い方が良い"
+                }
+            ));
         }
         out.push('\n');
     }
@@ -36,16 +50,27 @@ pub fn render_markdown(report: &DemoReport) -> String {
     // Result table
     out.push_str("## 結果\n\n");
     out.push_str("| Method | ラベル要 | ");
-    let metric_cols: Vec<String> = report.metric_definitions.iter().map(|m| m.name.clone()).collect();
-    for m in &metric_cols { out.push_str(&format!("{} | ", m)); }
+    let metric_cols: Vec<String> = report
+        .metric_definitions
+        .iter()
+        .map(|m| m.name.clone())
+        .collect();
+    for m in &metric_cols {
+        out.push_str(&format!("{} | ", m));
+    }
     out.push_str("wall(ms) |\n|---|:---:|");
-    for _ in &metric_cols { out.push_str("---:|"); }
+    for _ in &metric_cols {
+        out.push_str("---:|");
+    }
     out.push_str("---:|\n");
     for r in &report.method_results {
         let label = if r.requires_labels { "Yes" } else { "No" };
         let prefix = if r.method == "KDF" { "**" } else { "" };
         let suffix = if r.method == "KDF" { "**" } else { "" };
-        out.push_str(&format!("| {}{}{} | {} | ", prefix, r.method, suffix, label));
+        out.push_str(&format!(
+            "| {}{}{} | {} | ",
+            prefix, r.method, suffix, label
+        ));
         for m in &metric_cols {
             let v = r.metrics.get(m).copied().unwrap_or(f64::NAN);
             out.push_str(&format!("{:.3} | ", v));

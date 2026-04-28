@@ -1,5 +1,5 @@
 //! Effectiveness measurement for new features
-use kdf::{Kdf, KdfParams, cosine_similarity, levenshtein_similarity, dtw_similarity};
+use kdf::{cosine_similarity, dtw_similarity, levenshtein_similarity, Kdf, KdfParams};
 use std::time::Instant;
 
 fn main() {
@@ -95,7 +95,7 @@ fn main() {
             vec![1.0, 2.0, 3.0, 4.0, 5.0],
             vec![1.0, 2.0, 3.0, 4.0, 5.0],
             "同一系列",
-            true,  // should be high
+            true, // should be high
         ),
         (
             vec![1.0, 2.0, 3.0, 4.0, 5.0],
@@ -113,7 +113,7 @@ fn main() {
             vec![1.0, 2.0, 3.0],
             vec![1.0, 1.5, 2.0, 2.5, 3.0],
             "異なる長さ",
-            true,  // DTW should handle
+            true, // DTW should handle
         ),
         (
             vec![0.0, 1.0, 0.0, 1.0, 0.0],
@@ -130,9 +130,16 @@ fn main() {
         let sim = dtw_similarity(a, b);
         let threshold = 0.3;
         let is_high = sim > threshold;
-        let status = if *should_be_high == is_high { "✅" } else { "⚠️" };
+        let status = if *should_be_high == is_high {
+            "✅"
+        } else {
+            "⚠️"
+        };
         let expect = if *should_be_high { "高" } else { "低" };
-        println!("   | {:12} | {:>6.3} | {:>4} | {} |", desc, sim, expect, status);
+        println!(
+            "   | {:12} | {:>6.3} | {:>4} | {} |",
+            desc, sim, expect, status
+        );
     }
 
     // ========================================================================
@@ -142,10 +149,10 @@ fn main() {
 
     // 文字列クラスタリング
     let strings = vec![
-        "apple", "apples", "apply",      // Cluster 1
-        "banana", "bananas",              // Cluster 2
-        "cherry",                          // Cluster 3
-        "xyz123",                          // Isolated
+        "apple", "apples", "apply", // Cluster 1
+        "banana", "bananas", // Cluster 2
+        "cherry",  // Cluster 3
+        "xyz123",  // Isolated
     ];
 
     let kdf = Kdf::with_defaults();
@@ -154,7 +161,10 @@ fn main() {
     println!("   ### 文字列クラスタリング (Levenshtein)");
     println!("   入力: {} 件", strings.len());
     println!("   選択: {} 件", result.selected.len());
-    println!("   冗長削減: {:.1}%", (1.0 - result.selected.len() as f64 / strings.len() as f64) * 100.0);
+    println!(
+        "   冗長削減: {:.1}%",
+        (1.0 - result.selected.len() as f64 / strings.len() as f64) * 100.0
+    );
     println!("   選択された文字列:");
     for &i in &result.selected {
         println!("      - {} ({:?})", strings[i], result.layers[i]);
@@ -172,7 +182,9 @@ fn main() {
         // フラット
         vec![5.0; 10],
         // 振動
-        (0..10).map(|i| if i % 2 == 0 { 0.0 } else { 1.0 }).collect(),
+        (0..10)
+            .map(|i| if i % 2 == 0 { 0.0 } else { 1.0 })
+            .collect(),
     ];
 
     let result = kdf.process(&time_series, 0.2, |a, b| dtw_similarity(a, b));
@@ -180,14 +192,20 @@ fn main() {
     println!("\n   ### 時系列クラスタリング (DTW)");
     println!("   入力: {} 件", time_series.len());
     println!("   選択: {} 件", result.selected.len());
-    println!("   冗長削減: {:.1}%", (1.0 - result.selected.len() as f64 / time_series.len() as f64) * 100.0);
+    println!(
+        "   冗長削減: {:.1}%",
+        (1.0 - result.selected.len() as f64 / time_series.len() as f64) * 100.0
+    );
     println!("   選択されたパターン:");
     for &i in &result.selected {
         let pattern = if time_series[i][0] < time_series[i][9] {
             "上昇"
         } else if time_series[i][0] > time_series[i][9] {
             "下降"
-        } else if time_series[i].windows(2).all(|w| (w[0] - w[1]).abs() < 0.01) {
+        } else if time_series[i]
+            .windows(2)
+            .all(|w| (w[0] - w[1]).abs() < 0.01)
+        {
             "フラット"
         } else {
             "振動"
@@ -201,10 +219,12 @@ fn main() {
     println!("\n## 5. Builderパターン使用性\n");
 
     // 従来方式
-    let mut params_old = KdfParams::default();
-    params_old.alpha_edge = 1.8;
-    params_old.iterations = 50;
-    params_old.theta_edge = 0.2;
+    let params_old = KdfParams {
+        alpha_edge: 1.8,
+        iterations: 50,
+        theta_edge: 0.2,
+        ..Default::default()
+    };
 
     // Builder方式
     let params_new = KdfParams::builder()
@@ -215,10 +235,11 @@ fn main() {
 
     println!("   従来方式: 3行 (mut変数 + 個別代入)");
     println!("   Builder:  1行 (メソッドチェーン)");
-    println!("   パラメータ一致: {}",
-        params_old.alpha_edge == params_new.alpha_edge &&
-        params_old.iterations == params_new.iterations &&
-        params_old.theta_edge == params_new.theta_edge
+    println!(
+        "   パラメータ一致: {}",
+        params_old.alpha_edge == params_new.alpha_edge
+            && params_old.iterations == params_new.iterations
+            && params_old.theta_edge == params_new.theta_edge
     );
 
     // ========================================================================

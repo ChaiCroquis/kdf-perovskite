@@ -1,8 +1,8 @@
 //! Causal KDF V3 - Transfer Entropy Integration with KDF
 
-use std::collections::HashMap;
-use super::types::{TeStrategy, CausalLink};
 use super::engine::CausalEngine;
+use super::types::{CausalLink, TeStrategy};
+use std::collections::HashMap;
 
 /// Causal KDF V3 - Transfer Entropy Integration with KDF
 ///
@@ -54,11 +54,11 @@ impl CausalKdfV3 {
     ) -> Self {
         // Create engine with appropriate parameters
         let engine = CausalEngine::new(
-            1,              // gaussian_lag
-            3,              // symbolic_dim
-            1,              // symbolic_delay
-            4,              // ksg_k
-            ksg_surrogates, // ksg_surrogates
+            1,                   // gaussian_lag
+            3,                   // symbolic_dim
+            1,                   // symbolic_delay
+            4,                   // ksg_k
+            ksg_surrogates,      // ksg_surrogates
             screening_threshold, // te_threshold
         );
 
@@ -87,7 +87,9 @@ impl CausalKdfV3 {
         data: &HashMap<String, Vec<f64>>,
         candidates: &[(String, String)],
     ) -> Vec<CausalLink> {
-        let (links, batch_stats) = self.engine.batch_compute(data, candidates, TeStrategy::Screening);
+        let (links, batch_stats) =
+            self.engine
+                .batch_compute(data, candidates, TeStrategy::Screening);
 
         self.stats.screening_calls += batch_stats.pairs_computed;
 
@@ -109,7 +111,9 @@ impl CausalKdfV3 {
         data: &HashMap<String, Vec<f64>>,
         candidates: &[(String, String)],
     ) -> Vec<CausalLink> {
-        let (links, batch_stats) = self.engine.batch_compute(data, candidates, TeStrategy::DeepProbe);
+        let (links, batch_stats) =
+            self.engine
+                .batch_compute(data, candidates, TeStrategy::DeepProbe);
 
         self.stats.deep_probe_calls += batch_stats.pairs_computed;
 
@@ -140,7 +144,9 @@ impl CausalKdfV3 {
         data: &HashMap<String, Vec<f64>>,
         candidates: &[(String, String)],
     ) -> Vec<CausalLink> {
-        let (links, batch_stats) = self.engine.batch_compute(data, candidates, TeStrategy::Validation);
+        let (links, batch_stats) =
+            self.engine
+                .batch_compute(data, candidates, TeStrategy::Validation);
 
         self.stats.validation_calls += batch_stats.pairs_computed;
 

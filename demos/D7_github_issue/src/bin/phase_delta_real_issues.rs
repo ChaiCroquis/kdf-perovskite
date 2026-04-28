@@ -20,6 +20,7 @@ struct Label {
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct Issue {
     number: u32,
     title: String,
@@ -60,14 +61,19 @@ fn main() {
         eprintln!("  done");
         std::process::exit(1);
     }
-    println!("Loaded {} issues from rust-lang/rust (real GitHub API dump)", issues.len());
+    println!(
+        "Loaded {} issues from rust-lang/rust (real GitHub API dump)",
+        issues.len()
+    );
 
     // Filter to PURE issues (not PRs)
     let pure_issues: Vec<&Issue> = issues.iter().filter(|i| i.pull_request.is_none()).collect();
     println!("Pure issues (not PRs): {}", pure_issues.len());
 
     // Build id map: number → local index
-    let index_of: HashMap<u32, u32> = pure_issues.iter().enumerate()
+    let index_of: HashMap<u32, u32> = pure_issues
+        .iter()
+        .enumerate()
         .map(|(i, iss)| (iss.number, i as u32))
         .collect();
     let n = pure_issues.len();
@@ -78,22 +84,30 @@ fn main() {
     let mut author_groups: HashMap<String, Vec<u32>> = HashMap::new();
     for (i, iss) in pure_issues.iter().enumerate() {
         for l in &iss.labels {
-            label_groups.entry(l.name.clone()).or_default().push(i as u32);
+            label_groups
+                .entry(l.name.clone())
+                .or_default()
+                .push(i as u32);
         }
         if let Some(u) = &iss.user {
-            author_groups.entry(u.login.clone()).or_default().push(i as u32);
+            author_groups
+                .entry(u.login.clone())
+                .or_default()
+                .push(i as u32);
         }
     }
     // Edges: limit per group to avoid quadratic
-    for (_, idxs) in &label_groups {
+    for idxs in label_groups.values() {
         for a in 0..idxs.len() {
             for b in (a + 1)..idxs.len().min(a + 5) {
                 edges.push((idxs[a], idxs[b], 1.0));
             }
         }
     }
-    for (_, idxs) in &author_groups {
-        if idxs.len() < 2 || idxs.len() > 20 { continue; }
+    for idxs in author_groups.values() {
+        if idxs.len() < 2 || idxs.len() > 20 {
+            continue;
+        }
         for a in 0..idxs.len() {
             for b in (a + 1)..idxs.len().min(a + 3) {
                 edges.push((idxs[a], idxs[b], 0.5));
@@ -104,12 +118,19 @@ fn main() {
     // Rare ground truth: duplicate or not_planned issues
     let mut rare_gt: HashSet<u32> = HashSet::new();
     for (i, iss) in pure_issues.iter().enumerate() {
-        if matches!(iss.state_reason.as_deref(), Some("duplicate") | Some("not_planned")) {
+        if matches!(
+            iss.state_reason.as_deref(),
+            Some("duplicate") | Some("not_planned")
+        ) {
             rare_gt.insert(i as u32);
         }
     }
-    println!("Edges: {}, Rare ground truth (duplicate + not_planned): {} / {}",
-        edges.len(), rare_gt.len(), n);
+    println!(
+        "Edges: {}, Rare ground truth (duplicate + not_planned): {} / {}",
+        edges.len(),
+        rare_gt.len(),
+        n
+    );
     let _ = index_of;
 
     // Samplers
@@ -139,7 +160,9 @@ fn main() {
         for (i, iss) in pure_issues.iter().enumerate() {
             if iss.labels.iter().any(|l| hot_labels.contains(&l.name)) {
                 out.insert(i as u32);
-                if out.len() >= keep { break; }
+                if out.len() >= keep {
+                    break;
+                }
             }
         }
         out
@@ -149,10 +172,20 @@ fn main() {
         let mut c = NodeClassifier::default();
         let class = c.classify(n, &edges);
         let score = |l: Layer| -> i32 {
-            match l { Layer::Rare => 3, Layer::Core => 2, Layer::Edge => 1, Layer::Garbage => 0 }
+            match l {
+                Layer::Rare => 3,
+                Layer::Core => 2,
+                Layer::Edge => 1,
+                Layer::Garbage => 0,
+            }
         };
         let mut scored: Vec<(u32, i32)> = (0..n as u32)
-            .map(|id| (id, score(class.layers.get(&id).copied().unwrap_or(Layer::Edge))))
+            .map(|id| {
+                (
+                    id,
+                    score(class.layers.get(&id).copied().unwrap_or(Layer::Edge)),
+                )
+            })
             .collect();
         scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
         scored.into_iter().take(keep).map(|(i, _)| i).collect()
@@ -160,11 +193,15 @@ fn main() {
 
     // Evaluate
     let recall = |sel: &HashSet<u32>| -> f64 {
-        if rare_gt.is_empty() { return 0.0; }
+        if rare_gt.is_empty() {
+            return 0.0;
+        }
         sel.intersection(&rare_gt).count() as f64 / rare_gt.len() as f64
     };
     let precision = |sel: &HashSet<u32>| -> f64 {
-        if sel.is_empty() { return 0.0; }
+        if sel.is_empty() {
+            return 0.0;
+        }
         sel.intersection(&rare_gt).count() as f64 / sel.len() as f64
     };
 
@@ -186,17 +223,30 @@ fn main() {
 
     // Label match (deterministic)
     let sel_lm = label_match();
-    println!("| LabelMatch | {:.3} | {:.3} | ~0ms |", recall(&sel_lm), precision(&sel_lm));
+    println!(
+        "| LabelMatch | {:.3} | {:.3} | ~0ms |",
+        recall(&sel_lm),
+        precision(&sel_lm)
+    );
 
     // KDF (deterministic)
     let t0 = std::time::Instant::now();
     let sel_kdf = kdf_select();
     let ms = t0.elapsed().as_secs_f64() * 1000.0;
-    println!("| KDF | {:.3} | {:.3} | {:.1}ms |", recall(&sel_kdf), precision(&sel_kdf), ms);
+    println!(
+        "| KDF | {:.3} | {:.3} | {:.1}ms |",
+        recall(&sel_kdf),
+        precision(&sel_kdf),
+        ms
+    );
 
     println!("\n## Interpretation");
-    println!("- Rare ground truth = duplicate + not_planned state_reason ({}/{} = {:.1}%)",
-        rare_gt.len(), n, 100.0 * rare_gt.len() as f64 / n as f64);
+    println!(
+        "- Rare ground truth = duplicate + not_planned state_reason ({}/{} = {:.1}%)",
+        rare_gt.len(),
+        n,
+        100.0 * rare_gt.len() as f64 / n as f64
+    );
     println!("- Random baseline ≈ 30% (should match selection budget)");
     println!("- LabelMatch uses ground-truth labels indirectly — upper bound");
     println!("- KDF: structure-only, no text read, no labels besides graph");

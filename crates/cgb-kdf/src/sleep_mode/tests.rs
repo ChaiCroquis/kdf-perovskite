@@ -5,8 +5,8 @@ use std::collections::HashMap;
 use crate::interning::NodeIdMap;
 
 use super::{
-    compute_structural_entropy, entropy_cache::IncrementalEntropyCache,
-    cooling::AdaptiveCoolingScheduler, optimizer::SleepModeOptimizer,
+    compute_structural_entropy, cooling::AdaptiveCoolingScheduler,
+    entropy_cache::IncrementalEntropyCache, optimizer::SleepModeOptimizer,
 };
 
 fn create_test_graph() -> Vec<(String, String, f64)> {
@@ -57,7 +57,8 @@ fn test_interned_initialization() {
     let interned_partition = id_map.intern_partition(&partition);
 
     let mut cache = IncrementalEntropyCache::new(1000);
-    let entropy = cache.initialize_from_interned(&interned_edges, &interned_partition, id_map.len());
+    let entropy =
+        cache.initialize_from_interned(&interned_edges, &interned_partition, id_map.len());
 
     assert!(entropy >= 0.0);
 }
@@ -185,7 +186,10 @@ fn benchmark_interning() {
 
     println!("\nSleep Mode Optimizer Benchmark");
     println!("==============================");
-    println!("{:<8} {:<8} {:<12} {:<12}", "Nodes", "Edges", "Time(ms)", "Iter/sec");
+    println!(
+        "{:<8} {:<8} {:<12} {:<12}",
+        "Nodes", "Edges", "Time(ms)", "Iter/sec"
+    );
     println!("{}", "-".repeat(44));
 
     for &n in &[100, 200, 500, 1000] {

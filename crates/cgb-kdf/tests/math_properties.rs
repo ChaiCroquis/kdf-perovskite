@@ -32,7 +32,11 @@ fn closed_form_n_step_agreement() {
     }
     let closed = (-lambda * dt * n as f64).exp();
     let rel_err = ((w - closed) / closed).abs();
-    assert!(rel_err < 1e-11, "N-step product must equal closed-form exp(-Nλdt) within 1e-11, got rel_err={}", rel_err);
+    assert!(
+        rel_err < 1e-11,
+        "N-step product must equal closed-form exp(-Nλdt) within 1e-11, got rel_err={}",
+        rel_err
+    );
 }
 
 /// §4.2 convergence time: T_θ = (1/λ) · ln(w0/θ).
@@ -55,7 +59,12 @@ fn convergence_time_matches_formula() {
         steps += 1;
     }
     let rel = (steps as f64 - expected_steps as f64).abs() / expected_steps as f64;
-    assert!(rel < 0.01, "empirical steps ({}) must match formula ({}) within 1%", steps, expected_steps);
+    assert!(
+        rel < 0.01,
+        "empirical steps ({}) must match formula ({}) within 1%",
+        steps,
+        expected_steps
+    );
 }
 
 /// §4.3 rare layer is ~6x slower than edge layer (half-life comparison).
@@ -70,14 +79,20 @@ fn rare_layer_protects_longer_than_edge() {
 
     let tau_e = 1.0 / (lam_e * dt_e); // steps to 1/e
     let tau_r = 1.0 / (lam_r * dt_r);
-    assert!(tau_r > tau_e, "Rare layer time-constant must exceed Edge layer");
+    assert!(
+        tau_r > tau_e,
+        "Rare layer time-constant must exceed Edge layer"
+    );
 }
 
 /// §5.1 Lyapunov condition η² > μ² on default parameters.
 #[test]
 fn lyapunov_stability_default() {
     let mc = MetaController::default();
-    assert!(mc.check_lyapunov_stability(), "default η, μ must satisfy η²>μ²");
+    assert!(
+        mc.check_lyapunov_stability(),
+        "default η, μ must satisfy η²>μ²"
+    );
 }
 
 /// §5.2 long-run simulation: adaptive α does not diverge.
@@ -94,14 +109,30 @@ fn lyapunov_simulation_bounded() {
         let avg_k_core = 4.0 + 2.0 * ((t as f64) / 80.0).cos();
         mc.step(&mut params, avg_k_edge, avg_k_core);
         alpha_history.push(params.alpha_edge);
-        assert!(params.alpha_edge >= mc.alpha_edge_bounds.0, "α below bound at t={}", t);
-        assert!(params.alpha_edge <= mc.alpha_edge_bounds.1, "α above bound at t={}", t);
+        assert!(
+            params.alpha_edge >= mc.alpha_edge_bounds.0,
+            "α below bound at t={}",
+            t
+        );
+        assert!(
+            params.alpha_edge <= mc.alpha_edge_bounds.1,
+            "α above bound at t={}",
+            t
+        );
     }
 
     // Variance of α should remain bounded (no monotonic drift)
     let mean: f64 = alpha_history.iter().sum::<f64>() / alpha_history.len() as f64;
-    let var: f64 = alpha_history.iter().map(|a| (a - mean).powi(2)).sum::<f64>() / alpha_history.len() as f64;
-    assert!(var < 1.0, "α variance {} indicates Lyapunov instability", var);
+    let var: f64 = alpha_history
+        .iter()
+        .map(|a| (a - mean).powi(2))
+        .sum::<f64>()
+        / alpha_history.len() as f64;
+    assert!(
+        var < 1.0,
+        "α variance {} indicates Lyapunov instability",
+        var
+    );
 }
 
 /// Claim 8/9: λ(C) is strictly monotone-increasing in C (for fixed layer).
@@ -113,7 +144,14 @@ fn lambda_monotone_in_congestion() {
         for c_int in 1..=100 {
             let c = c_int as f64;
             let cur = p.lambda(c, layer);
-            assert!(cur > prev, "λ must be monotone-increasing in C; layer={:?}, C={}, prev={}, cur={}", layer, c, prev, cur);
+            assert!(
+                cur > prev,
+                "λ must be monotone-increasing in C; layer={:?}, C={}, prev={}, cur={}",
+                layer,
+                c,
+                prev,
+                cur
+            );
             prev = cur;
         }
     }
@@ -122,13 +160,22 @@ fn lambda_monotone_in_congestion() {
 /// Claim 29 δk^4 scaling: doubling δk multiplies the fourth-power term by 16.
 #[test]
 fn delta_k_fourth_power_scaling() {
-    let mc = MetaController { mu: 1.0, eta: 0.0, health_target: 1.0, ..MetaController::default() };
+    let mc = MetaController {
+        mu: 1.0,
+        eta: 0.0,
+        health_target: 1.0,
+        ..MetaController::default()
+    };
     // At H = 1 (perfect health) and health_target=1, the η term vanishes.
     // So Δα = +μ · δk^4 (sign +1 for Edge).
     // k_opt_edge = 6.0 → δk=4 for avg_k=10, δk=8 for avg_k=14.
     let d1 = mc.alpha_update(Layer::Edge, 10.0); // δk=4 → 256
     let d2 = mc.alpha_update(Layer::Edge, 14.0); // δk=8 → 4096
-    assert!((d2 / d1 - 16.0).abs() < 1e-9, "Claim 29: ratio must be 16, got {}", d2 / d1);
+    assert!(
+        (d2 / d1 - 16.0).abs() < 1e-9,
+        "Claim 29: ratio must be 16, got {}",
+        d2 / d1
+    );
 }
 
 /// Phase 3 determinism: apply_edge_decay is HashMap-insertion-order invariant.
@@ -138,7 +185,7 @@ fn delta_k_fourth_power_scaling() {
 /// This catches any reliance on HashMap's random iteration order.
 #[test]
 fn apply_decay_is_insertion_order_invariant() {
-    use cgb_kdf::{DecayManager, Layer, NodeClassification, ClassificationStats};
+    use cgb_kdf::{ClassificationStats, DecayManager, Layer, NodeClassification};
     use std::collections::HashMap;
 
     let forward: Vec<(u32, u32, f64)> = (0..20).map(|i| (i, i + 1, 1.0)).collect();
@@ -146,7 +193,10 @@ fn apply_decay_is_insertion_order_invariant() {
 
     let run = |edges: &[(u32, u32, f64)]| -> Vec<((u32, u32), u64)> {
         let mut layers = HashMap::new();
-        for e in edges { layers.insert(e.0, Layer::Edge); layers.insert(e.1, Layer::Edge); }
+        for e in edges {
+            layers.insert(e.0, Layer::Edge);
+            layers.insert(e.1, Layer::Edge);
+        }
         let class = NodeClassification {
             layers,
             rare_fingerprints: HashMap::new(),
@@ -154,7 +204,9 @@ fn apply_decay_is_insertion_order_invariant() {
         };
         let mut mgr = DecayManager::master_spec();
         mgr.initialize_with_edges(class, edges);
-        for _ in 0..50 { mgr.apply_edge_decay(); }
+        for _ in 0..50 {
+            mgr.apply_edge_decay();
+        }
         // Drain weights sorted by (u,v) to compare bit patterns.
         let mut out: Vec<_> = (0..20u32)
             .map(|i| ((i, i + 1), mgr.get_edge_weight(i, i + 1).unwrap().to_bits()))
@@ -165,7 +217,10 @@ fn apply_decay_is_insertion_order_invariant() {
 
     let a = run(&forward);
     let b = run(&reverse);
-    assert_eq!(a, b, "decay must be insertion-order invariant (HashMap order must not leak into results)");
+    assert_eq!(
+        a, b,
+        "decay must be insertion-order invariant (HashMap order must not leak into results)"
+    );
 }
 
 /// Determinism: decay operator is purely functional of (w, λ, dt).
@@ -177,5 +232,9 @@ fn decay_determinism_bitwise() {
     let w0 = 0.5_f64;
     let w_a = (0..1000).fold(w0, |w, _| w * (-lambda * dt).exp());
     let w_b = (0..1000).fold(w0, |w, _| w * (-lambda * dt).exp());
-    assert_eq!(w_a.to_bits(), w_b.to_bits(), "same inputs must produce bit-exact outputs");
+    assert_eq!(
+        w_a.to_bits(),
+        w_b.to_bits(),
+        "same inputs must produce bit-exact outputs"
+    );
 }

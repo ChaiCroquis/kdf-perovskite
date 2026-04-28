@@ -24,7 +24,9 @@
 //! - KDF (reply-graph structural rareness)
 //! - KDF+TextSim (structural + content hybrid)
 
-use kdf_demos_common::{visualizer::emit_artifacts, Axis, Conclusion, DemoReport, Metric, MethodResult};
+use kdf_demos_common::{
+    visualizer::emit_artifacts, Axis, Conclusion, DemoReport, MethodResult, Metric,
+};
 use rand::prelude::*;
 use rand::rngs::SmallRng;
 use real_data_bench::Dataset;
@@ -40,18 +42,50 @@ fn main() {
     let seeds: Vec<u64> = (0..N_TRIALS as u64).map(|i| 8000 + i).collect();
 
     let (posts, ds, minority_ids) = synthesize_forum(/*seed=*/ 42);
-    println!("Forum: n={} posts, reply edges={}, minority_posts={}",
-        posts.len(), ds.edges.len(), minority_ids.len());
+    println!(
+        "Forum: n={} posts, reply edges={}, minority_posts={}",
+        posts.len(),
+        ds.edges.len(),
+        minority_ids.len()
+    );
 
     let keep = (posts.len() as f64 * SELECTION_FRAC).ceil() as usize;
 
-    let methods: Vec<(String, bool, Box<dyn Fn(&[String], &Dataset, u64) -> HashSet<u32>>)> = vec![
-        ("Random".into(), false, Box::new(move |posts, _ds, seed| sample_random(posts.len(), keep, seed))),
-        ("ExactDup".into(), false, Box::new(move |posts, _ds, _seed| sample_exact_dedup(posts, keep))),
-        ("MinHash".into(), false, Box::new(move |posts, _ds, _seed| sample_minhash(posts, keep, 32))),
-        ("SimHash".into(), false, Box::new(move |posts, _ds, _seed| sample_simhash(posts, keep))),
-        ("KDF".into(), false, Box::new(move |_posts, ds, _seed| sample_kdf(ds, keep))),
-        ("KDF+TextSim".into(), false, Box::new(move |posts, ds, _seed| sample_kdf_hybrid(posts, ds, keep))),
+    let methods: Vec<(
+        String,
+        bool,
+        Box<dyn Fn(&[String], &Dataset, u64) -> HashSet<u32>>,
+    )> = vec![
+        (
+            "Random".into(),
+            false,
+            Box::new(move |posts, _ds, seed| sample_random(posts.len(), keep, seed)),
+        ),
+        (
+            "ExactDup".into(),
+            false,
+            Box::new(move |posts, _ds, _seed| sample_exact_dedup(posts, keep)),
+        ),
+        (
+            "MinHash".into(),
+            false,
+            Box::new(move |posts, _ds, _seed| sample_minhash(posts, keep, 32)),
+        ),
+        (
+            "SimHash".into(),
+            false,
+            Box::new(move |posts, _ds, _seed| sample_simhash(posts, keep)),
+        ),
+        (
+            "KDF".into(),
+            false,
+            Box::new(move |_posts, ds, _seed| sample_kdf(ds, keep)),
+        ),
+        (
+            "KDF+TextSim".into(),
+            false,
+            Box::new(move |posts, ds, _seed| sample_kdf_hybrid(posts, ds, keep)),
+        ),
     ];
 
     let mut method_results: Vec<MethodResult> = Vec::new();
@@ -66,39 +100,75 @@ fn main() {
             let t0 = Instant::now();
             let sel = sampler(&posts, &ds, seed);
             let ms = t0.elapsed().as_secs_f64() * 1000.0;
-            let minority_recall = sel.intersection(&minority_ids).count() as f64 / minority_ids.len().max(1) as f64;
+            let minority_recall =
+                sel.intersection(&minority_ids).count() as f64 / minority_ids.len().max(1) as f64;
             let dup_reduction = measure_dup_reduction(&posts, &sel);
             let comp = 1.0 - sel.len() as f64 / posts.len() as f64;
             minority_recalls.push(minority_recall);
             dup_reductions.push(dup_reduction);
             compressions.push(comp);
             walls.push(ms);
-            raw_trials.entry(format!("{}/minority_recall", name)).or_default().push(minority_recall);
-            raw_trials.entry(format!("{}/dup_reduction", name)).or_default().push(dup_reduction);
+            raw_trials
+                .entry(format!("{}/minority_recall", name))
+                .or_default()
+                .push(minority_recall);
+            raw_trials
+                .entry(format!("{}/dup_reduction", name))
+                .or_default()
+                .push(dup_reduction);
         }
         let mean = |v: &[f64]| v.iter().sum::<f64>() / v.len() as f64;
         let r = mean(&minority_recalls);
         let d = mean(&dup_reductions);
         let c = mean(&compressions);
         let w = mean(&walls);
-        println!("{:14} minority_recall={:.3}  dup_reduction={:.3}  comp={:.3}  ms={:.2}",
-            name, r, d, c, w);
+        println!(
+            "{:14} minority_recall={:.3}  dup_reduction={:.3}  comp={:.3}  ms={:.2}",
+            name, r, d, c, w
+        );
         let mut metrics = BTreeMap::new();
         metrics.insert("minority_recall".into(), r);
         metrics.insert("dup_reduction".into(), d);
         metrics.insert("compression".into(), c);
         metrics.insert("wall_ms".into(), w);
         method_results.push(MethodResult {
-            method: name.clone(), requires_labels: *needs_label,
-            metrics, wall_ms: w, notes: String::new(),
+            method: name.clone(),
+            requires_labels: *needs_label,
+            metrics,
+            wall_ms: w,
+            notes: String::new(),
         });
     }
 
     let metric_definitions = vec![
-        Metric { name: "minority_recall".into(), higher_is_better: true, mean: 0.0, stderr: 0.0, axis: Axis::KdfStrength },
-        Metric { name: "dup_reduction".into(), higher_is_better: true, mean: 0.0, stderr: 0.0, axis: Axis::Tie },
-        Metric { name: "compression".into(), higher_is_better: true, mean: 0.0, stderr: 0.0, axis: Axis::Tie },
-        Metric { name: "wall_ms".into(), higher_is_better: false, mean: 0.0, stderr: 0.0, axis: Axis::KdfWeakness },
+        Metric {
+            name: "minority_recall".into(),
+            higher_is_better: true,
+            mean: 0.0,
+            stderr: 0.0,
+            axis: Axis::KdfStrength,
+        },
+        Metric {
+            name: "dup_reduction".into(),
+            higher_is_better: true,
+            mean: 0.0,
+            stderr: 0.0,
+            axis: Axis::Tie,
+        },
+        Metric {
+            name: "compression".into(),
+            higher_is_better: true,
+            mean: 0.0,
+            stderr: 0.0,
+            axis: Axis::Tie,
+        },
+        Metric {
+            name: "wall_ms".into(),
+            higher_is_better: false,
+            mean: 0.0,
+            stderr: 0.0,
+            axis: Axis::KdfWeakness,
+        },
     ];
 
     let report = DemoReport {
@@ -163,7 +233,11 @@ fn synthesize_forum(seed: u64) -> (Vec<String>, Dataset, HashSet<u32>) {
     // Minority opinions: 10 posts, unique content, each with 1-2 replies
     for m in 0..10 {
         let id = posts.len() as u32;
-        let text = format!("minority opinion {}: there is an edge case where the feature fails at index {}", m, m * 7);
+        let text = format!(
+            "minority opinion {}: there is an edge case where the feature fails at index {}",
+            m,
+            m * 7
+        );
         posts.push(text);
         minority_ids.insert(id);
         let n_reply = (rng.gen_range(1..=2)) as usize;
@@ -186,7 +260,8 @@ fn synthesize_forum(seed: u64) -> (Vec<String>, Dataset, HashSet<u32>) {
         n_nodes: n,
         edges,
         rare_ground_truth: minority_ids.clone(),
-        description: "synthetic forum: 3 majority threads × 30 replies + 10 minorities + 20 spam".into(),
+        description: "synthetic forum: 3 majority threads × 30 replies + 10 minorities + 20 spam"
+            .into(),
     };
     (posts, ds, minority_ids)
 }
@@ -219,34 +294,50 @@ fn sample_exact_dedup(posts: &[String], keep: usize) -> HashSet<u32> {
 fn shingles(s: &str, k: usize) -> HashSet<String> {
     let s = s.to_lowercase();
     let chars: Vec<char> = s.chars().collect();
-    if chars.len() < k { return HashSet::new(); }
-    (0..=chars.len() - k).map(|i| chars[i..i + k].iter().collect::<String>()).collect()
+    if chars.len() < k {
+        return HashSet::new();
+    }
+    (0..=chars.len() - k)
+        .map(|i| chars[i..i + k].iter().collect::<String>())
+        .collect()
 }
 
 fn sample_minhash(posts: &[String], keep: usize, n_hashes: usize) -> HashSet<u32> {
     // Compute n_hashes MinHash signatures per post, group by signature, keep representatives.
-    let sigs: Vec<Vec<u64>> = posts.iter().map(|p| {
-        let shs = shingles(p, 5);
-        let mut hash_mins = vec![u64::MAX; n_hashes];
-        for sh in &shs {
-            let h = fnv1a(sh.as_bytes());
-            for k in 0..n_hashes {
-                let mixed = h ^ (0x9E3779B97F4A7C15u64.wrapping_mul(k as u64 + 1));
-                if mixed < hash_mins[k] { hash_mins[k] = mixed; }
+    let sigs: Vec<Vec<u64>> = posts
+        .iter()
+        .map(|p| {
+            let shs = shingles(p, 5);
+            let mut hash_mins = vec![u64::MAX; n_hashes];
+            for sh in &shs {
+                let h = fnv1a(sh.as_bytes());
+                for k in 0..n_hashes {
+                    let mixed = h ^ (0x9E3779B97F4A7C15u64.wrapping_mul(k as u64 + 1));
+                    if mixed < hash_mins[k] {
+                        hash_mins[k] = mixed;
+                    }
+                }
             }
-        }
-        hash_mins
-    }).collect();
+            hash_mins
+        })
+        .collect();
     // Group by first hash bucket + keep diverse across groups
     let mut buckets: BTreeMap<u64, Vec<u32>> = BTreeMap::new();
     for (i, sig) in sigs.iter().enumerate() {
-        buckets.entry(sig[0] / (u64::MAX / 100).max(1)).or_default().push(i as u32);
+        buckets
+            .entry(sig[0] / (u64::MAX / 100))
+            .or_default()
+            .push(i as u32);
     }
     let mut out: HashSet<u32> = HashSet::new();
     // Take one representative per bucket first
     for ids in buckets.values() {
-        if let Some(&first) = ids.first() { out.insert(first); }
-        if out.len() >= keep { break; }
+        if let Some(&first) = ids.first() {
+            out.insert(first);
+        }
+        if out.len() >= keep {
+            break;
+        }
     }
     out
 }
@@ -260,13 +351,19 @@ fn sample_simhash(posts: &[String], keep: usize) -> HashSet<u32> {
     }
     let mut out = HashSet::new();
     for ids in buckets.values() {
-        if let Some(&first) = ids.first() { out.insert(first); }
-        if out.len() >= keep { break; }
+        if let Some(&first) = ids.first() {
+            out.insert(first);
+        }
+        if out.len() >= keep {
+            break;
+        }
     }
     // Fill remaining with lowest-distance pairs removed
     if out.len() < keep {
         for i in 0..posts.len() as u32 {
-            if out.insert(i) && out.len() >= keep { break; }
+            if out.insert(i) && out.len() >= keep {
+                break;
+            }
         }
     }
     out
@@ -277,10 +374,20 @@ fn sample_kdf(ds: &Dataset, keep: usize) -> HashSet<u32> {
     let mut classifier = NodeClassifier::default();
     let class = classifier.classify(ds.n_nodes, &ds.edges);
     let score = |l: Layer| -> i32 {
-        match l { Layer::Rare => 3, Layer::Core => 2, Layer::Edge => 1, Layer::Garbage => 0 }
+        match l {
+            Layer::Rare => 3,
+            Layer::Core => 2,
+            Layer::Edge => 1,
+            Layer::Garbage => 0,
+        }
     };
     let mut scored: Vec<(u32, i32)> = (0..ds.n_nodes as u32)
-        .map(|id| (id, score(class.layers.get(&id).copied().unwrap_or(Layer::Edge))))
+        .map(|id| {
+            (
+                id,
+                score(class.layers.get(&id).copied().unwrap_or(Layer::Edge)),
+            )
+        })
         .collect();
     scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
     scored.into_iter().take(keep).map(|(id, _)| id).collect()
@@ -292,7 +399,14 @@ fn sample_kdf_hybrid(posts: &[String], ds: &Dataset, keep: usize) -> HashSet<u32
     let minhash_budget = keep.saturating_sub(kdf_budget);
     let mut out = sample_kdf(ds, kdf_budget);
     let mh = sample_minhash(posts, minhash_budget + out.len(), 32);
-    for id in mh { if !out.contains(&id) { out.insert(id); if out.len() >= keep { break; } } }
+    for id in mh {
+        if !out.contains(&id) {
+            out.insert(id);
+            if out.len() >= keep {
+                break;
+            }
+        }
+    }
     out
 }
 
@@ -314,12 +428,18 @@ fn simhash64(text: &str) -> u64 {
     for sh in shingles(text, 3) {
         let h = fnv1a(sh.as_bytes());
         for i in 0..64 {
-            if (h >> i) & 1 == 1 { v[i] += 1; } else { v[i] -= 1; }
+            if (h >> i) & 1 == 1 {
+                v[i] += 1;
+            } else {
+                v[i] -= 1;
+            }
         }
     }
     let mut out = 0u64;
     for i in 0..64 {
-        if v[i] > 0 { out |= 1 << i; }
+        if v[i] > 0 {
+            out |= 1 << i;
+        }
     }
     out
 }
@@ -330,7 +450,13 @@ fn measure_dup_reduction(posts: &[String], selected: &HashSet<u32>) -> f64 {
     let mut unique = 0;
     for &id in selected {
         let p = &posts[id as usize];
-        if seen.insert(p.clone()) { unique += 1; }
+        if seen.insert(p.clone()) {
+            unique += 1;
+        }
     }
-    if selected.is_empty() { 0.0 } else { unique as f64 / selected.len() as f64 }
+    if selected.is_empty() {
+        0.0
+    } else {
+        unique as f64 / selected.len() as f64
+    }
 }

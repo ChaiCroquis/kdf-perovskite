@@ -21,7 +21,9 @@
 //! - Stratified by status code (requires labels)
 //! - **KDF** (treats log as bipartite IP×resource graph, no labels needed)
 
-use kdf_demos_common::{visualizer::emit_artifacts, Axis, Conclusion, DemoReport, Metric, MethodResult};
+use kdf_demos_common::{
+    visualizer::emit_artifacts, Axis, Conclusion, DemoReport, MethodResult, Metric,
+};
 use rand::prelude::*;
 use rand::rngs::SmallRng;
 use real_data_bench::{public_datasets, Dataset};
@@ -35,7 +37,9 @@ const COMPRESSION_TARGET: f64 = 0.90; // drop ~90%, keep ~10%
 
 fn main() {
     // ------------------- 1. Load or generate --------------------
-    let rare_codes: HashSet<u16> = [400, 401, 403, 404, 500, 502, 503, 504].into_iter().collect();
+    let rare_codes: HashSet<u16> = [400, 401, 403, 404, 500, 502, 503, 504]
+        .into_iter()
+        .collect();
 
     let (log, dataset_label, synthetic) = match public_datasets::load_nasa_log(&rare_codes) {
         Some(ds) => {
@@ -53,7 +57,10 @@ fn main() {
 
     let n_total = log.len();
     let n_rare_true = log.iter().filter(|r| r.is_error).count();
-    println!("log records: total={}, rare(4xx/5xx)={}", n_total, n_rare_true);
+    println!(
+        "log records: total={}, rare(4xx/5xx)={}",
+        n_total, n_rare_true
+    );
 
     // ------------------- 2. Build KDF dataset (bipartite graph) --------------------
     let ds = build_bipartite_graph(&log);
@@ -62,12 +69,36 @@ fn main() {
     let seeds: Vec<u64> = (0..N_TRIALS as u64).map(|i| 5000 + i).collect();
     let keep_count = ((1.0 - COMPRESSION_TARGET) * n_total as f64).ceil() as usize;
 
-    let samplers: Vec<(String, bool, Box<dyn Fn(&[LogRecord], u64) -> HashSet<usize>>)> = vec![
-        ("Random".into(), false, Box::new(move |log, seed| sample_random(log, keep_count, seed))),
-        ("Reservoir".into(), false, Box::new(move |log, seed| sample_reservoir(log, keep_count, seed))),
-        ("Head".into(), false, Box::new(move |log, _seed| sample_head(log, keep_count))),
-        ("TailBasedLabeled".into(), true, Box::new(move |log, _seed| sample_tail_based(log, keep_count))),
-        ("StratifiedLabeled".into(), true, Box::new(move |log, seed| sample_stratified(log, keep_count, seed))),
+    let samplers: Vec<(
+        String,
+        bool,
+        Box<dyn Fn(&[LogRecord], u64) -> HashSet<usize>>,
+    )> = vec![
+        (
+            "Random".into(),
+            false,
+            Box::new(move |log, seed| sample_random(log, keep_count, seed)),
+        ),
+        (
+            "Reservoir".into(),
+            false,
+            Box::new(move |log, seed| sample_reservoir(log, keep_count, seed)),
+        ),
+        (
+            "Head".into(),
+            false,
+            Box::new(move |log, _seed| sample_head(log, keep_count)),
+        ),
+        (
+            "TailBasedLabeled".into(),
+            true,
+            Box::new(move |log, _seed| sample_tail_based(log, keep_count)),
+        ),
+        (
+            "StratifiedLabeled".into(),
+            true,
+            Box::new(move |log, seed| sample_stratified(log, keep_count, seed)),
+        ),
     ];
 
     let mut method_results: Vec<MethodResult> = Vec::new();
@@ -83,7 +114,10 @@ fn main() {
         let mut metrics = BTreeMap::new();
         metrics.insert("rare_recall".to_string(), mean_recall);
         metrics.insert("compression".to_string(), mean_comp);
-        metrics.insert("label_free".to_string(), if *needs_label { 0.0 } else { 1.0 });
+        metrics.insert(
+            "label_free".to_string(),
+            if *needs_label { 0.0 } else { 1.0 },
+        );
         metrics.insert("wall_ms".to_string(), mean_ms);
         method_results.push(MethodResult {
             method: name.clone(),
@@ -102,14 +136,20 @@ fn main() {
         Box::new(move |_log, _seed| sample_kdf(&ds, log_len, keep_count))
     };
     let (r, _, comp, ms) = run_trials(&log, &kdf_sampler, &seeds, &mut raw_trials, "KDF");
-    println!("{:20} recall={:.3}  comp={:.3}  ms={:.2}", "KDF", r, comp, ms);
+    println!(
+        "{:20} recall={:.3}  comp={:.3}  ms={:.2}",
+        "KDF", r, comp, ms
+    );
     let mut m1 = BTreeMap::new();
     m1.insert("rare_recall".into(), r);
     m1.insert("compression".into(), comp);
     m1.insert("label_free".into(), 1.0);
     m1.insert("wall_ms".into(), ms);
     method_results.push(MethodResult {
-        method: "KDF".into(), requires_labels: false, metrics: m1, wall_ms: ms,
+        method: "KDF".into(),
+        requires_labels: false,
+        metrics: m1,
+        wall_ms: ms,
         notes: "default classifier (Rare=deg==1) — baseline".into(),
     });
 
@@ -118,36 +158,78 @@ fn main() {
         let ds = ds_cloned;
         Box::new(move |_log, _seed| sample_kdf_reldensity(&ds, log_len, keep_count))
     };
-    let (r2, _, comp2, ms2) = run_trials(&log, &kdf_rd_sampler, &seeds, &mut raw_trials, "KDF+RelDensity");
-    println!("{:20} recall={:.3}  comp={:.3}  ms={:.2}", "KDF+RelDensity", r2, comp2, ms2);
+    let (r2, _, comp2, ms2) = run_trials(
+        &log,
+        &kdf_rd_sampler,
+        &seeds,
+        &mut raw_trials,
+        "KDF+RelDensity",
+    );
+    println!(
+        "{:20} recall={:.3}  comp={:.3}  ms={:.2}",
+        "KDF+RelDensity", r2, comp2, ms2
+    );
     let mut m2 = BTreeMap::new();
     m2.insert("rare_recall".into(), r2);
     m2.insert("compression".into(), comp2);
     m2.insert("label_free".into(), 1.0);
     m2.insert("wall_ms".into(), ms2);
     method_results.push(MethodResult {
-        method: "KDF+RelDensity".into(), requires_labels: false, metrics: m2, wall_ms: ms2,
+        method: "KDF+RelDensity".into(),
+        requires_labels: false,
+        metrics: m2,
+        wall_ms: ms2,
         notes: "Phase 7 S2 extension: rareness via local-context relative degree".into(),
     });
 
     // ------------------- 4. Emit report --------------------
     let metric_definitions = vec![
-        Metric { name: "rare_recall".into(), higher_is_better: true, mean: 0.0, stderr: 0.0, axis: Axis::KdfStrength },
-        Metric { name: "label_free".into(), higher_is_better: true, mean: 0.0, stderr: 0.0, axis: Axis::KdfStrength },
-        Metric { name: "compression".into(), higher_is_better: true, mean: 0.0, stderr: 0.0, axis: Axis::Tie },
-        Metric { name: "wall_ms".into(), higher_is_better: false, mean: 0.0, stderr: 0.0, axis: Axis::KdfWeakness },
+        Metric {
+            name: "rare_recall".into(),
+            higher_is_better: true,
+            mean: 0.0,
+            stderr: 0.0,
+            axis: Axis::KdfStrength,
+        },
+        Metric {
+            name: "label_free".into(),
+            higher_is_better: true,
+            mean: 0.0,
+            stderr: 0.0,
+            axis: Axis::KdfStrength,
+        },
+        Metric {
+            name: "compression".into(),
+            higher_is_better: true,
+            mean: 0.0,
+            stderr: 0.0,
+            axis: Axis::Tie,
+        },
+        Metric {
+            name: "wall_ms".into(),
+            higher_is_better: false,
+            mean: 0.0,
+            stderr: 0.0,
+            axis: Axis::KdfWeakness,
+        },
     ];
 
     let mut limits = vec![
-        format!("選択比率を {:.0}% に固定した単一ポイント評価(sweep は Phase 9 候補)", (1.0 - COMPRESSION_TARGET) * 100.0),
+        format!(
+            "選択比率を {:.0}% に固定した単一ポイント評価(sweep は Phase 9 候補)",
+            (1.0 - COMPRESSION_TARGET) * 100.0
+        ),
         "Bipartite graph 化(IP×resource)は NASA log の自然な構造、他ログで検証要".into(),
     ];
     if synthetic {
-        limits.insert(0, format!(
-            "本実行は **合成ログ (n={}, Zipf分布, planted error rate ~5%)** を使用。\
+        limits.insert(
+            0,
+            format!(
+                "本実行は **合成ログ (n={}, Zipf分布, planted error rate ~5%)** を使用。\
              実 NASA log は `demos/D2_nasa_log/data/access.log` に配置すると自動で使用されます。",
-            n_total
-        ));
+                n_total
+            ),
+        );
     }
 
     let report = DemoReport {
@@ -195,7 +277,11 @@ fn extract_records_from_dataset(ds: &Dataset, _rare_codes: &HashSet<u16>) -> Vec
     let mut records = Vec::with_capacity(ds.edges.len());
     for &(u, v, _) in &ds.edges {
         let is_error = ds.rare_ground_truth.contains(&v);
-        records.push(LogRecord { client_id: u, resource_id: v, is_error });
+        records.push(LogRecord {
+            client_id: u,
+            resource_id: v,
+            is_error,
+        });
     }
     records
 }
@@ -232,7 +318,9 @@ fn weighted_pick(weights: &[f64], total: f64, u: f64) -> usize {
     let mut acc = 0.0;
     for (i, &w) in weights.iter().enumerate() {
         acc += w;
-        if acc >= target { return i; }
+        if acc >= target {
+            return i;
+        }
     }
     weights.len() - 1
 }
@@ -249,7 +337,9 @@ fn sample_reservoir(log: &[LogRecord], keep: usize, seed: u64) -> HashSet<usize>
     let mut reservoir: Vec<usize> = (0..keep.min(log.len())).collect();
     for i in keep..log.len() {
         let j = rng.gen_range(0..=i);
-        if j < keep { reservoir[j] = i; }
+        if j < keep {
+            reservoir[j] = i;
+        }
     }
     reservoir.into_iter().collect()
 }
@@ -261,11 +351,18 @@ fn sample_head(log: &[LogRecord], keep: usize) -> HashSet<usize> {
 fn sample_tail_based(log: &[LogRecord], keep: usize) -> HashSet<usize> {
     // Uses status-code labels (simulated via `is_error`).
     // Strategy: keep ALL errors, fill rest from the remainder uniformly.
-    let errors: Vec<usize> = log.iter().enumerate().filter(|(_, r)| r.is_error).map(|(i, _)| i).collect();
+    let errors: Vec<usize> = log
+        .iter()
+        .enumerate()
+        .filter(|(_, r)| r.is_error)
+        .map(|(i, _)| i)
+        .collect();
     let mut out: HashSet<usize> = errors.iter().copied().collect();
     let remainder: Vec<usize> = (0..log.len()).filter(|i| !out.contains(i)).collect();
     let need = keep.saturating_sub(out.len());
-    for &i in remainder.iter().take(need) { out.insert(i); }
+    for &i in remainder.iter().take(need) {
+        out.insert(i);
+    }
     out
 }
 
@@ -274,16 +371,30 @@ fn sample_stratified(log: &[LogRecord], keep: usize, seed: u64) -> HashSet<usize
     let mut rng = SmallRng::seed_from_u64(seed);
     let n_rare = log.iter().filter(|r| r.is_error).count();
     let n_non_rare = log.len() - n_rare;
-    if n_rare == 0 { return sample_random(log, keep, seed); }
+    if n_rare == 0 {
+        return sample_random(log, keep, seed);
+    }
     let rare_keep = keep.min(n_rare); // keep as many errors as fit
     let non_rare_keep = keep.saturating_sub(rare_keep).min(n_non_rare);
 
-    let mut rare_idx: Vec<usize> = log.iter().enumerate().filter(|(_, r)| r.is_error).map(|(i, _)| i).collect();
-    let mut non_rare_idx: Vec<usize> = log.iter().enumerate().filter(|(_, r)| !r.is_error).map(|(i, _)| i).collect();
+    let mut rare_idx: Vec<usize> = log
+        .iter()
+        .enumerate()
+        .filter(|(_, r)| r.is_error)
+        .map(|(i, _)| i)
+        .collect();
+    let mut non_rare_idx: Vec<usize> = log
+        .iter()
+        .enumerate()
+        .filter(|(_, r)| !r.is_error)
+        .map(|(i, _)| i)
+        .collect();
     rare_idx.shuffle(&mut rng);
     non_rare_idx.shuffle(&mut rng);
 
-    rare_idx.into_iter().take(rare_keep)
+    rare_idx
+        .into_iter()
+        .take(rare_keep)
         .chain(non_rare_idx.into_iter().take(non_rare_keep))
         .collect()
 }
@@ -298,7 +409,9 @@ fn build_bipartite_graph(log: &[LogRecord]) -> Dataset {
     for r in log {
         max_id = max_id.max(r.client_id).max(r.resource_id);
         edges.push((r.client_id, r.resource_id, 1.0));
-        if r.is_error { rare.insert(r.resource_id); }
+        if r.is_error {
+            rare.insert(r.resource_id);
+        }
     }
     Dataset {
         name: "NASA-bipartite".into(),
@@ -318,7 +431,12 @@ fn sample_kdf(ds: &Dataset, log_len: usize, keep: usize) -> HashSet<usize> {
     let mut classifier = NodeClassifier::default();
     let class = classifier.classify(ds.n_nodes, &ds.edges);
     let score_layer = |l: Layer| -> i32 {
-        match l { Layer::Rare => 100, Layer::Core => 3, Layer::Edge => 1, Layer::Garbage => 0 }
+        match l {
+            Layer::Rare => 100,
+            Layer::Core => 3,
+            Layer::Edge => 1,
+            Layer::Garbage => 0,
+        }
     };
     score_and_take(ds, log_len, keep, |u, v| {
         let lu = class.layers.get(&u).copied().unwrap_or(Layer::Edge);
@@ -345,14 +463,18 @@ fn sample_kdf_reldensity(ds: &Dataset, log_len: usize, keep: usize) -> HashSet<u
     }
     // Rareness = how much below local average the node's degree is.
     // Higher "rareness_score" = more locally-rare node → more likely to hold rare info.
-    let rareness: Vec<f64> = (0..n).map(|i| {
-        if adj[i].is_empty() { return 0.0; }
-        let local_avg: f64 = adj[i].iter().map(|&v| deg[v as usize] as f64).sum::<f64>()
-            / adj[i].len() as f64;
-        let ratio = deg[i] as f64 / local_avg.max(1.0);
-        // 1.0 when deg equals local avg; >0 when deg << local avg
-        (1.0 - ratio.min(1.0)).max(0.0)
-    }).collect();
+    let rareness: Vec<f64> = (0..n)
+        .map(|i| {
+            if adj[i].is_empty() {
+                return 0.0;
+            }
+            let local_avg: f64 =
+                adj[i].iter().map(|&v| deg[v as usize] as f64).sum::<f64>() / adj[i].len() as f64;
+            let ratio = deg[i] as f64 / local_avg.max(1.0);
+            // 1.0 when deg equals local avg; >0 when deg << local avg
+            (1.0 - ratio.min(1.0)).max(0.0)
+        })
+        .collect();
 
     score_and_take(ds, log_len, keep, |u, v| {
         rareness[u as usize].max(rareness[v as usize])
@@ -360,14 +482,20 @@ fn sample_kdf_reldensity(ds: &Dataset, log_len: usize, keep: usize) -> HashSet<u
 }
 
 fn score_and_take<F>(ds: &Dataset, log_len: usize, keep: usize, score: F) -> HashSet<usize>
-where F: Fn(u32, u32) -> f64,
+where
+    F: Fn(u32, u32) -> f64,
 {
-    let mut scored: Vec<(usize, f64)> = ds.edges.iter().enumerate()
+    let mut scored: Vec<(usize, f64)> = ds
+        .edges
+        .iter()
+        .enumerate()
         .take(log_len)
         .map(|(i, &(u, v, _))| (i, score(u, v)))
         .collect();
     scored.sort_by(|a, b| {
-        b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal).then(a.0.cmp(&b.0))
+        b.1.partial_cmp(&a.1)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then(a.0.cmp(&b.0))
     });
     scored.into_iter().take(keep).map(|(i, _)| i).collect()
 }
@@ -379,7 +507,8 @@ fn run_trials<F>(
     raw_trials: &mut BTreeMap<String, Vec<f64>>,
     name: &str,
 ) -> (f64, f64, f64, f64)
-where F: Fn(&[LogRecord], u64) -> HashSet<usize>,
+where
+    F: Fn(&[LogRecord], u64) -> HashSet<usize>,
 {
     let mut recalls = Vec::with_capacity(seeds.len());
     let mut compressions = Vec::with_capacity(seeds.len());
@@ -396,8 +525,14 @@ where F: Fn(&[LogRecord], u64) -> HashSet<usize>,
         recalls.push(recall);
         compressions.push(comp);
         walls.push(ms);
-        raw_trials.entry(format!("{}/rare_recall", name)).or_default().push(recall);
-        raw_trials.entry(format!("{}/compression", name)).or_default().push(comp);
+        raw_trials
+            .entry(format!("{}/rare_recall", name))
+            .or_default()
+            .push(recall);
+        raw_trials
+            .entry(format!("{}/compression", name))
+            .or_default()
+            .push(comp);
     }
     let mean = |v: &[f64]| v.iter().sum::<f64>() / v.len() as f64;
     let se = |v: &[f64], m: f64| {

@@ -5,7 +5,7 @@
 use std::cell::OnceCell;
 
 // Re-export types for convenience
-pub use cgb_types::{NodeId, Edge, ModuleId};
+pub use cgb_types::{Edge, ModuleId, NodeId};
 
 /// Graph view trait for read-only access
 ///
@@ -58,10 +58,7 @@ impl EdgeListGraph {
 
     /// Create from tuple format (source, target, weight)
     pub fn from_tuples(node_count: usize, edges: &[(u32, u32, f64)]) -> Self {
-        let edges = edges
-            .iter()
-            .map(|&(s, t, w)| Edge::new(s, t, w))
-            .collect();
+        let edges = edges.iter().map(|&(s, t, w)| Edge::new(s, t, w)).collect();
         Self::new(node_count, edges)
     }
 
@@ -122,11 +119,7 @@ mod tests {
 
     #[test]
     fn test_edge_list_graph() {
-        let graph = EdgeListGraph::from_tuples(4, &[
-            (0, 1, 1.0),
-            (1, 2, 2.0),
-            (2, 3, 3.0),
-        ]);
+        let graph = EdgeListGraph::from_tuples(4, &[(0, 1, 1.0), (1, 2, 2.0), (2, 3, 3.0)]);
 
         assert_eq!(graph.node_count(), 4);
         assert_eq!(graph.edge_count(), 3);
@@ -137,10 +130,7 @@ mod tests {
 
     #[test]
     fn test_neighbors() {
-        let graph = EdgeListGraph::from_tuples(3, &[
-            (0, 1, 1.0),
-            (0, 2, 2.0),
-        ]);
+        let graph = EdgeListGraph::from_tuples(3, &[(0, 1, 1.0), (0, 2, 2.0)]);
 
         let neighbors: Vec<_> = graph.neighbors(0).collect();
         assert_eq!(neighbors.len(), 2);
@@ -148,10 +138,7 @@ mod tests {
 
     #[test]
     fn test_weighted_degree() {
-        let graph = EdgeListGraph::from_tuples(3, &[
-            (0, 1, 1.0),
-            (0, 2, 2.0),
-        ]);
+        let graph = EdgeListGraph::from_tuples(3, &[(0, 1, 1.0), (0, 2, 2.0)]);
 
         assert_eq!(graph.weighted_degree(0), 3.0);
         assert_eq!(graph.weighted_degree(1), 1.0);
@@ -160,10 +147,7 @@ mod tests {
 
     #[test]
     fn test_edge_weight() {
-        let graph = EdgeListGraph::from_tuples(3, &[
-            (0, 1, 1.5),
-            (1, 2, 2.5),
-        ]);
+        let graph = EdgeListGraph::from_tuples(3, &[(0, 1, 1.5), (1, 2, 2.5)]);
 
         // Existing edges
         assert_eq!(graph.edge_weight(0, 1), Some(1.5));
@@ -195,10 +179,7 @@ mod tests {
 
     #[test]
     fn test_edges_iterator() {
-        let graph = EdgeListGraph::from_tuples(3, &[
-            (0, 1, 1.0),
-            (1, 2, 2.0),
-        ]);
+        let graph = EdgeListGraph::from_tuples(3, &[(0, 1, 1.0), (1, 2, 2.0)]);
 
         let edges: Vec<_> = graph.edges().collect();
         assert_eq!(edges.len(), 2);

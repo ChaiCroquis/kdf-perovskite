@@ -27,9 +27,9 @@ fn main() {
         vec![0.0, 0.2, 0.8],
         vec![0.1, 0.1, 0.9],
         // Rare items (isolated)
-        vec![0.5, 0.5, 0.0],  // Between A and B
-        vec![0.3, 0.3, 0.4],  // Mixed
-        vec![5.0, 5.0, 5.0],  // Outlier
+        vec![0.5, 0.5, 0.0], // Between A and B
+        vec![0.3, 0.3, 0.4], // Mixed
+        vec![5.0, 5.0, 5.0], // Outlier
     ];
 
     let kdf = Kdf::with_defaults();
@@ -110,8 +110,8 @@ fn main() {
         "error: connection failed", // duplicate
         "info: server started",
         "info: server started successfully",
-        "warning: unusual activity detected",  // isolated
-        "critical: security breach",           // isolated
+        "warning: unusual activity detected", // isolated
+        "critical: security breach",          // isolated
     ];
 
     let text_auto = kdf.process_auto(&texts, |a, b| levenshtein_similarity(a, b));
@@ -125,9 +125,7 @@ fn main() {
     println!();
 
     println!("=== Summary ===");
-    println!(
-        "Auto-threshold automatically finds the optimal balance between"
-    );
+    println!("Auto-threshold automatically finds the optimal balance between");
     println!("compression (removing redundancy) and preservation (keeping rare items).");
     println!();
     println!("Use process_auto() for thorough analysis (16 threshold evaluations)");

@@ -52,7 +52,7 @@ fn benchmark_compression() {
     for (name, clusters, total) in scenarios {
         let (data, _) = generate_clustered_data(clusters, total / clusters, 42);
         let kdf = Kdf::with_defaults();
-        let result = kdf.process(&data, 0.7, euclidean_similarity);
+        let result = kdf.process(&data, 0.7, |a, b| euclidean_similarity(a, b));
 
         let selected = result.selected.len();
         let compression = 100.0 * (1.0 - selected as f64 / data.len() as f64);
@@ -62,7 +62,13 @@ fn benchmark_compression() {
 
         println!(
             "| {} | {} | {} | {:.1}% | {} | {} | {} |",
-            name, data.len(), selected, compression, core, edge, rare
+            name,
+            data.len(),
+            selected,
+            compression,
+            core,
+            edge,
+            rare
         );
     }
 
@@ -89,15 +95,21 @@ fn benchmark_rare_preservation() {
         let (data, rare_indices) = generate_with_outliers(total - n_rare, n_rare, 42);
 
         let kdf = Kdf::with_defaults();
-        let result = kdf.process(&data, 0.7, euclidean_similarity);
+        let result = kdf.process(&data, 0.7, |a, b| euclidean_similarity(a, b));
 
         let rare_items: HashSet<_> = result.rare_items().iter().cloned().collect();
-        let preserved = rare_indices.iter().filter(|i| rare_items.contains(*i)).count();
+        let preserved = rare_indices
+            .iter()
+            .filter(|i| rare_items.contains(*i))
+            .count();
         let preservation_rate = 100.0 * preserved as f64 / n_rare as f64;
 
         println!(
             "| {} | {} | {} | {:.1}% |",
-            name, n_rare, rare_items.len(), preservation_rate
+            name,
+            n_rare,
+            rare_items.len(),
+            preservation_rate
         );
     }
 
@@ -121,7 +133,10 @@ fn benchmark_vs_baselines() {
 
     // Random Sampling
     let random_selected = random_sample(&data, target_size, 42);
-    let random_rare = random_selected.iter().filter(|i| rare_set.contains(*i)).count();
+    let random_rare = random_selected
+        .iter()
+        .filter(|i| rare_set.contains(*i))
+        .count();
     println!(
         "| Random | {} | {} | {:.1}% | ラベル不要 |",
         random_selected.len(),
@@ -134,7 +149,10 @@ fn benchmark_vs_baselines() {
         .map(|i| if rare_set.contains(&i) { 1 } else { 0 })
         .collect();
     let stratified_selected = stratified_sample(&labels, target_size, 42);
-    let stratified_rare = stratified_selected.iter().filter(|i| rare_set.contains(*i)).count();
+    let stratified_rare = stratified_selected
+        .iter()
+        .filter(|i| rare_set.contains(*i))
+        .count();
     println!(
         "| Stratified | {} | {} | {:.1}% | ラベル必要 |",
         stratified_selected.len(),
@@ -144,7 +162,10 @@ fn benchmark_vs_baselines() {
 
     // K-Medoids (多様性重視)
     let kmedoids_selected = kmedoids_select(&data, target_size, 42);
-    let kmedoids_rare = kmedoids_selected.iter().filter(|i| rare_set.contains(*i)).count();
+    let kmedoids_rare = kmedoids_selected
+        .iter()
+        .filter(|i| rare_set.contains(*i))
+        .count();
     println!(
         "| K-Medoids | {} | {} | {:.1}% | 密集部優先 |",
         kmedoids_selected.len(),
@@ -154,9 +175,12 @@ fn benchmark_vs_baselines() {
 
     // KDF
     let kdf = Kdf::with_defaults();
-    let result = kdf.process(&data, 0.7, euclidean_similarity);
+    let result = kdf.process(&data, 0.7, |a, b| euclidean_similarity(a, b));
     let kdf_selected: HashSet<_> = result.selected.iter().cloned().collect();
-    let kdf_rare = rare_set.iter().filter(|i| kdf_selected.contains(*i)).count();
+    let kdf_rare = rare_set
+        .iter()
+        .filter(|i| kdf_selected.contains(*i))
+        .count();
     println!(
         "| **KDF** | {} | {} | **{:.1}%** | ラベル不要 |",
         kdf_selected.len(),
@@ -181,7 +205,7 @@ fn benchmark_reproducibility() {
 
     let mut results = Vec::new();
     for _ in 0..10 {
-        let result = kdf.process(&data, 0.7, euclidean_similarity);
+        let result = kdf.process(&data, 0.7, |a, b| euclidean_similarity(a, b));
         results.push(result.selected.clone());
     }
 
@@ -189,29 +213,44 @@ fn benchmark_reproducibility() {
     let base = &results[0];
     let all_identical = results.iter().all(|r| r == base);
 
-    println!("決定論的再現性: {}", if all_identical { "✓ 100%一致" } else { "✗ 不一致" });
+    println!(
+        "決定論的再現性: {}",
+        if all_identical {
+            "✓ 100%一致"
+        } else {
+            "✗ 不一致"
+        }
+    );
     println!("選択数: {} 件", base.len());
 
     // 異なるシードで10回実行
     let mut rare_counts = Vec::new();
     for seed in 0..10 {
         let (data, rare_indices) = generate_with_outliers(200, 20, seed);
-        let result = kdf.process(&data, 0.7, euclidean_similarity);
+        let result = kdf.process(&data, 0.7, |a, b| euclidean_similarity(a, b));
         let rare_items: HashSet<_> = result.rare_items().iter().cloned().collect();
-        let preserved = rare_indices.iter().filter(|i| rare_items.contains(*i)).count();
+        let preserved = rare_indices
+            .iter()
+            .filter(|i| rare_items.contains(*i))
+            .count();
         rare_counts.push(100.0 * preserved as f64 / 20.0);
     }
 
     let mean = rare_counts.iter().sum::<f64>() / rare_counts.len() as f64;
-    let variance = rare_counts.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / rare_counts.len() as f64;
+    let variance =
+        rare_counts.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / rare_counts.len() as f64;
     let std_dev = variance.sqrt();
 
     println!("\n異なるデータでの希少保持率 (n=10):");
     println!("  平均: {:.1}%", mean);
     println!("  標準偏差: {:.1}%", std_dev);
-    println!("  範囲: {:.1}% - {:.1}%",
+    println!(
+        "  範囲: {:.1}% - {:.1}%",
         rare_counts.iter().cloned().fold(f64::INFINITY, f64::min),
-        rare_counts.iter().cloned().fold(f64::NEG_INFINITY, f64::max)
+        rare_counts
+            .iter()
+            .cloned()
+            .fold(f64::NEG_INFINITY, f64::max)
     );
 }
 
@@ -229,14 +268,17 @@ fn benchmark_scalability() {
         let kdf = Kdf::with_defaults();
 
         let start = std::time::Instant::now();
-        let result = kdf.process(&data, 0.7, euclidean_similarity);
+        let result = kdf.process(&data, 0.7, |a, b| euclidean_similarity(a, b));
         let elapsed = start.elapsed();
 
         let compression = 100.0 * (1.0 - result.selected.len() as f64 / data.len() as f64);
 
         println!(
             "| {} | {:?} | {} | {:.1}% |",
-            size, elapsed, result.selected.len(), compression
+            size,
+            elapsed,
+            result.selected.len(),
+            compression
         );
     }
 
@@ -277,7 +319,11 @@ fn summary() {
 // データ生成
 // ============================================================================
 
-fn generate_clustered_data(n_clusters: usize, points_per_cluster: usize, seed: u64) -> (Vec<Vec<f64>>, Vec<usize>) {
+fn generate_clustered_data(
+    n_clusters: usize,
+    points_per_cluster: usize,
+    seed: u64,
+) -> (Vec<Vec<f64>>, Vec<usize>) {
     let mut rng = SimpleRng::new(seed);
     let mut data = Vec::new();
     let mut labels = Vec::new();
@@ -298,17 +344,18 @@ fn generate_clustered_data(n_clusters: usize, points_per_cluster: usize, seed: u
     (data, labels)
 }
 
-fn generate_with_outliers(n_main: usize, n_outliers: usize, seed: u64) -> (Vec<Vec<f64>>, Vec<usize>) {
+fn generate_with_outliers(
+    n_main: usize,
+    n_outliers: usize,
+    seed: u64,
+) -> (Vec<Vec<f64>>, Vec<usize>) {
     let mut rng = SimpleRng::new(seed);
     let mut data = Vec::new();
     let mut outlier_indices = Vec::new();
 
     // メインクラスタ
     for _ in 0..n_main {
-        data.push(vec![
-            rng.normal() * 0.5,
-            rng.normal() * 0.5,
-        ]);
+        data.push(vec![rng.normal() * 0.5, rng.normal() * 0.5]);
     }
 
     // 孤立点（遠くに配置）
@@ -316,10 +363,7 @@ fn generate_with_outliers(n_main: usize, n_outliers: usize, seed: u64) -> (Vec<V
         outlier_indices.push(data.len());
         let angle = (i as f64 / n_outliers.max(1) as f64) * 2.0 * std::f64::consts::PI;
         let radius = 5.0 + rng.uniform() * 2.0;
-        data.push(vec![
-            radius * angle.cos(),
-            radius * angle.sin(),
-        ]);
+        data.push(vec![radius * angle.cos(), radius * angle.sin()]);
     }
 
     (data, outlier_indices)
@@ -399,13 +443,16 @@ fn kmedoids_select(data: &[Vec<f64>], k: usize, seed: u64) -> Vec<usize> {
 
     // 各クラスタの中心に最も近い点を新メドイドに
     for (j, cluster) in clusters.iter().enumerate() {
-        if cluster.is_empty() { continue; }
+        if cluster.is_empty() {
+            continue;
+        }
 
         let mut best_idx = medoids[j];
         let mut best_cost = f64::MAX;
 
         for &candidate in cluster {
-            let cost: f64 = cluster.iter()
+            let cost: f64 = cluster
+                .iter()
                 .map(|&i| euclidean_distance(&data[candidate], &data[i]))
                 .sum();
             if cost < best_cost {
@@ -423,7 +470,7 @@ fn kmedoids_select(data: &[Vec<f64>], k: usize, seed: u64) -> Vec<usize> {
 // ユーティリティ
 // ============================================================================
 
-fn euclidean_similarity(a: &Vec<f64>, b: &Vec<f64>) -> f64 {
+fn euclidean_similarity(a: &[f64], b: &[f64]) -> f64 {
     let dist = euclidean_distance(a, b);
     1.0 / (1.0 + dist)
 }
@@ -442,11 +489,16 @@ struct SimpleRng {
 
 impl SimpleRng {
     fn new(seed: u64) -> Self {
-        Self { state: seed.wrapping_add(1) }
+        Self {
+            state: seed.wrapping_add(1),
+        }
     }
 
     fn next(&mut self) -> u64 {
-        self.state = self.state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        self.state = self
+            .state
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         self.state
     }
 

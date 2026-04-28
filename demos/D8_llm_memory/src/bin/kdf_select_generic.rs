@@ -48,7 +48,11 @@ struct SelectionOutput {
     n_total: u32,
 }
 
-fn kdf_select(n: u32, edges: &[(u32, u32, f64)], keep: usize) -> (Vec<u32>, HashMap<String, Vec<u32>>) {
+fn kdf_select(
+    n: u32,
+    edges: &[(u32, u32, f64)],
+    keep: usize,
+) -> (Vec<u32>, HashMap<String, Vec<u32>>) {
     use cgb_kdf::{Layer, NodeClassifier};
     let mut c = NodeClassifier::default();
     let class = c.classify(n as usize, edges);
@@ -126,15 +130,21 @@ fn main() {
 
     let keep = ((input.n as f64) * keep_rate).ceil() as usize;
     let keep = keep.max(1).min(input.n as usize);
-    eprintln!("keep={} ({}%)", keep, (keep as f64) / (input.n as f64) * 100.0);
+    eprintln!(
+        "keep={} ({}%)",
+        keep,
+        (keep as f64) / (input.n as f64) * 100.0
+    );
 
     let (selected, layers_map) = kdf_select(input.n, &input.edges, keep);
     eprintln!("Selected {} nodes", selected.len());
-    eprintln!("Layers: Rare={}, Core={}, Edge={}, Garbage={}",
-              layers_map.get("Rare").map(|v| v.len()).unwrap_or(0),
-              layers_map.get("Core").map(|v| v.len()).unwrap_or(0),
-              layers_map.get("Edge").map(|v| v.len()).unwrap_or(0),
-              layers_map.get("Garbage").map(|v| v.len()).unwrap_or(0));
+    eprintln!(
+        "Layers: Rare={}, Core={}, Edge={}, Garbage={}",
+        layers_map.get("Rare").map(|v| v.len()).unwrap_or(0),
+        layers_map.get("Core").map(|v| v.len()).unwrap_or(0),
+        layers_map.get("Edge").map(|v| v.len()).unwrap_or(0),
+        layers_map.get("Garbage").map(|v| v.len()).unwrap_or(0)
+    );
 
     let selected_ids: Option<Vec<String>> = input.node_ids.as_ref().map(|ids| {
         selected

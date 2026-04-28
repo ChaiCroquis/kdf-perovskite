@@ -8,7 +8,7 @@
 //!   3. 不均衡データ前処理 - 少数クラスの保護
 //!   4. キャッシュ管理 - 希少アクセスパターンの保持
 
-use kdf::{Kdf, levenshtein_similarity};
+use kdf::{levenshtein_similarity, Kdf};
 
 fn main() {
     println!("# KDF 実用ユースケース\n");
@@ -63,7 +63,8 @@ fn usecase_log_analysis() {
     let result = kdf.process(&logs, 0.6, |a, b| levenshtein_similarity(a, b));
 
     println!("入力ログ: {} 件", logs.len());
-    println!("選択ログ: {} 件 (削減率: {:.1}%)\n",
+    println!(
+        "選択ログ: {} 件 (削減率: {:.1}%)\n",
         result.selected.len(),
         100.0 * (1.0 - result.selected.len() as f64 / logs.len() as f64)
     );
@@ -81,16 +82,23 @@ fn usecase_log_analysis() {
 
     // 異常ログの保持率
     let critical_keywords = ["ERROR", "CRITICAL", "WARN"];
-    let critical_indices: Vec<_> = logs.iter().enumerate()
+    let critical_indices: Vec<_> = logs
+        .iter()
+        .enumerate()
         .filter(|(_, log)| critical_keywords.iter().any(|k| log.contains(k)))
         .map(|(i, _)| i)
         .collect();
 
     let selected_set: std::collections::HashSet<_> = result.selected.iter().cloned().collect();
-    let preserved = critical_indices.iter().filter(|i| selected_set.contains(*i)).count();
+    let preserved = critical_indices
+        .iter()
+        .filter(|i| selected_set.contains(*i))
+        .count();
 
-    println!("\n異常ログ保持率: {}/{} ({:.0}%)",
-        preserved, critical_indices.len(),
+    println!(
+        "\n異常ログ保持率: {}/{} ({:.0}%)",
+        preserved,
+        critical_indices.len(),
         100.0 * preserved as f64 / critical_indices.len() as f64
     );
 
@@ -160,24 +168,18 @@ fn usecase_imbalanced_data() {
 
     // 多数クラス（正常）: 90%
     for _ in 0..180 {
-        data.push(vec![
-            rng.normal() * 0.5 + 0.0,
-            rng.normal() * 0.5 + 0.0,
-        ]);
+        data.push(vec![rng.normal() * 0.5 + 0.0, rng.normal() * 0.5 + 0.0]);
         labels.push(0);
     }
 
     // 少数クラス（異常）: 10%
     for _ in 0..20 {
-        data.push(vec![
-            rng.normal() * 0.3 + 3.0,
-            rng.normal() * 0.3 + 3.0,
-        ]);
+        data.push(vec![rng.normal() * 0.3 + 3.0, rng.normal() * 0.3 + 3.0]);
         labels.push(1);
     }
 
     let kdf = Kdf::with_defaults();
-    let result = kdf.process(&data, 0.7, euclidean_similarity);
+    let result = kdf.process(&data, 0.7, |a, b| euclidean_similarity(a, b));
 
     // ラベル別の保持率
     let selected_set: std::collections::HashSet<_> = result.selected.iter().cloned().collect();
@@ -185,10 +187,14 @@ fn usecase_imbalanced_data() {
     let majority_total = labels.iter().filter(|&&l| l == 0).count();
     let minority_total = labels.iter().filter(|&&l| l == 1).count();
 
-    let majority_selected = labels.iter().enumerate()
+    let majority_selected = labels
+        .iter()
+        .enumerate()
         .filter(|(i, &l)| l == 0 && selected_set.contains(i))
         .count();
-    let minority_selected = labels.iter().enumerate()
+    let minority_selected = labels
+        .iter()
+        .enumerate()
         .filter(|(i, &l)| l == 1 && selected_set.contains(i))
         .count();
 
@@ -197,23 +203,30 @@ fn usecase_imbalanced_data() {
     println!("  少数クラス（異常）: {} 件\n", minority_total);
 
     println!("KDF処理後:");
-    println!("  多数クラス選択: {}/{} ({:.1}%)",
-        majority_selected, majority_total,
+    println!(
+        "  多数クラス選択: {}/{} ({:.1}%)",
+        majority_selected,
+        majority_total,
         100.0 * majority_selected as f64 / majority_total as f64
     );
-    println!("  少数クラス選択: {}/{} ({:.1}%)",
-        minority_selected, minority_total,
+    println!(
+        "  少数クラス選択: {}/{} ({:.1}%)",
+        minority_selected,
+        minority_total,
         100.0 * minority_selected as f64 / minority_total as f64
     );
 
     // Rare層に含まれる少数クラスの割合
     let rare_items = result.rare_items();
-    let minority_in_rare = rare_items.iter()
+    let minority_in_rare = rare_items
+        .iter()
         .filter(|&&i| i < labels.len() && labels[i] == 1)
         .count();
 
-    println!("\nRare層の少数クラス: {}/{} ({:.1}%)",
-        minority_in_rare, minority_total,
+    println!(
+        "\nRare層の少数クラス: {}/{} ({:.1}%)",
+        minority_in_rare,
+        minority_total,
         100.0 * minority_in_rare as f64 / minority_total as f64
     );
 
@@ -237,17 +250,17 @@ fn usecase_cache_management() {
     // 頻出パターン: 平日の日中アクセス
     for _ in 0..150 {
         patterns.push(vec![
-            9.0 + rng.uniform() * 9.0,  // 9-18時
-            (rng.uniform() * 5.0).floor(),  // 月-金
-            0.0,  // 通常リクエスト
-            0.0,  // 一般ユーザー
+            9.0 + rng.uniform() * 9.0,     // 9-18時
+            (rng.uniform() * 5.0).floor(), // 月-金
+            0.0,                           // 通常リクエスト
+            0.0,                           // 一般ユーザー
         ]);
     }
 
     // 中程度: 週末アクセス
     for _ in 0..30 {
         patterns.push(vec![
-            10.0 + rng.uniform() * 8.0,  // 10-18時
+            10.0 + rng.uniform() * 8.0, // 10-18時
             5.0 + rng.uniform() * 2.0,  // 土-日
             0.0,
             0.0,
@@ -257,22 +270,23 @@ fn usecase_cache_management() {
     // 希少: 深夜の管理者アクセス
     for _ in 0..10 {
         patterns.push(vec![
-            rng.uniform() * 5.0,  // 0-5時
-            rng.uniform() * 7.0,  // 任意の曜日
-            1.0,  // 管理リクエスト
-            1.0,  // 管理者
+            rng.uniform() * 5.0, // 0-5時
+            rng.uniform() * 7.0, // 任意の曜日
+            1.0,                 // 管理リクエスト
+            1.0,                 // 管理者
         ]);
     }
 
     // 極めて希少: 異常パターン
-    patterns.push(vec![2.0, 3.0, 2.0, 2.0]);  // 深夜の未知リクエスト
-    patterns.push(vec![3.0, 6.0, 2.0, 0.0]);  // 一般ユーザーの異常リクエスト
+    patterns.push(vec![2.0, 3.0, 2.0, 2.0]); // 深夜の未知リクエスト
+    patterns.push(vec![3.0, 6.0, 2.0, 0.0]); // 一般ユーザーの異常リクエスト
 
     let kdf = Kdf::with_defaults();
-    let result = kdf.process(&patterns, 0.8, euclidean_similarity);
+    let result = kdf.process(&patterns, 0.8, |a, b| euclidean_similarity(a, b));
 
     println!("アクセスパターン: {} 件", patterns.len());
-    println!("キャッシュ対象: {} 件 (削減率: {:.1}%)\n",
+    println!(
+        "キャッシュ対象: {} 件 (削減率: {:.1}%)\n",
         result.selected.len(),
         100.0 * (1.0 - result.selected.len() as f64 / patterns.len() as f64)
     );
@@ -285,10 +299,15 @@ fn usecase_cache_management() {
     // 希少パターンの保持確認
     let rare_indices: Vec<usize> = (patterns.len() - 12..patterns.len()).collect();
     let selected_set: std::collections::HashSet<_> = result.selected.iter().cloned().collect();
-    let rare_preserved = rare_indices.iter().filter(|i| selected_set.contains(*i)).count();
+    let rare_preserved = rare_indices
+        .iter()
+        .filter(|i| selected_set.contains(*i))
+        .count();
 
-    println!("\n希少パターン保持: {}/{} ({:.1}%)",
-        rare_preserved, rare_indices.len(),
+    println!(
+        "\n希少パターン保持: {}/{} ({:.1}%)",
+        rare_preserved,
+        rare_indices.len(),
         100.0 * rare_preserved as f64 / rare_indices.len() as f64
     );
 
@@ -335,8 +354,9 @@ fn practical_guidelines() {
 // ユーティリティ
 // ============================================================================
 
-fn euclidean_similarity(a: &Vec<f64>, b: &Vec<f64>) -> f64 {
-    let dist: f64 = a.iter()
+fn euclidean_similarity(a: &[f64], b: &[f64]) -> f64 {
+    let dist: f64 = a
+        .iter()
         .zip(b.iter())
         .map(|(x, y)| (x - y).powi(2))
         .sum::<f64>()
@@ -350,11 +370,16 @@ struct SimpleRng {
 
 impl SimpleRng {
     fn new(seed: u64) -> Self {
-        Self { state: seed.wrapping_add(1) }
+        Self {
+            state: seed.wrapping_add(1),
+        }
     }
 
     fn next(&mut self) -> u64 {
-        self.state = self.state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        self.state = self
+            .state
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         self.state
     }
 

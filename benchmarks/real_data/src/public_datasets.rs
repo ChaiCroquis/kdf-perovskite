@@ -26,11 +26,17 @@ pub fn load_fb15k_237(rare_freq_max: usize) -> Option<Dataset> {
     let mut all_rows: Vec<(String, String, String)> = Vec::new();
     for f in files {
         let p = root.join(f);
-        if !p.exists() { return None; }
+        if !p.exists() {
+            return None;
+        }
         for line in std::fs::read_to_string(&p).ok()?.lines() {
             let parts: Vec<&str> = line.split('\t').collect();
             if parts.len() == 3 {
-                all_rows.push((parts[0].to_string(), parts[1].to_string(), parts[2].to_string()));
+                all_rows.push((
+                    parts[0].to_string(),
+                    parts[1].to_string(),
+                    parts[2].to_string(),
+                ));
             }
         }
     }
@@ -79,14 +85,20 @@ pub fn load_ogbn_arxiv(rare_citation_max: usize) -> Option<Dataset> {
     let root = data_root().join("ogbn-arxiv");
     let edges_p = root.join("edges.csv");
     let cites_p = root.join("citation_count.csv");
-    if !edges_p.exists() || !cites_p.exists() { return None; }
+    if !edges_p.exists() || !cites_p.exists() {
+        return None;
+    }
 
     let mut edges: Vec<(u32, u32, f64)> = Vec::new();
     let mut max_id = 0u32;
     for (i, line) in std::fs::read_to_string(&edges_p).ok()?.lines().enumerate() {
-        if i == 0 { continue; } // header
+        if i == 0 {
+            continue;
+        } // header
         let parts: Vec<&str> = line.split(',').collect();
-        if parts.len() != 2 { continue; }
+        if parts.len() != 2 {
+            continue;
+        }
         let s: u32 = parts[0].parse().ok()?;
         let t: u32 = parts[1].parse().ok()?;
         max_id = max_id.max(s).max(t);
@@ -95,12 +107,18 @@ pub fn load_ogbn_arxiv(rare_citation_max: usize) -> Option<Dataset> {
 
     let mut rare_ground_truth: HashSet<u32> = HashSet::new();
     for (i, line) in std::fs::read_to_string(&cites_p).ok()?.lines().enumerate() {
-        if i == 0 { continue; }
+        if i == 0 {
+            continue;
+        }
         let parts: Vec<&str> = line.split(',').collect();
-        if parts.len() != 2 { continue; }
+        if parts.len() != 2 {
+            continue;
+        }
         let id: u32 = parts[0].parse().ok()?;
         let c: usize = parts[1].parse().unwrap_or(0);
-        if c <= rare_citation_max { rare_ground_truth.insert(id); }
+        if c <= rare_citation_max {
+            rare_ground_truth.insert(id);
+        }
     }
 
     Some(Dataset {
@@ -108,7 +126,10 @@ pub fn load_ogbn_arxiv(rare_citation_max: usize) -> Option<Dataset> {
         n_nodes: (max_id as usize) + 1,
         edges,
         rare_ground_truth,
-        description: format!("ogbn-arxiv with rare = papers with citations ≤ {}", rare_citation_max),
+        description: format!(
+            "ogbn-arxiv with rare = papers with citations ≤ {}",
+            rare_citation_max
+        ),
     })
 }
 
@@ -120,7 +141,9 @@ pub fn load_ogbn_arxiv(rare_citation_max: usize) -> Option<Dataset> {
 /// (e.g., 4xx/5xx rare errors).
 pub fn load_nasa_log(rare_status_codes: &HashSet<u16>) -> Option<Dataset> {
     let p = data_root().join("nasa-http").join("access.log");
-    if !p.exists() { return None; }
+    if !p.exists() {
+        return None;
+    }
     let mut entity_ids: HashMap<String, u32> = HashMap::new();
     let mut edges: Vec<(u32, u32, f64)> = Vec::new();
     let mut rare: HashSet<u32> = HashSet::new();
@@ -133,9 +156,13 @@ pub fn load_nasa_log(rare_status_codes: &HashSet<u16>) -> Option<Dataset> {
             let next = entity_ids.len() as u32;
             let src = *entity_ids.entry(format!("ip:{}", client)).or_insert(next);
             let next = entity_ids.len() as u32;
-            let dst = *entity_ids.entry(format!("res:{}", resource)).or_insert(next);
+            let dst = *entity_ids
+                .entry(format!("res:{}", resource))
+                .or_insert(next);
             edges.push((src, dst, 1.0));
-            if rare_status_codes.contains(&status) { rare.insert(dst); }
+            if rare_status_codes.contains(&status) {
+                rare.insert(dst);
+            }
         }
     }
     Some(Dataset {

@@ -11,13 +11,14 @@
 //!
 //! Run: cargo run --release --example kdf_hybrid_optimization
 
-use kdf::{Kdf, Layer, cosine_similarity};
+use kdf::{cosine_similarity, Kdf, Layer};
 use std::time::Instant;
 
 // ============================================================================
 // Hybrid Optimization
 // ============================================================================
 
+#[allow(dead_code)]
 struct HybridResult {
     layers: Vec<Layer>,
     comparisons: usize,
@@ -27,7 +28,7 @@ struct HybridResult {
 fn process_hybrid(
     data: &[Vec<f64>],
     threshold: f64,
-    max_reps: usize,  // Maximum number of representatives
+    max_reps: usize, // Maximum number of representatives
 ) -> HybridResult {
     let n = data.len();
     if n == 0 {
@@ -113,7 +114,6 @@ fn process_hybrid(
                 if cosine_similarity(&data[i], &data[j]) >= threshold {
                     degrees[i] += 1;
                     degrees[j] += 1;
-                    found_neighbor = true;
                     break;
                 }
             }
@@ -127,7 +127,7 @@ fn process_hybrid(
             .collect();
 
         // Sample within-cluster comparisons (not all pairs)
-        let sample_size = members.len().min(10);  // Compare up to 10 pairs
+        let sample_size = members.len().min(10); // Compare up to 10 pairs
         for i in 0..sample_size.min(members.len()) {
             for j in (i + 1)..sample_size.min(members.len()) {
                 if members[i] < n && members[j] < n {
@@ -148,17 +148,20 @@ fn process_hybrid(
         0.0
     };
 
-    let layers: Vec<Layer> = degrees.iter().map(|&deg| {
-        if deg == 0 {
-            Layer::Rare
-        } else if (deg as f64) > avg_degree * 1.5 {
-            Layer::Core
-        } else if (deg as f64) < avg_degree * 0.3 {
-            Layer::Rare
-        } else {
-            Layer::Edge
-        }
-    }).collect();
+    let layers: Vec<Layer> = degrees
+        .iter()
+        .map(|&deg| {
+            if deg == 0 {
+                Layer::Rare
+            } else if (deg as f64) > avg_degree * 1.5 {
+                Layer::Core
+            } else if (deg as f64) < avg_degree * 0.3 {
+                Layer::Rare
+            } else {
+                Layer::Edge
+            }
+        })
+        .collect();
 
     HybridResult {
         layers,
@@ -171,10 +174,7 @@ fn process_hybrid(
 // Incremental Clustering Approach
 // ============================================================================
 
-fn process_incremental_clustering(
-    data: &[Vec<f64>],
-    threshold: f64,
-) -> HybridResult {
+fn process_incremental_clustering(data: &[Vec<f64>], threshold: f64) -> HybridResult {
     let n = data.len();
     if n == 0 {
         return HybridResult {
@@ -230,17 +230,20 @@ fn process_incremental_clustering(
 
     // Classify
     let avg_degree = degrees.iter().sum::<usize>() as f64 / n.max(1) as f64;
-    let layers: Vec<Layer> = degrees.iter().map(|&deg| {
-        if deg == 0 {
-            Layer::Rare
-        } else if (deg as f64) > avg_degree * 1.5 {
-            Layer::Core
-        } else if (deg as f64) < avg_degree * 0.3 {
-            Layer::Rare
-        } else {
-            Layer::Edge
-        }
-    }).collect();
+    let layers: Vec<Layer> = degrees
+        .iter()
+        .map(|&deg| {
+            if deg == 0 {
+                Layer::Rare
+            } else if (deg as f64) > avg_degree * 1.5 {
+                Layer::Core
+            } else if (deg as f64) < avg_degree * 0.3 {
+                Layer::Rare
+            } else {
+                Layer::Edge
+            }
+        })
+        .collect();
 
     let representatives: Vec<usize> = clusters.iter().map(|(rep, _)| *rep).collect();
 
@@ -293,7 +296,8 @@ fn generate_data(n: usize, dim: usize, redundancy: f64) -> Vec<Vec<f64>> {
 }
 
 fn evaluate_rare_recall(true_layers: &[Layer], predicted_layers: &[Layer]) -> f64 {
-    let true_rare: std::collections::HashSet<usize> = true_layers.iter()
+    let true_rare: std::collections::HashSet<usize> = true_layers
+        .iter()
         .enumerate()
         .filter(|(_, &l)| l == Layer::Rare)
         .map(|(i, _)| i)
@@ -303,7 +307,8 @@ fn evaluate_rare_recall(true_layers: &[Layer], predicted_layers: &[Layer]) -> f6
         return 1.0;
     }
 
-    let predicted_rare: std::collections::HashSet<usize> = predicted_layers.iter()
+    let predicted_rare: std::collections::HashSet<usize> = predicted_layers
+        .iter()
         .enumerate()
         .filter(|(_, &l)| l == Layer::Rare)
         .map(|(i, _)| i)
@@ -345,16 +350,28 @@ fn main() {
         let incr_time = start.elapsed().as_secs_f64() * 1000.0;
         let incr_recall = evaluate_rare_recall(&std_layers, &incr.layers);
 
-        println!("| {:.0}% | Standard | {:.1}ms | {} | - | 100% |",
-                 redundancy * 100.0, std_time, full_comp);
-        println!("| {:.0}% | Hybrid | {:.1}ms | {} | {:.1}% | {:.1}% |",
-                 redundancy * 100.0, hybrid_time, hybrid.comparisons,
-                 (1.0 - hybrid.comparisons as f64 / full_comp as f64) * 100.0,
-                 hybrid_recall * 100.0);
-        println!("| {:.0}% | IncrCluster | {:.1}ms | {} | {:.1}% | {:.1}% |",
-                 redundancy * 100.0, incr_time, incr.comparisons,
-                 (1.0 - incr.comparisons as f64 / full_comp as f64) * 100.0,
-                 incr_recall * 100.0);
+        println!(
+            "| {:.0}% | Standard | {:.1}ms | {} | - | 100% |",
+            redundancy * 100.0,
+            std_time,
+            full_comp
+        );
+        println!(
+            "| {:.0}% | Hybrid | {:.1}ms | {} | {:.1}% | {:.1}% |",
+            redundancy * 100.0,
+            hybrid_time,
+            hybrid.comparisons,
+            (1.0 - hybrid.comparisons as f64 / full_comp as f64) * 100.0,
+            hybrid_recall * 100.0
+        );
+        println!(
+            "| {:.0}% | IncrCluster | {:.1}ms | {} | {:.1}% | {:.1}% |",
+            redundancy * 100.0,
+            incr_time,
+            incr.comparisons,
+            (1.0 - incr.comparisons as f64 / full_comp as f64) * 100.0,
+            incr_recall * 100.0
+        );
     }
 
     println!("\n## 2. Scaling Test (90% redundancy)\n");
@@ -376,9 +393,15 @@ fn main() {
         let _ = process_incremental_clustering(&data, threshold);
         let incr_time = start.elapsed().as_secs_f64() * 1000.0;
 
-        println!("| {} | {:.1}ms | {:.1}ms | {:.1}ms | {:.1}x | {:.1}x |",
-                 n, std_time, hybrid_time, incr_time,
-                 std_time / hybrid_time, std_time / incr_time);
+        println!(
+            "| {} | {:.1}ms | {:.1}ms | {:.1}ms | {:.1}x | {:.1}x |",
+            n,
+            std_time,
+            hybrid_time,
+            incr_time,
+            std_time / hybrid_time,
+            std_time / incr_time
+        );
     }
 
     println!("\n## 3. Conclusion\n");

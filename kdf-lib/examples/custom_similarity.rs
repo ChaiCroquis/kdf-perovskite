@@ -1,6 +1,6 @@
 //! Custom similarity function example for KDF
 
-use kdf::{Kdf, euclidean_similarity, jaccard_similarity};
+use kdf::{euclidean_similarity, jaccard_similarity, Kdf};
 use std::collections::HashSet;
 
 /// Custom item type with tokens
@@ -62,7 +62,10 @@ fn main() {
     println!("Selected indices: {:?}", result.selected_indices());
     println!("\nSelected documents:");
     for &idx in result.selected_indices() {
-        println!("  - {} (layer: {:?})", documents[idx].id, result.layers[idx]);
+        println!(
+            "  - {} (layer: {:?})",
+            documents[idx].id, result.layers[idx]
+        );
     }
 
     // Example 3: Custom weighted similarity
@@ -74,10 +77,22 @@ fn main() {
     }
 
     let weighted_items = vec![
-        WeightedItem { values: vec![1.0, 0.0], importance: 1.0 },
-        WeightedItem { values: vec![1.0, 0.1], importance: 1.0 },
-        WeightedItem { values: vec![0.0, 1.0], importance: 0.5 },
-        WeightedItem { values: vec![-1.0, 0.0], importance: 2.0 }, // High importance
+        WeightedItem {
+            values: vec![1.0, 0.0],
+            importance: 1.0,
+        },
+        WeightedItem {
+            values: vec![1.0, 0.1],
+            importance: 1.0,
+        },
+        WeightedItem {
+            values: vec![0.0, 1.0],
+            importance: 0.5,
+        },
+        WeightedItem {
+            values: vec![-1.0, 0.0],
+            importance: 2.0,
+        }, // High importance
     ];
 
     // Custom similarity that considers importance

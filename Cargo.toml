@@ -5,7 +5,6 @@ members = [
     "crates/cgb-graph",
     "crates/bias-detector",
     "crates/cgb-kdf",
-    "crates/kdf-perovskite-py",
     "kdf-lib",
     "kdf-cli",
     "kdf-python",
@@ -53,3 +52,20 @@ authoritative-spec = "docs/patent/filed/"
 compliance-report = "docs/patent/COMPLIANCE.md"
 traceability = "docs/patent/TRACEABILITY.md"
 reference-implementation = "cgb-kdf"
+
+# --- Workspace-wide clippy lint policy ---
+#
+# Lints intentionally allowed across the workspace:
+#   - needless_range_loop: idiomatic for numerical computations
+#       (e.g. `for d in 0..dim { point[d] = ... }` is clearer than enumerate())
+#   - type_complexity: complex tuple/Vec types are explicit by intent
+#       (extracting a type alias often hides intent rather than aiding it)
+#   - useless_vec: `vec![...]` form is clearer than array literals for test data
+#   - field_reassign_with_default: occasionally cleaner when only 1-2 fields set
+#       (most call sites have been migrated to struct-init form)
+#
+# Each member crate opts in via `[lints] workspace = true` in its Cargo.toml.
+[workspace.lints.clippy]
+needless_range_loop = "allow"
+type_complexity = "allow"
+useless_vec = "allow"

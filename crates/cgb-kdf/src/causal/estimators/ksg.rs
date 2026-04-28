@@ -129,7 +129,8 @@ impl KsgEstimator {
             let epsilon = self.kth_neighbor_distance(&joint_points[i], &joint_points);
 
             let n_y_ypast = self.count_within_epsilon(&y_ypast_points[i], &y_ypast_points, epsilon);
-            let n_ypast_xpast = self.count_within_epsilon(&ypast_xpast_points[i], &ypast_xpast_points, epsilon);
+            let n_ypast_xpast =
+                self.count_within_epsilon(&ypast_xpast_points[i], &ypast_xpast_points, epsilon);
             let n_ypast = self.count_within_epsilon(&ypast_points[i], &ypast_points, epsilon);
 
             sum_psi += Self::digamma((n_y_ypast + 1) as f64)

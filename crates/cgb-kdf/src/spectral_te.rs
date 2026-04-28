@@ -14,8 +14,8 @@
 //!
 //! Python implementation: python/kdf/spectral_te_priority.py
 
-use std::collections::HashMap;
 use nalgebra::{DMatrix, SymmetricEigen};
+use std::collections::HashMap;
 
 use super::causal::{CausalLink, TeStrategy};
 
@@ -100,7 +100,6 @@ impl Default for SpectralTEPrioritizer {
 }
 
 impl SpectralTEPrioritizer {
-
     /// Prioritize pairs using spectral analysis
     ///
     /// # Arguments
@@ -175,7 +174,11 @@ impl SpectralTEPrioritizer {
         let fiedler_importance: Vec<f64> = if node_count >= 2 {
             let fiedler_idx = sorted_indices[1];
             let fiedler: Vec<f64> = eigenvectors.column(fiedler_idx).iter().cloned().collect();
-            let max_fiedler = fiedler.iter().map(|x| x.abs()).fold(0.0_f64, |a, b| a.max(b)) + 1e-10;
+            let max_fiedler = fiedler
+                .iter()
+                .map(|x| x.abs())
+                .fold(0.0_f64, |a, b| a.max(b))
+                + 1e-10;
             fiedler.iter().map(|&x| x.abs() / max_fiedler).collect()
         } else {
             vec![1.0; node_count]
@@ -326,10 +329,7 @@ impl SpectralTEPrioritizer {
         // Group nodes by cluster
         let mut cluster_nodes: HashMap<u32, Vec<&NodeSpectralInfo>> = HashMap::new();
         for info in node_info {
-            cluster_nodes
-                .entry(info.cluster_id)
-                .or_default()
-                .push(info);
+            cluster_nodes.entry(info.cluster_id).or_default().push(info);
         }
 
         // Same-cluster pairs (high priority)

@@ -100,7 +100,9 @@ fn build_dataset(n: usize, seed: u64) -> Dataset {
         // k_per_cluster nodes share the pattern
         for m in 0..k_per_cluster {
             let id = (tail_start + c * k_per_cluster + m) as u32;
-            if (id as usize) >= n { break; }
+            if (id as usize) >= n {
+                break;
+            }
             // All duplicates connect to same hubs
             for &h in &pattern_hubs {
                 edges.push((id, h, 1.0));
@@ -118,7 +120,11 @@ fn build_dataset(n: usize, seed: u64) -> Dataset {
         edges.push((id, h, 1.0));
     }
 
-    Dataset { n, edges, rare_ground_truth }
+    Dataset {
+        n,
+        edges,
+        rare_ground_truth,
+    }
 }
 
 fn compute_degrees(n: usize, edges: &[(u32, u32, f64)]) -> Vec<usize> {
@@ -136,7 +142,9 @@ fn method_random(ds: &Dataset, seed: u64) -> HashSet<u32> {
     let mut rng = SmallRng::seed_from_u64(seed);
     let mut selected = HashSet::new();
     for i in 0..ds.n {
-        if rng.gen_bool(0.30) { selected.insert(i as u32); }
+        if rng.gen_bool(0.30) {
+            selected.insert(i as u32);
+        }
     }
     selected
 }
@@ -146,7 +154,9 @@ fn method_stratified(ds: &Dataset, seed: u64) -> HashSet<u32> {
     let mut rng = SmallRng::seed_from_u64(seed);
     let mut selected = HashSet::new();
     // Always include all rare
-    for &r in &ds.rare_ground_truth { selected.insert(r); }
+    for &r in &ds.rare_ground_truth {
+        selected.insert(r);
+    }
     // Sample 30% of non-rare
     for i in 0..ds.n {
         let id = i as u32;
@@ -310,11 +320,21 @@ fn main() {
             let seed = (n as u64) * 1000 + trial as u64;
             let ds = build_dataset(n, seed);
 
-            all_trials.push(run_trial(&ds, "Random", seed, trial, || method_random(&ds, seed)));
-            all_trials.push(run_trial(&ds, "Stratified", seed, trial, || method_stratified(&ds, seed)));
-            all_trials.push(run_trial(&ds, "KMedoids", seed, trial, || method_kmedoids(&ds, seed)));
-            all_trials.push(run_trial(&ds, "CoreSet", seed, trial, || method_coreset(&ds, seed)));
-            all_trials.push(run_trial(&ds, "PageRank", seed, trial, || method_pagerank(&ds, seed)));
+            all_trials.push(run_trial(&ds, "Random", seed, trial, || {
+                method_random(&ds, seed)
+            }));
+            all_trials.push(run_trial(&ds, "Stratified", seed, trial, || {
+                method_stratified(&ds, seed)
+            }));
+            all_trials.push(run_trial(&ds, "KMedoids", seed, trial, || {
+                method_kmedoids(&ds, seed)
+            }));
+            all_trials.push(run_trial(&ds, "CoreSet", seed, trial, || {
+                method_coreset(&ds, seed)
+            }));
+            all_trials.push(run_trial(&ds, "PageRank", seed, trial, || {
+                method_pagerank(&ds, seed)
+            }));
             all_trials.push(run_trial(&ds, "KDF", seed, trial, || method_kdf(&ds)));
         }
     }
@@ -327,8 +347,13 @@ fn main() {
     for a in &agg {
         println!(
             "| {} | {} | {:.3} ± {:.3} | {:.3} | {:.2} | {} |",
-            a.method, a.n, a.rare_recall_mean, a.rare_recall_stderr,
-            a.compression_mean, a.elapsed_ms_mean, a.trials,
+            a.method,
+            a.n,
+            a.rare_recall_mean,
+            a.rare_recall_stderr,
+            a.compression_mean,
+            a.elapsed_ms_mean,
+            a.trials,
         );
     }
 
@@ -342,7 +367,8 @@ fn main() {
             "n_trials": N_TRIALS,
             "sizes": SIZES,
         }
-    })).unwrap();
+    }))
+    .unwrap();
     std::fs::write(out_path, json).expect("write results");
     println!("\nResults written to {}", out_path);
 }

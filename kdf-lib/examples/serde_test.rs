@@ -1,6 +1,6 @@
 //! Serialization/Deserialization test
-use kdf::{IncrementalKdf, KdfParams, cosine_similarity};
-use serde::{Serialize, Deserialize};
+use kdf::{cosine_similarity, IncrementalKdf, KdfParams};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 struct TestItem {
@@ -45,7 +45,7 @@ fn main() {
     // Verify
     assert_eq!(ikdf.len(), ikdf2.len());
     assert_eq!(ikdf.layers(), ikdf2.layers());
-    assert_eq!(ikdf.weights(), ikdf2.weights());
+    assert_eq!(ikdf.selection_scores(), ikdf2.selection_scores());
     assert_eq!(ikdf.degrees(), ikdf2.degrees());
 
     // Verify items

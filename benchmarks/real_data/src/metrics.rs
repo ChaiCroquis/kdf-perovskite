@@ -1,7 +1,7 @@
 //! Evaluation metrics for Phase 6.
 
-use std::collections::HashSet;
 use super::{Dataset, TrialResult};
+use std::collections::HashSet;
 
 pub fn evaluate(
     dataset_name: &str,

@@ -42,75 +42,87 @@
 //! }
 //! ```
 
-pub mod framework;
-pub mod fingerprint;
-pub mod prescreening;
 pub mod analogy;
-pub mod sleep_mode;
-pub mod interning;
 pub mod exact_solver;
+pub mod fingerprint;
+pub mod framework;
+pub mod interning;
+pub mod prescreening;
+pub mod sleep_mode;
 
 // New modules (migrated from Python)
-pub mod vne;
 pub mod causal;
+pub mod engines;
 pub mod spectral_te;
 pub mod text_processor;
-pub mod engines;
+pub mod vne;
 
 // Framework (unified entry point)
 pub use framework::{
-    Layer, NodeClassification, ClassificationStats,
-    NodeClassifier, FastNodeClassifier, DecayManager, MasterSpecParams, KdfProcessor,
-    // Rev.12 (Analogy Discovery + multi-stage review)
-    ReviewPhase, RareNodeState, Rev12Stats, Rev12Error, KdfProcessorRev12,
-    T_WAIT_MIN, T_WAIT_MAX, T_WAIT_DEFAULT,
-    DISCOVERY_THRESHOLD_DEFAULT, DISCOVERY_THRESHOLD_UPPER_DEFAULT,
+    ActivationScore,
+    ClassificationStats,
+    DecayManager,
+    FastNodeClassifier,
+    HierarchicalRegionManager,
+    KdfProcessor,
+    KdfProcessorRev12,
+    Layer,
+    MasterSpecParams,
     // Phase 1 additions (Claim 20-32)
     MetaController,
-    HierarchicalRegionManager, RegionConfig, RegionKind,
-    TransitionController, TransitionScore, ActivationScore, SemanticImportance,
+    NodeClassification,
+    NodeClassifier,
+    RareNodeState,
+    RegionConfig,
+    RegionKind,
+    Rev12Error,
+    Rev12Stats,
+    // Rev.12 (Analogy Discovery + multi-stage review)
+    ReviewPhase,
+    SemanticImportance,
+    TransitionController,
+    TransitionScore,
+    DISCOVERY_THRESHOLD_DEFAULT,
+    DISCOVERY_THRESHOLD_UPPER_DEFAULT,
+    T_WAIT_DEFAULT,
+    T_WAIT_MAX,
+    T_WAIT_MIN,
 };
 
 // Existing components
-pub use fingerprint::{StructuralFingerprintEngine, Fingerprint, PrecomputedFingerprint};
-pub use prescreening::{PreScreeningOptimizer, ScreeningStats};
-pub use analogy::{AnalogyDiscoveryEngine, NodeFeatures, StructuralMapping, RelationType};
-pub use sleep_mode::{SleepModeOptimizer, NREMResult, IncrementalEntropyCache, NodeMoveContext};
+pub use analogy::{AnalogyDiscoveryEngine, NodeFeatures, RelationType, StructuralMapping};
+pub use exact_solver::{ExactResult, ExactSolver, HybridResult, HybridSolver, SolverStrategy};
+pub use fingerprint::{Fingerprint, PrecomputedFingerprint, StructuralFingerprintEngine};
 pub use interning::NodeIdMap;
-pub use exact_solver::{ExactSolver, HybridSolver, ExactResult, HybridResult, SolverStrategy};
+pub use prescreening::{PreScreeningOptimizer, ScreeningStats};
+pub use sleep_mode::{IncrementalEntropyCache, NREMResult, NodeMoveContext, SleepModeOptimizer};
 
 // VNE (Von Neumann Entropy) Integration
 pub use vne::{
-    VNEResult, AnomalyResult, ChangeDetection,
-    VNEMonitor, VNETriggeredSleepMode,
-    von_neumann_entropy, von_neumann_entropy_detailed, detect_change,
+    detect_change, von_neumann_entropy, von_neumann_entropy_detailed, AnomalyResult,
+    ChangeDetection, VNEMonitor, VNEResult, VNETriggeredSleepMode,
 };
 
 // Causal Discovery (Transfer Entropy)
 pub use causal::{
-    TeStrategy, TeResult, CausalLink,
-    GaussianEstimator, SymbolicEstimator, KsgEstimator,
-    CausalEngine, CausalKdfV3, SleepCycleResult,
-    CausalPartitionBuilder, CausalCluster,
-    CausalEnhancedNREMOptimizer, CausalNREMResult,
+    CausalCluster, CausalEngine, CausalEnhancedNREMOptimizer, CausalKdfV3, CausalLink,
+    CausalNREMResult, CausalPartitionBuilder, GaussianEstimator, KsgEstimator, SleepCycleResult,
+    SymbolicEstimator, TeResult, TeStrategy,
 };
 
 // Spectral TE Prioritization
 pub use spectral_te::{
-    NodeSpectralInfo, PairPriority, SpectralTEPrioritizer,
-    prioritize_te_computation,
+    prioritize_te_computation, NodeSpectralInfo, PairPriority, SpectralTEPrioritizer,
 };
 
 // Text Processing
 pub use text_processor::{
-    Token, TextProcessor, DomainClassifier,
-    simple_tokenize, extract_keywords,
+    extract_keywords, simple_tokenize, DomainClassifier, TextProcessor, Token,
 };
 
 // High-Level Engines
 pub use engines::{
-    TaskType, NodeType, KnowledgeNode, AnalysisResult,
-    KDFMeaningEngine, TopicRelearnResult, Project,
-    KDFThinkEngine, ThinkAnalysisResult, ClusterSummary, LayerHealth,
-    KDFSleepEngine, HeavyTask, TaskResult, NREMOptimizationResult,
+    AnalysisResult, ClusterSummary, HeavyTask, KDFMeaningEngine, KDFSleepEngine, KDFThinkEngine,
+    KnowledgeNode, LayerHealth, NREMOptimizationResult, NodeType, Project, TaskResult, TaskType,
+    ThinkAnalysisResult, TopicRelearnResult,
 };

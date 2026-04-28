@@ -47,10 +47,16 @@ fn register_all(engine: &mut AnalogyDiscoveryEngine, specs: &[NodeSpec]) {
         features.degree = spec.degree;
         features.clustering_coef = spec.clustering_coef;
         features.domain = spec.domain.to_string();
-        features.outgoing_relation_types =
-            spec.outgoing.iter().cloned().collect::<HashSet<RelationType>>();
-        features.incoming_relation_types =
-            spec.incoming.iter().cloned().collect::<HashSet<RelationType>>();
+        features.outgoing_relation_types = spec
+            .outgoing
+            .iter()
+            .cloned()
+            .collect::<HashSet<RelationType>>();
+        features.incoming_relation_types = spec
+            .incoming
+            .iter()
+            .cloned()
+            .collect::<HashSet<RelationType>>();
         engine.register_node(spec.id, features, &spec.label);
     }
 }
@@ -76,8 +82,7 @@ fn run_test(test: AnalogyTestCase) -> TestResult {
     register_all(&mut engine, &test.source_nodes);
     register_all(&mut engine, &test.target_nodes);
 
-    let target_ids: Vec<String> =
-        test.target_nodes.iter().map(|n| n.id.to_string()).collect();
+    let target_ids: Vec<String> = test.target_nodes.iter().map(|n| n.id.to_string()).collect();
 
     let mut results = Vec::new();
     let mut correct = 0usize;
@@ -141,6 +146,7 @@ fn run_test(test: AnalogyTestCase) -> TestResult {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct TestResult {
     name: String,
     n_queries: usize,
@@ -364,7 +370,7 @@ fn test_3_non_isomorphic_control() -> AnalogyTestCase {
         name: "Test 3: Non-isomorphic (negative control — expect LOW confidence)",
         source_nodes: source,
         target_nodes: target,
-        expected_mapping: vec![],  // No expected mapping — we measure overall_score below threshold
+        expected_mapping: vec![], // No expected mapping — we measure overall_score below threshold
         is_positive: false,
     }
 }
@@ -481,8 +487,7 @@ fn test_5_run_negative_control_score(test: &AnalogyTestCase) -> f64 {
     register_all(&mut engine, &test.source_nodes);
     register_all(&mut engine, &test.target_nodes);
 
-    let target_ids: Vec<String> =
-        test.target_nodes.iter().map(|n| n.id.to_string()).collect();
+    let target_ids: Vec<String> = test.target_nodes.iter().map(|n| n.id.to_string()).collect();
 
     let source_id = test.source_nodes[0].id;
     let mapping = engine.find_analogy(source_id, &target_ids);
@@ -512,12 +517,12 @@ fn main() {
     println!("    Based on Gentner (1983) Structure-Mapping Theory");
     println!("================================================================================");
 
-    let mut results = Vec::new();
-
     // Positive tests
-    results.push(run_test(test_1_solar_system_vs_atom()));
-    results.push(run_test(test_2_isomorphic_renamed()));
-    results.push(run_test(test_4_git_vs_paper()));
+    let results = vec![
+        run_test(test_1_solar_system_vs_atom()),
+        run_test(test_2_isomorphic_renamed()),
+        run_test(test_4_git_vs_paper()),
+    ];
 
     // Negative control — examine actual score
     let neg_test = test_3_non_isomorphic_control();
@@ -584,9 +589,7 @@ fn main() {
     );
 
     if pos_pass && neg_pass {
-        println!(
-            "\n★ F-068 VALIDATED: Analogy Discovery Engine correctly identifies structural"
-        );
+        println!("\n★ F-068 VALIDATED: Analogy Discovery Engine correctly identifies structural");
         println!("  isomorphism across domains, and correctly rejects non-isomorphic inputs.");
         println!("  Claim 1 pillar 3 (整合性発見手段) is empirically backed.");
     } else {

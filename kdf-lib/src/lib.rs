@@ -74,7 +74,7 @@
 use std::collections::{HashMap, HashSet};
 
 #[cfg(feature = "serde")]
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "parallel")]
 use rayon::prelude::*;
@@ -153,13 +153,13 @@ impl Default for KdfParams {
             alpha_meta: 0.5,
             theta_edge: 0.15,
             beta: 0.01,
-            gamma: 0.1,  // Legacy: single gamma for backward compatibility
+            gamma: 0.1, // Legacy: single gamma for backward compatibility
             // Master spec layer-specific gamma values
             gamma_edge: 0.015,
             gamma_rare: 0.010,
             gamma_core: 0.008,
             gamma_meta: 0.005,
-            use_edge_based: true,  // Default: Master spec compliant edge-based
+            use_edge_based: true, // Default: Master spec compliant edge-based
             iterations: 100,
             core_threshold: 1.5,
             rare_threshold: 0.3,
@@ -333,32 +333,39 @@ fn classify_layers(degrees: &[usize], params: &KdfParams) -> Vec<Layer> {
 
     let avg_degree = degrees.iter().sum::<usize>() as f64 / n as f64;
 
-    degrees.iter().map(|&deg| {
-        if deg == 0 {
-            Layer::Rare
-        } else if (deg as f64) > avg_degree * params.core_threshold {
-            Layer::Core
-        } else if (deg as f64) < avg_degree * params.rare_threshold {
-            Layer::Rare
-        } else {
-            Layer::Edge
-        }
-    }).collect()
+    degrees
+        .iter()
+        .map(|&deg| {
+            if deg == 0 {
+                Layer::Rare
+            } else if (deg as f64) > avg_degree * params.core_threshold {
+                Layer::Core
+            } else if (deg as f64) < avg_degree * params.rare_threshold {
+                Layer::Rare
+            } else {
+                Layer::Edge
+            }
+        })
+        .collect()
 }
 
 /// Pre-compute decay factors for each item (optimization: avoid repeated powf calls)
 ///
 /// Uses node-based congestion: C_i = deg(i)
 fn compute_decay_factors(degrees: &[usize], layers: &[Layer], params: &KdfParams) -> Vec<f64> {
-    degrees.iter().zip(layers).map(|(&deg, &layer)| {
-        let c = deg as f64;
-        let (alpha, gamma) = match layer {
-            Layer::Core => (params.alpha_core, params.gamma_for_layer(Layer::Core)),
-            Layer::Edge => (params.alpha_edge, params.gamma_for_layer(Layer::Edge)),
-            Layer::Rare => (params.alpha_rare, params.gamma_for_layer(Layer::Rare)),
-        };
-        (1.0 - params.beta * (1.0 + gamma * c.powf(alpha))).max(0.0)
-    }).collect()
+    degrees
+        .iter()
+        .zip(layers)
+        .map(|(&deg, &layer)| {
+            let c = deg as f64;
+            let (alpha, gamma) = match layer {
+                Layer::Core => (params.alpha_core, params.gamma_for_layer(Layer::Core)),
+                Layer::Edge => (params.alpha_edge, params.gamma_for_layer(Layer::Edge)),
+                Layer::Rare => (params.alpha_rare, params.gamma_for_layer(Layer::Rare)),
+            };
+            (1.0 - params.beta * (1.0 + gamma * c.powf(alpha))).max(0.0)
+        })
+        .collect()
 }
 
 /// Compute edge-based congestion: C_(u,v) = deg(u) + deg(v)
@@ -512,7 +519,10 @@ impl KdfResult {
     }
 
     /// Backward compatibility: get weights (deprecated, use selection_scores)
-    #[deprecated(since = "0.2.0", note = "Use selection_scores instead. 'weights' is not a KDF concept.")]
+    #[deprecated(
+        since = "0.2.0",
+        note = "Use selection_scores instead. 'weights' is not a KDF concept."
+    )]
     pub fn weights(&self) -> &Vec<f64> {
         &self.selection_scores
     }
@@ -538,7 +548,9 @@ impl KdfResult {
         F: Fn(&T) -> bool,
     {
         let redundant_total = items.iter().filter(|i| !is_rare(i)).count();
-        let redundant_selected = self.selected.iter()
+        let redundant_selected = self
+            .selected
+            .iter()
             .filter(|&&i| !is_rare(&items[i]))
             .count();
 
@@ -555,7 +567,9 @@ impl KdfResult {
         F: Fn(&T) -> bool,
     {
         let rare_total = items.iter().filter(|i| is_rare(i)).count();
-        let rare_selected = self.selected.iter()
+        let rare_selected = self
+            .selected
+            .iter()
             .filter(|&&i| is_rare(&items[i]))
             .count();
 
@@ -589,7 +603,8 @@ impl KdfResult {
     /// Get all items in the same cluster as the given item
     pub fn cluster_members(&self, idx: usize) -> Vec<usize> {
         let rep = self.representative_of(idx);
-        self.clusters.iter()
+        self.clusters
+            .iter()
             .enumerate()
             .filter(|(_, &r)| r == rep)
             .map(|(i, _)| i)
@@ -607,7 +622,8 @@ impl KdfResult {
 
     /// Get all Rare layer items
     pub fn rare_items(&self) -> Vec<usize> {
-        self.layers.iter()
+        self.layers
+            .iter()
             .enumerate()
             .filter(|(_, &layer)| layer == Layer::Rare)
             .map(|(i, _)| i)
@@ -616,7 +632,8 @@ impl KdfResult {
 
     /// Get all Edge layer items
     pub fn edge_items(&self) -> Vec<usize> {
-        self.layers.iter()
+        self.layers
+            .iter()
             .enumerate()
             .filter(|(_, &layer)| layer == Layer::Edge)
             .map(|(i, _)| i)
@@ -625,7 +642,8 @@ impl KdfResult {
 
     /// Get all Core layer items
     pub fn core_items(&self) -> Vec<usize> {
-        self.layers.iter()
+        self.layers
+            .iter()
             .enumerate()
             .filter(|(_, &layer)| layer == Layer::Core)
             .map(|(i, _)| i)
@@ -641,7 +659,7 @@ impl KdfResult {
             SelectionReason::Representative { group_size }
         } else {
             SelectionReason::NotSelected {
-                representative: self.representative_of(idx)
+                representative: self.representative_of(idx),
             }
         }
     }
@@ -774,29 +792,50 @@ impl KdfResult {
         match layer {
             Layer::Rare => {
                 explanation.push_str("  - Layer: Rare (isolated, no similar items found)\n");
-                explanation.push_str(&format!("  - Connectivity: {} connections (degree=0 or very low)\n", degree));
+                explanation.push_str(&format!(
+                    "  - Connectivity: {} connections (degree=0 or very low)\n",
+                    degree
+                ));
                 explanation.push_str("  - Reason: Preserved due to uniqueness\n");
             }
             Layer::Edge => {
                 explanation.push_str("  - Layer: Edge (medium connectivity)\n");
-                explanation.push_str(&format!("  - Connectivity: {} similar items found\n", degree));
+                explanation.push_str(&format!(
+                    "  - Connectivity: {} similar items found\n",
+                    degree
+                ));
                 if is_selected {
                     let group_size = self.cluster_members(idx).len();
-                    explanation.push_str(&format!("  - Reason: Representative of {} items\n", group_size));
+                    explanation.push_str(&format!(
+                        "  - Reason: Representative of {} items\n",
+                        group_size
+                    ));
                 } else {
                     let rep = self.representative_of(idx);
-                    explanation.push_str(&format!("  - Reason: Redundant, represented by item {}\n", rep));
+                    explanation.push_str(&format!(
+                        "  - Reason: Redundant, represented by item {}\n",
+                        rep
+                    ));
                 }
             }
             Layer::Core => {
                 explanation.push_str("  - Layer: Core (high connectivity, highly redundant)\n");
-                explanation.push_str(&format!("  - Connectivity: {} similar items found\n", degree));
+                explanation.push_str(&format!(
+                    "  - Connectivity: {} similar items found\n",
+                    degree
+                ));
                 if is_selected {
                     let group_size = self.cluster_members(idx).len();
-                    explanation.push_str(&format!("  - Reason: Best representative of {} items\n", group_size));
+                    explanation.push_str(&format!(
+                        "  - Reason: Best representative of {} items\n",
+                        group_size
+                    ));
                 } else {
                     let rep = self.representative_of(idx);
-                    explanation.push_str(&format!("  - Reason: Highly redundant, represented by item {}\n", rep));
+                    explanation.push_str(&format!(
+                        "  - Reason: Highly redundant, represented by item {}\n",
+                        rep
+                    ));
                 }
             }
         }
@@ -821,11 +860,13 @@ impl KdfResult {
 
         // Overview
         summary.push_str(&format!("Total items processed: {}\n", stats.total_items));
-        summary.push_str(&format!("Items selected: {} ({:.1}%)\n",
+        summary.push_str(&format!(
+            "Items selected: {} ({:.1}%)\n",
             stats.selected_count,
             (stats.selected_count as f64 / stats.total_items as f64) * 100.0
         ));
-        summary.push_str(&format!("Items filtered: {} ({:.1}%)\n",
+        summary.push_str(&format!(
+            "Items filtered: {} ({:.1}%)\n",
             stats.total_items - stats.selected_count,
             stats.redundancy_ratio * 100.0
         ));
@@ -839,18 +880,33 @@ impl KdfResult {
                 Layer::Edge => "Edge (medium connectivity)",
                 Layer::Core => "Core (highly connected)",
             };
-            summary.push_str(&format!("  {:?}: {} items ({:.1}%) - {}\n", layer, count, pct, desc));
+            summary.push_str(&format!(
+                "  {:?}: {} items ({:.1}%) - {}\n",
+                layer, count, pct, desc
+            ));
         }
 
         summary.push_str("\n--- Connectivity ---\n");
-        summary.push_str(&format!("  Average connections per item: {:.2}\n", stats.avg_degree));
+        summary.push_str(&format!(
+            "  Average connections per item: {:.2}\n",
+            stats.avg_degree
+        ));
         summary.push_str(&format!("  Maximum connections: {}\n", stats.max_degree));
-        summary.push_str(&format!("  Isolation ratio: {:.1}%\n", stats.isolation_ratio * 100.0));
+        summary.push_str(&format!(
+            "  Isolation ratio: {:.1}%\n",
+            stats.isolation_ratio * 100.0
+        ));
 
         summary.push_str("\n--- Clustering ---\n");
         summary.push_str(&format!("  Number of clusters: {}\n", stats.cluster_count));
-        summary.push_str(&format!("  Average cluster size: {:.2}\n", stats.avg_cluster_size));
-        summary.push_str(&format!("  Largest cluster: {} items\n", stats.max_cluster_size));
+        summary.push_str(&format!(
+            "  Average cluster size: {:.2}\n",
+            stats.avg_cluster_size
+        ));
+        summary.push_str(&format!(
+            "  Largest cluster: {} items\n",
+            stats.max_cluster_size
+        ));
 
         // Key insights
         summary.push_str("\n--- Key Insights ---\n");
@@ -866,7 +922,10 @@ impl KdfResult {
         }
         if stats.layer_counts.get(&Layer::Rare).copied().unwrap_or(0) > 0 {
             let rare_count = stats.layer_counts.get(&Layer::Rare).copied().unwrap_or(0);
-            summary.push_str(&format!("  * {} rare items preserved (100% rare preservation)\n", rare_count));
+            summary.push_str(&format!(
+                "  * {} rare items preserved (100% rare preservation)\n",
+                rare_count
+            ));
         }
 
         summary
@@ -986,7 +1045,10 @@ impl KdfResult {
         // Calculate weight-based probability distribution
         let total_weight: f64 = self.selection_scores.iter().sum();
         let probabilities: Vec<f64> = if total_weight > 0.0 {
-            self.selection_scores.iter().map(|w| w / total_weight).collect()
+            self.selection_scores
+                .iter()
+                .map(|w| w / total_weight)
+                .collect()
         } else {
             vec![1.0 / n as f64; n]
         };
@@ -995,12 +1057,17 @@ impl KdfResult {
         let original_entropy = shannon_entropy(&probabilities);
 
         // Entropy of selected items only
-        let selected_weights: Vec<f64> = self.selected.iter()
+        let selected_weights: Vec<f64> = self
+            .selected
+            .iter()
             .map(|&i| self.selection_scores[i])
             .collect();
         let selected_total: f64 = selected_weights.iter().sum();
         let selected_probs: Vec<f64> = if selected_total > 0.0 {
-            selected_weights.iter().map(|w| w / selected_total).collect()
+            selected_weights
+                .iter()
+                .map(|w| w / selected_total)
+                .collect()
         } else {
             vec![1.0 / selected_count.max(1) as f64; selected_count]
         };
@@ -1009,12 +1076,16 @@ impl KdfResult {
         // Information preserved ratio
         // Based on the information content of selected vs all items
         let info_preserved = if original_entropy > 0.0 {
-            let selected_info: f64 = self.selected.iter()
+            let selected_info: f64 = self
+                .selected
+                .iter()
                 .map(|&i| -probabilities[i].log2())
                 .sum();
-            let total_info: f64 = probabilities.iter()
+            let total_info: f64 = probabilities
+                .iter()
                 .map(|p| if *p > 0.0 { -*p * p.log2() } else { 0.0 })
-                .sum::<f64>() * n as f64;
+                .sum::<f64>()
+                * n as f64;
             (selected_info / total_info.max(1.0)).min(1.0)
         } else {
             1.0
@@ -1026,13 +1097,22 @@ impl KdfResult {
         // Minimum Description Length
         // MDL = model complexity + data encoded with model
         let mdl_original = (n as f64).log2() + original_entropy * n as f64;
-        let mdl_selected = (selected_count as f64).log2() + selected_entropy * selected_count as f64;
+        let mdl_selected =
+            (selected_count as f64).log2() + selected_entropy * selected_count as f64;
 
         // Rare item information contribution
         // Rare items have maximum self-information (low probability)
-        let rare_information: f64 = self.selected.iter()
+        let rare_information: f64 = self
+            .selected
+            .iter()
             .filter(|&&i| self.layers[i] == Layer::Rare)
-            .map(|&i| if probabilities[i] > 0.0 { -probabilities[i].log2() } else { 0.0 })
+            .map(|&i| {
+                if probabilities[i] > 0.0 {
+                    -probabilities[i].log2()
+                } else {
+                    0.0
+                }
+            })
             .sum();
 
         // Redundancy removed
@@ -1106,7 +1186,8 @@ impl KdfResult {
         let edge_items = self.edge_items();
 
         // Potential targets (Core + Edge)
-        let targets: Vec<usize> = core_items.iter()
+        let targets: Vec<usize> = core_items
+            .iter()
             .chain(edge_items.iter())
             .copied()
             .collect();
@@ -1119,17 +1200,23 @@ impl KdfResult {
 
         for &rare_idx in &rare_items {
             // Find nearest target
-            let (nearest_idx, nearest_dist) = targets.iter()
+            let (nearest_idx, nearest_dist) = targets
+                .iter()
                 .map(|&t| (t, distance(&data[rare_idx], &data[t])))
                 .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
                 .unwrap();
 
             // Calculate gap metrics
-            let max_dist = targets.iter()
+            let max_dist = targets
+                .iter()
                 .map(|&t| distance(&data[rare_idx], &data[t]))
                 .fold(0.0f64, f64::max);
 
-            let gap_ratio = if max_dist > 0.0 { nearest_dist / max_dist } else { 0.0 };
+            let gap_ratio = if max_dist > 0.0 {
+                nearest_dist / max_dist
+            } else {
+                0.0
+            };
 
             // Estimate bridge ratio (how much to move towards target)
             // Lower gap_ratio means closer to target, needs less bridging
@@ -1173,9 +1260,13 @@ pub struct BridgeProposal {
 impl BridgeProposal {
     /// Generate a human-readable recommendation
     pub fn recommendation(&self) -> String {
-        let urgency = if self.gap_distance > 1.0 { "大きな" }
-            else if self.gap_distance > 0.5 { "中程度の" }
-            else { "小さな" };
+        let urgency = if self.gap_distance > 1.0 {
+            "大きな"
+        } else if self.gap_distance > 0.5 {
+            "中程度の"
+        } else {
+            "小さな"
+        };
 
         format!(
             "Item {} → Target {}: {}ギャップ (距離={:.2})\n\
@@ -1192,7 +1283,8 @@ impl BridgeProposal {
 
 /// Calculate Shannon entropy from probability distribution
 fn shannon_entropy(probabilities: &[f64]) -> f64 {
-    probabilities.iter()
+    probabilities
+        .iter()
         .filter(|&&p| p > 0.0)
         .map(|&p| -p * p.log2())
         .sum()
@@ -1228,7 +1320,9 @@ impl TheoreticalBounds {
     /// w(T) = (1 - β)^T = 0.99^100 ≈ 0.366 > θ_E = 0.15
     /// Therefore all Rare items are selected.
     pub fn verify_rare_preservation(result: &KdfResult) -> bool {
-        result.layers.iter()
+        result
+            .layers
+            .iter()
             .enumerate()
             .filter(|(_, &layer)| layer == Layer::Rare)
             .all(|(i, _)| result.is_selected(i))
@@ -1242,11 +1336,10 @@ impl TheoreticalBounds {
     pub fn convergence_iterations(params: &KdfParams) -> usize {
         // For Rare: w(T) = (1-β)^T, need w(T) > θ_E
         // (1-β)^T > θ_E → T < ln(θ_E) / ln(1-β)
-        let rare_max = (params.theta_edge.ln() / (1.0 - params.beta).ln()) as usize;
 
         // For Core with high degree: w(T) = (1-λ_core)^T < θ_E
         // This converges faster, so Rare is the limiting factor
-        rare_max
+        (params.theta_edge.ln() / (1.0 - params.beta).ln()) as usize
     }
 }
 
@@ -1326,7 +1419,11 @@ impl Kdf {
 
         // Phase 4: Selection and Clustering
         let mut indices: Vec<usize> = (0..n).collect();
-        indices.sort_by(|a, b| weights[*b].partial_cmp(&weights[*a]).unwrap_or(std::cmp::Ordering::Equal));
+        indices.sort_by(|a, b| {
+            weights[*b]
+                .partial_cmp(&weights[*a])
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         let mut selected: Vec<usize> = Vec::new();
         let mut selected_set: HashSet<usize> = HashSet::new();
@@ -1337,8 +1434,11 @@ impl Kdf {
                 selected.push(i);
                 selected_set.insert(i);
             } else if weights[i] >= self.params.theta_edge {
-                let similar_rep = selected.iter()
-                    .find(|&&s| similarity(&items[i], &items[s]) >= self.params.selection_sim_threshold)
+                let similar_rep = selected
+                    .iter()
+                    .find(|&&s| {
+                        similarity(&items[i], &items[s]) >= self.params.selection_sim_threshold
+                    })
                     .copied();
 
                 if let Some(rep) = similar_rep {
@@ -1347,16 +1447,12 @@ impl Kdf {
                     selected.push(i);
                     selected_set.insert(i);
                 }
-            } else {
-                if let Some(&rep) = selected.iter()
-                    .max_by(|&&a, &&b| {
-                        similarity(&items[i], &items[a])
-                            .partial_cmp(&similarity(&items[i], &items[b]))
-                            .unwrap_or(std::cmp::Ordering::Equal)
-                    })
-                {
-                    clusters[i] = rep;
-                }
+            } else if let Some(&rep) = selected.iter().max_by(|&&a, &&b| {
+                similarity(&items[i], &items[a])
+                    .partial_cmp(&similarity(&items[i], &items[b]))
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            }) {
+                clusters[i] = rep;
             }
         }
 
@@ -1365,7 +1461,15 @@ impl Kdf {
             selected_set.insert(indices[0]);
         }
 
-        KdfResult { selected, layers, selection_scores: weights, degrees, clusters, edge_weights: HashMap::new(), selected_set }
+        KdfResult {
+            selected,
+            layers,
+            selection_scores: weights,
+            degrees,
+            clusters,
+            edge_weights: HashMap::new(),
+            selected_set,
+        }
     }
 
     // ========================================================================
@@ -1410,9 +1514,7 @@ impl Kdf {
         }
 
         // Thresholds to evaluate (coarse to fine)
-        let thresholds: Vec<f64> = vec![
-            0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95
-        ];
+        let thresholds: Vec<f64> = vec![0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95];
 
         let mut best_threshold = 0.85;
         let mut best_score = f64::MIN;
@@ -1420,7 +1522,7 @@ impl Kdf {
         let mut scores = Vec::with_capacity(thresholds.len());
 
         for &threshold in &thresholds {
-            let result = self.process(items, threshold, &similarity);
+            let result = self.process(items, threshold, similarity);
             let score = self.compute_auto_score(&result, n);
             scores.push(score);
 
@@ -1439,12 +1541,13 @@ impl Kdf {
             best_threshold + 0.01,
             best_threshold + 0.02,
             best_threshold + 0.03,
-        ].into_iter()
-            .filter(|&t| t > 0.0 && t < 1.0)
-            .collect();
+        ]
+        .into_iter()
+        .filter(|&t| t > 0.0 && t < 1.0)
+        .collect();
 
         for &threshold in &fine_thresholds {
-            let result = self.process(items, threshold, &similarity);
+            let result = self.process(items, threshold, similarity);
             let score = self.compute_auto_score(&result, n);
 
             if score > best_score {
@@ -1456,7 +1559,7 @@ impl Kdf {
 
         AutoThresholdResult {
             threshold: best_threshold,
-            result: best_result.unwrap_or_else(|| self.process(items, 0.85, &similarity)),
+            result: best_result.unwrap_or_else(|| self.process(items, 0.85, similarity)),
             thresholds_evaluated: thresholds,
             scores,
         }
@@ -1491,7 +1594,9 @@ impl Kdf {
         };
 
         // 2. Rare preservation: all detected rare items should be selected
-        let rare_selected = result.selected.iter()
+        let rare_selected = result
+            .selected
+            .iter()
             .filter(|&&i| result.layers[i] == Layer::Rare)
             .count() as f64;
         let rare_preservation = if rare_count > 0.0 {
@@ -1525,7 +1630,8 @@ impl Kdf {
         // 5. Layer diversity: all three layers should be represented
         let core_count = result.layers.iter().filter(|&&l| l == Layer::Core).count() as f64;
         let edge_count = result.layers.iter().filter(|&&l| l == Layer::Edge).count() as f64;
-        let layers_present = (core_count > 0.0) as i32 + (edge_count > 0.0) as i32 + (rare_count > 0.0) as i32;
+        let layers_present =
+            (core_count > 0.0) as i32 + (edge_count > 0.0) as i32 + (rare_count > 0.0) as i32;
         let layer_diversity = layers_present as f64 / 3.0;
 
         // Combined score with balanced weights
@@ -1534,13 +1640,13 @@ impl Kdf {
         // Compression: weight 2 (secondary - remove redundancy)
         // Structure: weight 1.5 (support balanced selection)
         // Diversity: weight 1.5 (support layer representation)
-        let score = (rare_preservation * 4.0
-                   + rare_detection * 3.0
-                   + compression_score * 2.0
-                   + structure_quality * 1.5
-                   + layer_diversity * 1.5) / 12.0;
 
-        score
+        (rare_preservation * 4.0
+            + rare_detection * 3.0
+            + compression_score * 2.0
+            + structure_quality * 1.5
+            + layer_diversity * 1.5)
+            / 12.0
     }
 
     /// Quick auto-threshold with fewer evaluations
@@ -1556,7 +1662,7 @@ impl Kdf {
         let mut best_result = None;
 
         for &threshold in &thresholds {
-            let result = self.process(items, threshold, &similarity);
+            let result = self.process(items, threshold, similarity);
             let score = self.compute_auto_score(&result, items.len());
 
             if score > best_score {
@@ -1566,7 +1672,10 @@ impl Kdf {
             }
         }
 
-        (best_threshold, best_result.unwrap_or_else(|| self.process(items, 0.80, &similarity)))
+        (
+            best_threshold,
+            best_result.unwrap_or_else(|| self.process(items, 0.80, similarity)),
+        )
     }
 
     // ========================================================================
@@ -1637,7 +1746,8 @@ impl Kdf {
                 let avg_sim: f64 = (0..n)
                     .filter(|&j| j != i)
                     .map(|j| similarity(&items[i], &items[j]))
-                    .sum::<f64>() / (n - 1).max(1) as f64;
+                    .sum::<f64>()
+                    / (n - 1).max(1) as f64;
 
                 if avg_sim < min_avg_sim {
                     min_avg_sim = avg_sim;
@@ -1703,7 +1813,12 @@ impl Kdf {
     ///
     /// `KdfResult` containing selected indices and metadata
     #[cfg(feature = "parallel")]
-    pub fn process_parallel<T: Sync, F>(&self, items: &[T], sim_threshold: f64, similarity: F) -> KdfResult
+    pub fn process_parallel<T: Sync, F>(
+        &self,
+        items: &[T],
+        sim_threshold: f64,
+        similarity: F,
+    ) -> KdfResult
     where
         F: Fn(&T, &T) -> f64 + Sync,
     {
@@ -1732,7 +1847,11 @@ impl Kdf {
 
         // Phase 4: Selection and Clustering (sequential - depends on prior selections)
         let mut indices: Vec<usize> = (0..n).collect();
-        indices.sort_by(|a, b| weights[*b].partial_cmp(&weights[*a]).unwrap_or(std::cmp::Ordering::Equal));
+        indices.sort_by(|a, b| {
+            weights[*b]
+                .partial_cmp(&weights[*a])
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         let mut selected: Vec<usize> = Vec::new();
         let mut selected_set: HashSet<usize> = HashSet::new();
@@ -1743,8 +1862,11 @@ impl Kdf {
                 selected.push(i);
                 selected_set.insert(i);
             } else if weights[i] >= self.params.theta_edge {
-                let similar_rep = selected.iter()
-                    .find(|&&s| similarity(&items[i], &items[s]) >= self.params.selection_sim_threshold)
+                let similar_rep = selected
+                    .iter()
+                    .find(|&&s| {
+                        similarity(&items[i], &items[s]) >= self.params.selection_sim_threshold
+                    })
                     .copied();
 
                 if let Some(rep) = similar_rep {
@@ -1754,13 +1876,11 @@ impl Kdf {
                     selected_set.insert(i);
                 }
             } else {
-                if let Some(&rep) = selected.iter()
-                    .max_by(|&&a, &&b| {
-                        similarity(&items[i], &items[a])
-                            .partial_cmp(&similarity(&items[i], &items[b]))
-                            .unwrap_or(std::cmp::Ordering::Equal)
-                    })
-                {
+                if let Some(&rep) = selected.iter().max_by(|&&a, &&b| {
+                    similarity(&items[i], &items[a])
+                        .partial_cmp(&similarity(&items[i], &items[b]))
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                }) {
                     clusters[i] = rep;
                 }
             }
@@ -1771,7 +1891,15 @@ impl Kdf {
             selected_set.insert(indices[0]);
         }
 
-        KdfResult { selected, layers, selection_scores: weights, degrees, clusters, edge_weights: HashMap::new(), selected_set }
+        KdfResult {
+            selected,
+            layers,
+            selection_scores: weights,
+            degrees,
+            clusters,
+            edge_weights: HashMap::new(),
+            selected_set,
+        }
     }
 
     // ========================================================================
@@ -1889,11 +2017,9 @@ impl Kdf {
                 let members = &clusters[cluster_idx].1;
                 let sample_size = members.len().min(5);
                 for &member in members.iter().rev().take(sample_size) {
-                    if member != i {
-                        if similarity(&items[i], &items[member]) >= sim_threshold {
-                            degrees[i] += 1;
-                            degrees[member] += 1;
-                        }
+                    if member != i && similarity(&items[i], &items[member]) >= sim_threshold {
+                        degrees[i] += 1;
+                        degrees[member] += 1;
                     }
                 }
             } else {
@@ -1916,13 +2042,18 @@ impl Kdf {
 
         // Also select high-weight items not yet selected
         let mut indices: Vec<usize> = (0..n).collect();
-        indices.sort_by(|a, b| weights[*b].partial_cmp(&weights[*a]).unwrap_or(std::cmp::Ordering::Equal));
+        indices.sort_by(|a, b| {
+            weights[*b]
+                .partial_cmp(&weights[*a])
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         for &i in &indices {
             if !selected_set.contains(&i) && weights[i] >= self.params.theta_edge {
                 // Check if similar to any selected
-                let has_similar = selected.iter()
-                    .any(|&s| similarity(&items[i], &items[s]) >= self.params.selection_sim_threshold);
+                let has_similar = selected.iter().any(|&s| {
+                    similarity(&items[i], &items[s]) >= self.params.selection_sim_threshold
+                });
 
                 if !has_similar {
                     selected.push(i);
@@ -1963,7 +2094,13 @@ impl Kdf {
     /// # Returns
     ///
     /// `KdfResult` with better Rare accuracy than `process_fast()`
-    pub fn process_fast_verified<T, F>(&self, items: &[T], sim_threshold: f64, similarity: F, verify_rare: bool) -> KdfResult
+    pub fn process_fast_verified<T, F>(
+        &self,
+        items: &[T],
+        sim_threshold: f64,
+        similarity: F,
+        verify_rare: bool,
+    ) -> KdfResult
     where
         F: Fn(&T, &T) -> f64,
     {
@@ -2020,13 +2157,12 @@ impl Kdf {
                 if degrees[rare_idx] == 0 {
                     // Check against ALL other items to confirm isolation
                     for j in 0..n {
-                        if j != rare_idx {
-                            if similarity(&items[rare_idx], &items[j]) >= sim_threshold {
-                                degrees[rare_idx] += 1;
-                                degrees[j] += 1;
-                                // Found a neighbor - no longer Rare
-                                break;
-                            }
+                        if j != rare_idx && similarity(&items[rare_idx], &items[j]) >= sim_threshold
+                        {
+                            degrees[rare_idx] += 1;
+                            degrees[j] += 1;
+                            // Found a neighbor - no longer Rare
+                            break;
                         }
                     }
                 }
@@ -2042,12 +2178,17 @@ impl Kdf {
         let selected_set: HashSet<usize> = selected.iter().copied().collect();
 
         let mut indices: Vec<usize> = (0..n).collect();
-        indices.sort_by(|a, b| weights[*b].partial_cmp(&weights[*a]).unwrap_or(std::cmp::Ordering::Equal));
+        indices.sort_by(|a, b| {
+            weights[*b]
+                .partial_cmp(&weights[*a])
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         for &i in &indices {
             if !selected_set.contains(&i) && weights[i] >= self.params.theta_edge {
-                let has_similar = selected.iter()
-                    .any(|&s| similarity(&items[i], &items[s]) >= self.params.selection_sim_threshold);
+                let has_similar = selected.iter().any(|&s| {
+                    similarity(&items[i], &items[s]) >= self.params.selection_sim_threshold
+                });
 
                 if !has_similar {
                     selected.push(i);
@@ -2123,7 +2264,10 @@ pub struct TemporalKdf {
 impl TemporalKdf {
     /// Create a new temporal KDF instance
     pub fn new(kdf_params: KdfParams, temporal_params: TemporalParams) -> Self {
-        Self { kdf_params, temporal_params }
+        Self {
+            kdf_params,
+            temporal_params,
+        }
     }
 
     /// Create with default parameters
@@ -2192,7 +2336,9 @@ impl TemporalKdf {
         // Phase 5: Selection (same as standard KDF)
         let mut indices: Vec<usize> = (0..n).collect();
         indices.sort_by(|a, b| {
-            weights[*b].partial_cmp(&weights[*a]).unwrap_or(std::cmp::Ordering::Equal)
+            weights[*b]
+                .partial_cmp(&weights[*a])
+                .unwrap_or(std::cmp::Ordering::Equal)
         });
 
         let mut selected: Vec<usize> = Vec::new();
@@ -2201,12 +2347,17 @@ impl TemporalKdf {
 
         for &i in &indices {
             // Rare items still get priority, but temporal weight affects final selection
-            if layers[i] == Layer::Rare && weights[i] >= self.kdf_params.theta_edge * self.temporal_params.min_weight {
+            if layers[i] == Layer::Rare
+                && weights[i] >= self.kdf_params.theta_edge * self.temporal_params.min_weight
+            {
                 selected.push(i);
                 selected_set.insert(i);
             } else if weights[i] >= self.kdf_params.theta_edge {
-                let similar_rep = selected.iter()
-                    .find(|&&s| similarity(&items[i], &items[s]) >= self.kdf_params.selection_sim_threshold)
+                let similar_rep = selected
+                    .iter()
+                    .find(|&&s| {
+                        similarity(&items[i], &items[s]) >= self.kdf_params.selection_sim_threshold
+                    })
                     .copied();
 
                 if let Some(rep) = similar_rep {
@@ -2215,16 +2366,12 @@ impl TemporalKdf {
                     selected.push(i);
                     selected_set.insert(i);
                 }
-            } else {
-                if let Some(&rep) = selected.iter()
-                    .max_by(|&&a, &&b| {
-                        similarity(&items[i], &items[a])
-                            .partial_cmp(&similarity(&items[i], &items[b]))
-                            .unwrap_or(std::cmp::Ordering::Equal)
-                    })
-                {
-                    clusters[i] = rep;
-                }
+            } else if let Some(&rep) = selected.iter().max_by(|&&a, &&b| {
+                similarity(&items[i], &items[a])
+                    .partial_cmp(&similarity(&items[i], &items[b]))
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            }) {
+                clusters[i] = rep;
             }
         }
 
@@ -2233,7 +2380,15 @@ impl TemporalKdf {
             selected_set.insert(indices[0]);
         }
 
-        KdfResult { selected, layers, selection_scores: weights, degrees, clusters, edge_weights: HashMap::new(), selected_set }
+        KdfResult {
+            selected,
+            layers,
+            selection_scores: weights,
+            degrees,
+            clusters,
+            edge_weights: HashMap::new(),
+            selected_set,
+        }
     }
 
     /// Get items that are "fresh" (recently added and still relevant)
@@ -2249,7 +2404,8 @@ impl TemporalKdf {
         F: Fn(&T, &T) -> f64,
     {
         let result = self.process(items, timestamps, sim_threshold, similarity);
-        result.selected
+        result
+            .selected
             .into_iter()
             .filter(|&i| self.temporal_params.temporal_weight(timestamps[i]) >= freshness_threshold)
             .collect()
@@ -2268,11 +2424,12 @@ impl TemporalKdf {
         F: Fn(&T, &T) -> f64,
     {
         let result = self.process(items, timestamps, sim_threshold, similarity);
-        result.selected
+        result
+            .selected
             .into_iter()
             .filter(|&i| {
-                result.layers[i] == Layer::Rare &&
-                self.temporal_params.temporal_weight(timestamps[i]) < staleness_threshold
+                result.layers[i] == Layer::Rare
+                    && self.temporal_params.temporal_weight(timestamps[i]) < staleness_threshold
             })
             .collect()
     }
@@ -2374,7 +2531,9 @@ impl<T: Clone> IncrementalKdf<T> {
     where
         F: Fn(&T, &T) -> f64,
     {
-        if idx >= self.items.len() { return; }
+        if idx >= self.items.len() {
+            return;
+        }
 
         let n = self.items.len();
 
@@ -2401,10 +2560,16 @@ impl<T: Clone> IncrementalKdf<T> {
         F: Fn(&T, &T) -> f64,
     {
         let n = self.items.len();
-        if n == 0 { return vec![]; }
+        if n == 0 {
+            return vec![];
+        }
 
         let mut indices: Vec<usize> = (0..n).collect();
-        indices.sort_by(|a, b| self.selection_scores[*b].partial_cmp(&self.selection_scores[*a]).unwrap_or(std::cmp::Ordering::Equal));
+        indices.sort_by(|a, b| {
+            self.selection_scores[*b]
+                .partial_cmp(&self.selection_scores[*a])
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         let mut selected: Vec<usize> = Vec::new();
         let mut selected_set: HashSet<usize> = HashSet::new();
@@ -2414,8 +2579,10 @@ impl<T: Clone> IncrementalKdf<T> {
                 selected.push(i);
                 selected_set.insert(i);
             } else if self.selection_scores[i] >= self.params.theta_edge {
-                let has_similar = selected.iter()
-                    .any(|&s| similarity(&self.items[i], &self.items[s]) >= self.params.selection_sim_threshold);
+                let has_similar = selected.iter().any(|&s| {
+                    similarity(&self.items[i], &self.items[s])
+                        >= self.params.selection_sim_threshold
+                });
                 if !has_similar {
                     selected.push(i);
                     selected_set.insert(i);
@@ -2460,7 +2627,8 @@ pub fn cosine_similarity(a: &[f64], b: &[f64]) -> f64 {
 
 /// Euclidean similarity (1 / (1 + distance))
 pub fn euclidean_similarity(a: &[f64], b: &[f64]) -> f64 {
-    let dist: f64 = a.iter()
+    let dist: f64 = a
+        .iter()
         .zip(b)
         .map(|(x, y)| (x - y).powi(2))
         .sum::<f64>()
@@ -2504,10 +2672,12 @@ pub fn levenshtein_similarity(a: &str, b: &str) -> f64 {
     for i in 1..=m {
         curr[0] = i;
         for j in 1..=n {
-            let cost = if a_chars[i - 1] == b_chars[j - 1] { 0 } else { 1 };
-            curr[j] = (prev[j] + 1)
-                .min(curr[j - 1] + 1)
-                .min(prev[j - 1] + cost);
+            let cost = if a_chars[i - 1] == b_chars[j - 1] {
+                0
+            } else {
+                1
+            };
+            curr[j] = (prev[j] + 1).min(curr[j - 1] + 1).min(prev[j - 1] + cost);
         }
         std::mem::swap(&mut prev, &mut curr);
     }
@@ -2572,7 +2742,8 @@ pub fn dtw_similarity_multi(a: &[Vec<f64>], b: &[Vec<f64>]) -> f64 {
         curr[0] = f64::INFINITY;
         for j in 1..=n {
             // Euclidean distance between feature vectors
-            let cost: f64 = a[i - 1].iter()
+            let cost: f64 = a[i - 1]
+                .iter()
                 .zip(&b[j - 1])
                 .map(|(x, y)| (x - y).powi(2))
                 .sum::<f64>()
@@ -2714,10 +2885,17 @@ mod tests {
         let decay_prob = compute_edge_decay_probability(0, 1, &degrees, Layer::Edge, &params);
 
         let expected = params.beta * (1.0 + params.gamma_edge * 5.0_f64.powf(params.alpha_edge));
-        assert!((decay_prob - expected).abs() < 1e-10,
-            "Edge decay: expected {}, got {}", expected, decay_prob);
-        assert!((decay_prob - 0.01168).abs() < 0.0001,
-            "Edge decay C=5: expected ~0.01168, got {}", decay_prob);
+        assert!(
+            (decay_prob - expected).abs() < 1e-10,
+            "Edge decay: expected {}, got {}",
+            expected,
+            decay_prob
+        );
+        assert!(
+            (decay_prob - 0.01168).abs() < 0.0001,
+            "Edge decay C=5: expected ~0.01168, got {}",
+            decay_prob
+        );
     }
 
     #[test]
@@ -2731,8 +2909,12 @@ mod tests {
         let decay_prob = compute_edge_decay_probability(0, 1, &degrees, Layer::Rare, &params);
 
         let expected = params.beta * (1.0 + params.gamma_rare * 5.0_f64.powf(params.alpha_rare));
-        assert!((decay_prob - expected).abs() < 1e-10,
-            "Rare decay: expected {}, got {}", expected, decay_prob);
+        assert!(
+            (decay_prob - expected).abs() < 1e-10,
+            "Rare decay: expected {}, got {}",
+            expected,
+            decay_prob
+        );
     }
 
     #[test]
@@ -2746,10 +2928,17 @@ mod tests {
         let decay_prob = compute_edge_decay_probability(0, 1, &degrees, Layer::Core, &params);
 
         let expected = params.beta * (1.0 + params.gamma_core * 5.0_f64.powf(params.alpha_core));
-        assert!((decay_prob - expected).abs() < 1e-10,
-            "Core decay: expected {}, got {}", expected, decay_prob);
-        assert!((decay_prob - 0.012).abs() < 0.0001,
-            "Core decay C=5: expected 0.012, got {}", decay_prob);
+        assert!(
+            (decay_prob - expected).abs() < 1e-10,
+            "Core decay: expected {}, got {}",
+            expected,
+            decay_prob
+        );
+        assert!(
+            (decay_prob - 0.012).abs() < 0.0001,
+            "Core decay C=5: expected 0.012, got {}",
+            decay_prob
+        );
     }
 
     #[test]
@@ -2762,13 +2951,19 @@ mod tests {
 
         // 1 step
         let weight_after_1 = initial_weight * (1.0 - decay_prob);
-        assert!((weight_after_1 - 0.98832).abs() < 0.001,
-            "1 step: expected ~0.988, got {}", weight_after_1);
+        assert!(
+            (weight_after_1 - 0.98832).abs() < 0.001,
+            "1 step: expected ~0.988, got {}",
+            weight_after_1
+        );
 
         // 100 steps
         let weight_after_100 = initial_weight * (1.0 - decay_prob).powi(100);
-        assert!(weight_after_100 > 0.3 && weight_after_100 < 0.35,
-            "100 steps: expected ~0.31, got {}", weight_after_100);
+        assert!(
+            weight_after_100 > 0.3 && weight_after_100 < 0.35,
+            "100 steps: expected ~0.31, got {}",
+            weight_after_100
+        );
     }
 
     #[test]
@@ -2823,8 +3018,10 @@ mod tests {
         assert_eq!(master_params.gamma_for_layer(Layer::Core), 0.008);
 
         // Legacy mode (use_edge_based = false) should use single gamma
-        let mut legacy_params = KdfParams::default();
-        legacy_params.use_edge_based = false;
+        let legacy_params = KdfParams {
+            use_edge_based: false,
+            ..Default::default()
+        };
         assert_eq!(legacy_params.gamma_for_layer(Layer::Edge), 0.1);
         assert_eq!(legacy_params.gamma_for_layer(Layer::Rare), 0.1);
         assert_eq!(legacy_params.gamma_for_layer(Layer::Core), 0.1);

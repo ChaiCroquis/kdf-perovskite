@@ -14,18 +14,18 @@
 //! Python implementation: python/kdf/vne_integration.py
 
 // Submodules
-pub mod types;
-pub mod matrix;
 pub mod entropy;
+pub mod matrix;
 pub mod monitor;
 pub mod triggered;
+pub mod types;
 
 #[cfg(test)]
 mod tests;
 
 // Re-exports for convenience
-pub use types::{VNEResult, AnomalyResult, ChangeDetection};
-pub use matrix::{laplacian_matrix, density_matrix};
-pub use entropy::{von_neumann_entropy, von_neumann_entropy_detailed, detect_change};
+pub use entropy::{detect_change, von_neumann_entropy, von_neumann_entropy_detailed};
+pub use matrix::{density_matrix, laplacian_matrix};
 pub use monitor::VNEMonitor;
-pub use triggered::{VNETriggeredSleepMode, VNETriggeredStats, OptimizationResult};
+pub use triggered::{OptimizationResult, VNETriggeredSleepMode, VNETriggeredStats};
+pub use types::{AnomalyResult, ChangeDetection, VNEResult};

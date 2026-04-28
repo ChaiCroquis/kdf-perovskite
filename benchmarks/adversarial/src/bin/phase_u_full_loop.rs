@@ -8,8 +8,8 @@
 
 use adversarial_bench as adv;
 use cgb_kdf::{
-    ActivationScore, Layer, MasterSpecParams, MetaController, NodeClassifier,
-    RegionKind, SemanticImportance, TransitionController, TransitionScore,
+    ActivationScore, Layer, MasterSpecParams, MetaController, NodeClassifier, RegionKind,
+    SemanticImportance, TransitionController, TransitionScore,
 };
 use real_data_bench::Dataset;
 use std::collections::HashSet;
@@ -18,14 +18,22 @@ const N_DATASET_SEEDS: usize = 5;
 const N_STEPS: usize = 5;
 
 fn avg_connectivity(ds: &Dataset) -> f64 {
-    if ds.n_nodes == 0 { return 0.0; }
+    if ds.n_nodes == 0 {
+        return 0.0;
+    }
     let mut deg = vec![0u32; ds.n_nodes];
     for &(u, v, _) in &ds.edges {
-        if (u as usize) < ds.n_nodes { deg[u as usize] += 1; }
-        if (v as usize) < ds.n_nodes { deg[v as usize] += 1; }
+        if (u as usize) < ds.n_nodes {
+            deg[u as usize] += 1;
+        }
+        if (v as usize) < ds.n_nodes {
+            deg[v as usize] += 1;
+        }
     }
     let non_iso: Vec<u32> = deg.into_iter().filter(|&d| d > 0).collect();
-    if non_iso.is_empty() { 0.0 } else {
+    if non_iso.is_empty() {
+        0.0
+    } else {
         non_iso.iter().sum::<u32>() as f64 / non_iso.len() as f64
     }
 }
@@ -35,18 +43,26 @@ fn run_full_loop(dataset_seed: u64) -> Vec<(usize, f64, f64, f64)> {
     let snapshots = adv::temporal_snapshots(500, N_STEPS, dataset_seed);
 
     // Phase N style: ActivationScore + MetaController only
-    let mut activation_partial = ActivationScore::default();
-    activation_partial.decay_rate = 0.05;
+    let mut activation_partial = ActivationScore {
+        decay_rate: 0.05,
+        ..Default::default()
+    };
     let mc_partial = MetaController::default();
     let mut params_partial = MasterSpecParams::default();
 
     // Phase U style: + TransitionController with explicit promote/demote
-    let mut activation_full = ActivationScore::default();
-    activation_full.decay_rate = 0.05;
+    let mut activation_full = ActivationScore {
+        decay_rate: 0.05,
+        ..Default::default()
+    };
     let mc_full = MetaController::default();
     let mut params_full = MasterSpecParams::default();
     let tc = TransitionController {
-        score_config: TransitionScore { w_connectivity: 0.3, w_activation: 0.5, w_semantic: 0.2 },
+        score_config: TransitionScore {
+            w_connectivity: 0.3,
+            w_activation: 0.5,
+            w_semantic: 0.2,
+        },
         promote_threshold: 0.6,
         demote_threshold: 0.3,
         ..Default::default()
@@ -55,7 +71,8 @@ fn run_full_loop(dataset_seed: u64) -> Vec<(usize, f64, f64, f64)> {
 
     // Track per-node "current region" — transitions between these are where
     // TransitionController exerts its influence
-    let mut region_of: std::collections::HashMap<u32, RegionKind> = std::collections::HashMap::new();
+    let mut region_of: std::collections::HashMap<u32, RegionKind> =
+        std::collections::HashMap::new();
     let mut transitions_triggered = 0u32;
 
     let mut results = Vec::new();
@@ -82,7 +99,8 @@ fn run_full_loop(dataset_seed: u64) -> Vec<(usize, f64, f64, f64)> {
         mc_full.step(&mut params_full, avg_k, avg_k / 2.0);
 
         // ---- FULL PATH: TransitionController makes region decisions ----
-        let mut neighbors: std::collections::HashMap<u32, Vec<u32>> = std::collections::HashMap::new();
+        let mut neighbors: std::collections::HashMap<u32, Vec<u32>> =
+            std::collections::HashMap::new();
         for &(u, v, _) in &ds.edges {
             neighbors.entry(u).or_default().push(v);
             neighbors.entry(v).or_default().push(u);
@@ -106,11 +124,15 @@ fn run_full_loop(dataset_seed: u64) -> Vec<(usize, f64, f64, f64)> {
         // ---- Scoring ----
         let score_static_only = |id: u32| -> f64 {
             let l = class.layers.get(&id).copied().unwrap_or(Layer::Edge);
-            match l { Layer::Rare => 3.0, Layer::Core => 2.0, Layer::Edge => 1.0, Layer::Garbage => 0.0 }
+            match l {
+                Layer::Rare => 3.0,
+                Layer::Core => 2.0,
+                Layer::Edge => 1.0,
+                Layer::Garbage => 0.0,
+            }
         };
-        let score_partial = |id: u32| -> f64 {
-            score_static_only(id) + activation_partial.get(id) * 5.0
-        };
+        let score_partial =
+            |id: u32| -> f64 { score_static_only(id) + activation_partial.get(id) * 5.0 };
         let score_full = |id: u32| -> f64 {
             let base = score_static_only(id) + activation_full.get(id) * 5.0;
             // FULL path: region membership adds signal
@@ -123,7 +145,8 @@ fn run_full_loop(dataset_seed: u64) -> Vec<(usize, f64, f64, f64)> {
         };
 
         let pick = |scorer: &dyn Fn(u32) -> f64| -> HashSet<u32> {
-            let mut scored: Vec<(u32, f64)> = (0..ds.n_nodes as u32).map(|id| (id, scorer(id))).collect();
+            let mut scored: Vec<(u32, f64)> =
+                (0..ds.n_nodes as u32).map(|id| (id, scorer(id))).collect();
             scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
             scored.into_iter().take(keep).map(|(i, _)| i).collect()
         };
@@ -133,15 +156,24 @@ fn run_full_loop(dataset_seed: u64) -> Vec<(usize, f64, f64, f64)> {
         let full_sel = pick(&score_full);
 
         let recall = |sel: &HashSet<u32>| -> f64 {
-            if ds.rare_ground_truth.is_empty() { return 0.0; }
+            if ds.rare_ground_truth.is_empty() {
+                return 0.0;
+            }
             sel.intersection(&ds.rare_ground_truth).count() as f64
                 / ds.rare_ground_truth.len() as f64
         };
 
-        results.push((step, recall(&static_sel), recall(&partial_sel), recall(&full_sel)));
+        results.push((
+            step,
+            recall(&static_sel),
+            recall(&partial_sel),
+            recall(&full_sel),
+        ));
     }
-    println!("   (dataset_seed={}: TransitionController fired {} times over {} steps)",
-        dataset_seed, transitions_triggered, N_STEPS);
+    println!(
+        "   (dataset_seed={}: TransitionController fired {} times over {} steps)",
+        dataset_seed, transitions_triggered, N_STEPS
+    );
     results
 }
 
@@ -172,10 +204,17 @@ fn main() {
         let rp = agg[step].1 / n;
         let rf = agg[step].2 / n;
         let delta = rf - rp;
-        let marker = if delta.abs() < 0.01 { "≈" }
-                     else if delta > 0.0 { "✅" }
-                     else { "❌" };
-        println!("| t={} | {:.3} | {:.3} | {:.3} | {}{:+.3} |", step, rs, rp, rf, marker, delta);
+        let marker = if delta.abs() < 0.01 {
+            "≈"
+        } else if delta > 0.0 {
+            "✅"
+        } else {
+            "❌"
+        };
+        println!(
+            "| t={} | {:.3} | {:.3} | {:.3} | {}{:+.3} |",
+            step, rs, rp, rf, marker, delta
+        );
     }
 
     println!("\n## Interpretation");

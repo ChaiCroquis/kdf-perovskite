@@ -37,9 +37,9 @@ impl ProductItem {
     /// Get numeric features as a vector
     fn numeric_features(&self) -> Vec<f64> {
         vec![
-            self.price / 1000.0,  // Normalize price
-            self.rating / 5.0,    // Normalize rating
-            (self.sales_count as f64).ln() / 10.0,  // Log-normalize sales
+            self.price / 1000.0,                   // Normalize price
+            self.rating / 5.0,                     // Normalize rating
+            (self.sales_count as f64).ln() / 10.0, // Log-normalize sales
         ]
     }
 }
@@ -133,16 +133,38 @@ fn main() {
 
     let text_numeric_items = vec![
         // Cluster 1: Similar text, similar numbers
-        TextNumericItem { id: 0, text: "machine learning".to_string(), numeric_features: vec![1.0, 0.5, 0.8] },
-        TextNumericItem { id: 1, text: "machine learning models".to_string(), numeric_features: vec![1.0, 0.6, 0.7] },
-        TextNumericItem { id: 2, text: "deep learning".to_string(), numeric_features: vec![0.9, 0.5, 0.9] },
-
+        TextNumericItem {
+            id: 0,
+            text: "machine learning".to_string(),
+            numeric_features: vec![1.0, 0.5, 0.8],
+        },
+        TextNumericItem {
+            id: 1,
+            text: "machine learning models".to_string(),
+            numeric_features: vec![1.0, 0.6, 0.7],
+        },
+        TextNumericItem {
+            id: 2,
+            text: "deep learning".to_string(),
+            numeric_features: vec![0.9, 0.5, 0.9],
+        },
         // Cluster 2: Different text, similar to each other
-        TextNumericItem { id: 3, text: "web development".to_string(), numeric_features: vec![0.3, 0.8, 0.2] },
-        TextNumericItem { id: 4, text: "web development basics".to_string(), numeric_features: vec![0.3, 0.9, 0.3] },
-
+        TextNumericItem {
+            id: 3,
+            text: "web development".to_string(),
+            numeric_features: vec![0.3, 0.8, 0.2],
+        },
+        TextNumericItem {
+            id: 4,
+            text: "web development basics".to_string(),
+            numeric_features: vec![0.3, 0.9, 0.3],
+        },
         // Rare: Unique text with outlier numeric features
-        TextNumericItem { id: 5, text: "quantum computing".to_string(), numeric_features: vec![0.1, 0.1, 0.1] },
+        TextNumericItem {
+            id: 5,
+            text: "quantum computing".to_string(),
+            numeric_features: vec![0.1, 0.1, 0.1],
+        },
     ];
 
     // Process with different text weights
@@ -165,72 +187,100 @@ fn main() {
     let products = vec![
         // Electronics cluster
         ProductItem {
-            id: 0, name: "Wireless Bluetooth Headphones".to_string(),
+            id: 0,
+            name: "Wireless Bluetooth Headphones".to_string(),
             description: "High quality audio, noise cancelling".to_string(),
             category_embedding: vec![1.0, 0.0, 0.0, 0.0],
-            price: 89.99, rating: 4.5, sales_count: 1500,
+            price: 89.99,
+            rating: 4.5,
+            sales_count: 1500,
         },
         ProductItem {
-            id: 1, name: "Bluetooth Earbuds Pro".to_string(),
+            id: 1,
+            name: "Bluetooth Earbuds Pro".to_string(),
             description: "Wireless earbuds with great sound".to_string(),
             category_embedding: vec![1.0, 0.1, 0.0, 0.0],
-            price: 79.99, rating: 4.3, sales_count: 2000,
+            price: 79.99,
+            rating: 4.3,
+            sales_count: 2000,
         },
         ProductItem {
-            id: 2, name: "Premium Wireless Headset".to_string(),
+            id: 2,
+            name: "Premium Wireless Headset".to_string(),
             description: "Professional audio quality".to_string(),
             category_embedding: vec![1.0, 0.0, 0.1, 0.0],
-            price: 149.99, rating: 4.7, sales_count: 800,
+            price: 149.99,
+            rating: 4.7,
+            sales_count: 800,
         },
-
         // Clothing cluster
         ProductItem {
-            id: 3, name: "Cotton T-Shirt".to_string(),
+            id: 3,
+            name: "Cotton T-Shirt".to_string(),
             description: "Comfortable everyday wear".to_string(),
             category_embedding: vec![0.0, 1.0, 0.0, 0.0],
-            price: 19.99, rating: 4.2, sales_count: 5000,
+            price: 19.99,
+            rating: 4.2,
+            sales_count: 5000,
         },
         ProductItem {
-            id: 4, name: "Basic Cotton Tee".to_string(),
+            id: 4,
+            name: "Basic Cotton Tee".to_string(),
             description: "Soft cotton shirt".to_string(),
             category_embedding: vec![0.0, 1.0, 0.0, 0.0],
-            price: 14.99, rating: 4.0, sales_count: 8000,
+            price: 14.99,
+            rating: 4.0,
+            sales_count: 8000,
         },
-
         // Rare: Unique product
         ProductItem {
-            id: 5, name: "Vintage Record Player".to_string(),
+            id: 5,
+            name: "Vintage Record Player".to_string(),
             description: "Classic vinyl turntable with modern features".to_string(),
             category_embedding: vec![0.5, 0.0, 0.5, 0.0],
-            price: 299.99, rating: 4.8, sales_count: 150,
+            price: 299.99,
+            rating: 4.8,
+            sales_count: 150,
         },
-
         // Rare: Cross-category
         ProductItem {
-            id: 6, name: "Smart Fitness Watch".to_string(),
+            id: 6,
+            name: "Smart Fitness Watch".to_string(),
             description: "Health tracking with style".to_string(),
             category_embedding: vec![0.5, 0.3, 0.0, 0.2],
-            price: 199.99, rating: 4.6, sales_count: 1200,
+            price: 199.99,
+            rating: 4.6,
+            sales_count: 1200,
         },
     ];
 
-    let result_products = kdf.process(&products, 0.7, |a, b| {
-        product_multimodal_similarity(a, b)
-    });
+    let result_products = kdf.process(&products, 0.7, product_multimodal_similarity);
 
     println!("Product KDF Results:");
     println!("  Total products: {}", products.len());
     println!("  Selected: {:?}", result_products.selected);
-    println!("  Compression: {:.0}%", (1.0 - result_products.selected.len() as f64 / products.len() as f64) * 100.0);
+    println!(
+        "  Compression: {:.0}%",
+        (1.0 - result_products.selected.len() as f64 / products.len() as f64) * 100.0
+    );
     println!();
 
     println!("Products by layer:");
     for (i, product) in products.iter().enumerate() {
         let layer = &result_products.layers[i];
-        let selected = if result_products.selected.contains(&i) { "*" } else { " " };
-        println!("  {} {} [{}] - \"{}\" (${:.2})",
-            selected, format!("{:?}", layer).chars().next().unwrap(),
-            i, product.name, product.price);
+        let selected = if result_products.selected.contains(&i) {
+            "*"
+        } else {
+            " "
+        };
+        println!(
+            "  {} {} [{}] - \"{}\" (${:.2})",
+            selected,
+            format!("{:?}", layer).chars().next().unwrap(),
+            i,
+            product.name,
+            product.price
+        );
     }
     println!();
 
@@ -250,7 +300,7 @@ fn main() {
         title: String,
         content: String,
         topic_vector: Vec<f64>,
-        metadata: Vec<f64>,  // e.g., [length, citations, year]
+        metadata: Vec<f64>, // e.g., [length, citations, year]
     }
 
     let documents = vec![
@@ -293,23 +343,24 @@ fn main() {
     mm_sim.add_modality(|d| d.topic_vector.clone(), 0.5);
 
     // Add metadata modality (weight 0.3)
-    mm_sim.add_modality(|d| {
-        // Normalize metadata
-        vec![
-            d.metadata[0] / 500.0,
-            d.metadata[1] / 200.0,
-            (d.metadata[2] - 2020.0) / 5.0,
-        ]
-    }, 0.3);
+    mm_sim.add_modality(
+        |d| {
+            // Normalize metadata
+            vec![
+                d.metadata[0] / 500.0,
+                d.metadata[1] / 200.0,
+                (d.metadata[2] - 2020.0) / 5.0,
+            ]
+        },
+        0.3,
+    );
 
     // Note: Text modality would need embedding in real use
     // Here we use a simple length-based approximation
-    mm_sim.add_modality(|d| {
-        vec![
-            d.title.len() as f64 / 50.0,
-            d.content.len() as f64 / 100.0,
-        ]
-    }, 0.2);
+    mm_sim.add_modality(
+        |d| vec![d.title.len() as f64 / 50.0, d.content.len() as f64 / 100.0],
+        0.2,
+    );
 
     let result_docs = kdf.process(&documents, 0.7, |a, b| mm_sim.compute(a, b));
 

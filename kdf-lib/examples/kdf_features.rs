@@ -1,5 +1,5 @@
 //! KDF-specific features demonstration: anomaly scoring, diversity sampling, statistics
-use kdf::{Kdf, cosine_similarity};
+use kdf::{cosine_similarity, Kdf};
 
 fn main() {
     println!("=== KDF-Specific Features Test ===\n");
@@ -18,8 +18,8 @@ fn main() {
         vec![0.0, 0.0, 1.0],
         vec![0.0, 0.1, 0.98],
         // Isolated points (anomalies)
-        vec![-1.0, -1.0, 0.0],  // Very different
-        vec![0.5, 0.5, 0.5],    // Between all clusters
+        vec![-1.0, -1.0, 0.0], // Very different
+        vec![0.5, 0.5, 0.5],   // Between all clusters
     ];
 
     let kdf = Kdf::with_defaults();
@@ -86,7 +86,10 @@ fn main() {
     println!("   Avg cluster size: {:.2}", stats.avg_cluster_size);
     println!("   Max cluster size: {}", stats.max_cluster_size);
     println!("   Isolation ratio:  {:.2}%", stats.isolation_ratio * 100.0);
-    println!("   Redundancy ratio: {:.2}%", stats.redundancy_ratio * 100.0);
+    println!(
+        "   Redundancy ratio: {:.2}%",
+        stats.redundancy_ratio * 100.0
+    );
 
     // ========================================================================
     // Verification
@@ -94,12 +97,8 @@ fn main() {
     println!("\n## Verification");
 
     // Anomaly detection: isolated items should have high scores
-    let isolated_scores: Vec<f64> = vec![8, 9].iter()
-        .map(|&i| result.anomaly_score(i))
-        .collect();
-    let cluster_scores: Vec<f64> = vec![0, 3, 6].iter()
-        .map(|&i| result.anomaly_score(i))
-        .collect();
+    let isolated_scores: Vec<f64> = [8, 9].iter().map(|&i| result.anomaly_score(i)).collect();
+    let cluster_scores: Vec<f64> = [0, 3, 6].iter().map(|&i| result.anomaly_score(i)).collect();
 
     let avg_isolated = isolated_scores.iter().sum::<f64>() / isolated_scores.len() as f64;
     let avg_cluster = cluster_scores.iter().sum::<f64>() / cluster_scores.len() as f64;
@@ -116,14 +115,27 @@ fn main() {
     // Diversity sampling: should include items from different clusters
     let mut cluster_coverage = 0;
     for &idx in &diverse_5 {
-        if idx <= 2 { cluster_coverage |= 1; }       // Cluster 1
-        else if idx <= 5 { cluster_coverage |= 2; }  // Cluster 2
-        else if idx <= 7 { cluster_coverage |= 4; }  // Cluster 3
-        else { cluster_coverage |= 8; }              // Isolated
+        if idx <= 2 {
+            cluster_coverage |= 1;
+        }
+        // Cluster 1
+        else if idx <= 5 {
+            cluster_coverage |= 2;
+        }
+        // Cluster 2
+        else if idx <= 7 {
+            cluster_coverage |= 4;
+        }
+        // Cluster 3
+        else {
+            cluster_coverage |= 8;
+        } // Isolated
     }
 
-    let clusters_hit = (cluster_coverage & 1) + ((cluster_coverage >> 1) & 1)
-                     + ((cluster_coverage >> 2) & 1) + ((cluster_coverage >> 3) & 1);
+    let clusters_hit = (cluster_coverage & 1)
+        + ((cluster_coverage >> 1) & 1)
+        + ((cluster_coverage >> 2) & 1)
+        + ((cluster_coverage >> 3) & 1);
     println!("   Diversity sample covers {} groups", clusters_hit);
 
     if clusters_hit >= 3 {

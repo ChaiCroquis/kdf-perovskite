@@ -22,7 +22,11 @@ pub struct Edge {
 impl Edge {
     /// Create a new edge
     pub fn new(source: NodeId, target: NodeId, weight: f64) -> Self {
-        Self { source, target, weight }
+        Self {
+            source,
+            target,
+            weight,
+        }
     }
 }
 

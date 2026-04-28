@@ -67,7 +67,7 @@ fn demo_knowledge_decay() {
     labels.push("孤立");
 
     // θ=0.5 で密集データ同士を接続（デモ用）
-    let result = kdf.process(&data, 0.5, euclidean_similarity);
+    let result = kdf.process(&data, 0.5, |a, b| euclidean_similarity(a, b));
 
     // 層別の分析
     let core_items = result.core_items();
@@ -80,14 +80,26 @@ fn demo_knowledge_decay() {
     println!("   - 孤立: 1件\n");
 
     println!("   KDFの整理結果:");
-    println!("   - Core/Edge層: {} 件 ← 類似データ（冗長）", core_items.len() + edge_items.len());
-    println!("   - Rare層: {} 件 ← 判断材料不足（孤立）\n", rare_items.len());
+    println!(
+        "   - Core/Edge層: {} 件 ← 類似データ（冗長）",
+        core_items.len() + edge_items.len()
+    );
+    println!(
+        "   - Rare層: {} 件 ← 判断材料不足（孤立）\n",
+        rare_items.len()
+    );
 
     // Core/Edge層の内訳
-    let connected_pb = core_items.iter().chain(edge_items.iter())
-        .filter(|&&i| labels[i] == "Pb系").count();
+    let connected_pb = core_items
+        .iter()
+        .chain(edge_items.iter())
+        .filter(|&&i| labels[i] == "Pb系")
+        .count();
     println!("   接続データ（Core/Edge）の内訳:");
-    println!("   - Pb系: {} 件 → 互いに類似、知識として集約可能", connected_pb);
+    println!(
+        "   - Pb系: {} 件 → 互いに類似、知識として集約可能",
+        connected_pb
+    );
 
     println!("\n   【Knowledge Decay】");
     println!("   Pb系論文1本目: 価値 = 100%");
@@ -120,13 +132,13 @@ fn demo_expert_perspective() {
 
     // 効率は低いが構造的に類似（Sn系）
     // 効率2%だが、構造パラメータは主流派に近い
-    data.push(vec![2.0, 1.1]);  // 低効率だが構造OK
+    data.push(vec![2.0, 1.1]); // 低効率だが構造OK
     data.push(vec![3.0, 1.05]); // 低効率だが構造OK
 
     // 完全に異なるもの
     data.push(vec![50.0, 5.0]); // 高効率だが構造が異なる
 
-    let result = kdf.process(&data, 0.85, euclidean_similarity);
+    let result = kdf.process(&data, 0.85, |a, b| euclidean_similarity(a, b));
 
     let rare_items = result.rare_items();
     let edge_items = result.edge_items();
@@ -160,7 +172,10 @@ fn demo_expert_perspective() {
     } else {
         "Core（知識内）"
     };
-    println!("   - 高効率・構造異質[{}]: {}", high_eff_unusual, unusual_layer);
+    println!(
+        "   - 高効率・構造異質[{}]: {}",
+        high_eff_unusual, unusual_layer
+    );
 
     println!("\n   【部屋の主の視点】");
     println!("   効率だけで判断すると: 低効率 = ゴミ");
@@ -194,11 +209,11 @@ fn demo_deferred_judgment() {
         data.len() + 1,
         data.len() + 2,
     ];
-    data.push(vec![5.0, 5.0]);  // 孤立
-    data.push(vec![2.0, 2.0]);  // やや離れた位置
-    data.push(vec![0.5, 0.5]);  // 既知領域に近い
+    data.push(vec![5.0, 5.0]); // 孤立
+    data.push(vec![2.0, 2.0]); // やや離れた位置
+    data.push(vec![0.5, 0.5]); // 既知領域に近い
 
-    let result = kdf.process(&data, 0.85, euclidean_similarity);
+    let result = kdf.process(&data, 0.85, |a, b| euclidean_similarity(a, b));
 
     let rare_items = result.rare_items();
     let edge_items = result.edge_items();
@@ -261,8 +276,9 @@ fn summary() {
 }
 
 /// ユークリッド類似度
-fn euclidean_similarity(a: &Vec<f64>, b: &Vec<f64>) -> f64 {
-    let dist: f64 = a.iter()
+fn euclidean_similarity(a: &[f64], b: &[f64]) -> f64 {
+    let dist: f64 = a
+        .iter()
         .zip(b.iter())
         .map(|(x, y)| (x - y).powi(2))
         .sum::<f64>()

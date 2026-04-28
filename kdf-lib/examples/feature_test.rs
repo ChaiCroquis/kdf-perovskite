@@ -1,16 +1,16 @@
 //! Comprehensive feature test for all KDF functionality
-use kdf::{Kdf, cosine_similarity, SelectionReason, Layer};
+use kdf::{cosine_similarity, Kdf, Layer, SelectionReason};
 
 fn main() {
     println!("=== 新機能テスト ===\n");
 
     let kdf = Kdf::with_defaults();
     let items = vec![
-        vec![1.0, 0.0, 0.0],  // 0: クラスタA
-        vec![1.0, 0.1, 0.0],  // 1: クラスタA
-        vec![1.0, 0.0, 0.1],  // 2: クラスタA
-        vec![0.0, 1.0, 0.0],  // 3: クラスタB
-        vec![0.0, 1.0, 0.1],  // 4: クラスタB
+        vec![1.0, 0.0, 0.0],    // 0: クラスタA
+        vec![1.0, 0.1, 0.0],    // 1: クラスタA
+        vec![1.0, 0.0, 0.1],    // 2: クラスタA
+        vec![0.0, 1.0, 0.0],    // 3: クラスタB
+        vec![0.0, 1.0, 0.1],    // 4: クラスタB
         vec![-1.0, -1.0, -1.0], // 5: レア
     ];
 
@@ -26,10 +26,12 @@ fn main() {
         let reason = result.reason(i);
         let desc = match reason {
             SelectionReason::Rare => "Rare (孤立)".to_string(),
-            SelectionReason::Representative { group_size } =>
-                format!("Representative ({}件の代表)", group_size),
-            SelectionReason::NotSelected { representative } =>
-                format!("NotSelected (代表: {})", representative),
+            SelectionReason::Representative { group_size } => {
+                format!("Representative ({}件の代表)", group_size)
+            }
+            SelectionReason::NotSelected { representative } => {
+                format!("NotSelected (代表: {})", representative)
+            }
         };
         println!("   Item {}: {}", i, desc);
     }
@@ -63,7 +65,11 @@ fn main() {
 
     println!("\n## 結果サマリ");
     println!("   入力: {} 件", items.len());
-    println!("   選択: {} 件 ({:?})", result.selected.len(), result.selected);
+    println!(
+        "   選択: {} 件 ({:?})",
+        result.selected.len(),
+        result.selected
+    );
 
     // Assertions
     assert!(result.is_selected(5), "Rare item must be selected");

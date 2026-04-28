@@ -3,11 +3,12 @@
 //! Demonstrates how KDF can make classical k-NN competitive with modern approaches
 //! by reducing dataset size while preserving rare/important cases.
 
-use kdf::{Kdf, cosine_similarity};
+use kdf::{cosine_similarity, Kdf};
 use std::collections::HashMap;
 use std::time::Instant;
 
 /// Simple k-NN classifier
+#[allow(clippy::upper_case_acronyms)]
 struct KNN {
     data: Vec<Vec<f64>>,
     labels: Vec<usize>,
@@ -20,7 +21,9 @@ impl KNN {
 
     fn predict(&self, query: &[f64], k: usize) -> usize {
         // Find k nearest neighbors
-        let mut distances: Vec<(usize, f64)> = self.data.iter()
+        let mut distances: Vec<(usize, f64)> = self
+            .data
+            .iter()
             .enumerate()
             .map(|(i, point)| (i, cosine_similarity(query, point)))
             .collect();
@@ -37,7 +40,8 @@ impl KNN {
     }
 
     fn accuracy(&self, test_data: &[Vec<f64>], test_labels: &[usize], k: usize) -> f64 {
-        let correct = test_data.iter()
+        let correct = test_data
+            .iter()
             .zip(test_labels)
             .filter(|(query, &label)| self.predict(query, k) == label)
             .count();
@@ -129,9 +133,10 @@ fn main() {
     let pred_time = start.elapsed();
 
     // Per-class accuracy
-    let mut class_acc_standard = vec![0.0; 4];
+    let mut class_acc_standard = [0.0; 4];
     for class in 0..4 {
-        let class_test: Vec<_> = test_data.iter()
+        let class_test: Vec<_> = test_data
+            .iter()
             .zip(&test_labels)
             .filter(|(_, &l)| l == class)
             .map(|(d, _)| d.clone())
@@ -145,10 +150,22 @@ fn main() {
     println!("   予測時間: {:?}", pred_time);
     println!("   全体精度: {:.1}%", acc_standard * 100.0);
     println!("   クラス別精度:");
-    println!("     Class 0 (多数派): {:.1}%", class_acc_standard[0] * 100.0);
-    println!("     Class 1 (中間):   {:.1}%", class_acc_standard[1] * 100.0);
-    println!("     Class 2 (希少):   {:.1}%", class_acc_standard[2] * 100.0);
-    println!("     Class 3 (極希少): {:.1}%", class_acc_standard[3] * 100.0);
+    println!(
+        "     Class 0 (多数派): {:.1}%",
+        class_acc_standard[0] * 100.0
+    );
+    println!(
+        "     Class 1 (中間):   {:.1}%",
+        class_acc_standard[1] * 100.0
+    );
+    println!(
+        "     Class 2 (希少):   {:.1}%",
+        class_acc_standard[2] * 100.0
+    );
+    println!(
+        "     Class 3 (極希少): {:.1}%",
+        class_acc_standard[3] * 100.0
+    );
 
     // ========================================================================
     // Method 2: Random Sampling + k-NN (naive approach)
@@ -172,9 +189,10 @@ fn main() {
     let acc_random = knn_random.accuracy(&test_data, &test_labels, 5);
     let pred_time = start.elapsed();
 
-    let mut class_acc_random = vec![0.0; 4];
+    let mut class_acc_random = [0.0; 4];
     for class in 0..4 {
-        let class_test: Vec<_> = test_data.iter()
+        let class_test: Vec<_> = test_data
+            .iter()
             .zip(&test_labels)
             .filter(|(_, &l)| l == class)
             .map(|(d, _)| d.clone())
@@ -192,7 +210,10 @@ fn main() {
     println!("     Class 0 (多数派): {:.1}%", class_acc_random[0] * 100.0);
     println!("     Class 1 (中間):   {:.1}%", class_acc_random[1] * 100.0);
     println!("     Class 2 (希少):   {:.1}%", class_acc_random[2] * 100.0);
-    println!("     Class 3 (極希少): {:.1}% ← 希少クラス喪失!", class_acc_random[3] * 100.0);
+    println!(
+        "     Class 3 (極希少): {:.1}% ← 希少クラス喪失!",
+        class_acc_random[3] * 100.0
+    );
 
     // ========================================================================
     // Method 3: KDF + k-NN (our approach)
@@ -204,12 +225,12 @@ fn main() {
     let result = kdf.process(&train_data, 0.95, |a, b| cosine_similarity(a, b));
     let kdf_time = start.elapsed();
 
-    let kdf_data: Vec<Vec<f64>> = result.selected.iter()
+    let kdf_data: Vec<Vec<f64>> = result
+        .selected
+        .iter()
         .map(|&i| train_data[i].clone())
         .collect();
-    let kdf_labels: Vec<usize> = result.selected.iter()
-        .map(|&i| train_labels[i])
-        .collect();
+    let kdf_labels: Vec<usize> = result.selected.iter().map(|&i| train_labels[i]).collect();
 
     // Count rare classes preserved
     let rare_preserved = kdf_labels.iter().filter(|&&l| l == 3).count();
@@ -223,9 +244,10 @@ fn main() {
     let acc_kdf = knn_kdf.accuracy(&test_data, &test_labels, 5);
     let pred_time = start.elapsed();
 
-    let mut class_acc_kdf = vec![0.0; 4];
+    let mut class_acc_kdf = [0.0; 4];
     for class in 0..4 {
-        let class_test: Vec<_> = test_data.iter()
+        let class_test: Vec<_> = test_data
+            .iter()
             .zip(&test_labels)
             .filter(|(_, &l)| l == class)
             .map(|(d, _)| d.clone())
@@ -235,12 +257,17 @@ fn main() {
     }
 
     println!("   KDF処理時間: {:?}", kdf_time);
-    println!("   データサイズ: {} 件 ({:.1}%に圧縮)",
-             result.selected.len(),
-             (result.selected.len() as f64 / total_train as f64) * 100.0);
-    println!("   極希少クラス(3)保持: {}/{} 件 ({}%)",
-             rare_preserved, rare_original,
-             (rare_preserved as f64 / rare_original as f64) * 100.0);
+    println!(
+        "   データサイズ: {} 件 ({:.1}%に圧縮)",
+        result.selected.len(),
+        (result.selected.len() as f64 / total_train as f64) * 100.0
+    );
+    println!(
+        "   極希少クラス(3)保持: {}/{} 件 ({}%)",
+        rare_preserved,
+        rare_original,
+        (rare_preserved as f64 / rare_original as f64) * 100.0
+    );
     println!("   構築時間: {:?}", build_time);
     println!("   予測時間: {:?}", pred_time);
     println!("   全体精度: {:.1}%", acc_kdf * 100.0);
@@ -248,7 +275,10 @@ fn main() {
     println!("     Class 0 (多数派): {:.1}%", class_acc_kdf[0] * 100.0);
     println!("     Class 1 (中間):   {:.1}%", class_acc_kdf[1] * 100.0);
     println!("     Class 2 (希少):   {:.1}%", class_acc_kdf[2] * 100.0);
-    println!("     Class 3 (極希少): {:.1}% ← 希少クラス保持!", class_acc_kdf[3] * 100.0);
+    println!(
+        "     Class 3 (極希少): {:.1}% ← 希少クラス保持!",
+        class_acc_kdf[3] * 100.0
+    );
 
     // ========================================================================
     // Comparison Summary
@@ -257,12 +287,27 @@ fn main() {
 
     println!("   | 手法 | データ量 | 全体精度 | 希少精度 | 極希少精度 |");
     println!("   |------|----------|----------|----------|------------|");
-    println!("   | Standard k-NN | {:>4} 件 | {:>6.1}% | {:>6.1}% | {:>8.1}% |",
-             total_train, acc_standard * 100.0, class_acc_standard[2] * 100.0, class_acc_standard[3] * 100.0);
-    println!("   | Random + k-NN | {:>4} 件 | {:>6.1}% | {:>6.1}% | {:>8.1}% |",
-             sample_size, acc_random * 100.0, class_acc_random[2] * 100.0, class_acc_random[3] * 100.0);
-    println!("   | KDF + k-NN    | {:>4} 件 | {:>6.1}% | {:>6.1}% | {:>8.1}% |",
-             result.selected.len(), acc_kdf * 100.0, class_acc_kdf[2] * 100.0, class_acc_kdf[3] * 100.0);
+    println!(
+        "   | Standard k-NN | {:>4} 件 | {:>6.1}% | {:>6.1}% | {:>8.1}% |",
+        total_train,
+        acc_standard * 100.0,
+        class_acc_standard[2] * 100.0,
+        class_acc_standard[3] * 100.0
+    );
+    println!(
+        "   | Random + k-NN | {:>4} 件 | {:>6.1}% | {:>6.1}% | {:>8.1}% |",
+        sample_size,
+        acc_random * 100.0,
+        class_acc_random[2] * 100.0,
+        class_acc_random[3] * 100.0
+    );
+    println!(
+        "   | KDF + k-NN    | {:>4} 件 | {:>6.1}% | {:>6.1}% | {:>8.1}% |",
+        result.selected.len(),
+        acc_kdf * 100.0,
+        class_acc_kdf[2] * 100.0,
+        class_acc_kdf[3] * 100.0
+    );
 
     // ========================================================================
     // Key Findings
@@ -272,9 +317,20 @@ fn main() {
     let speedup = total_train as f64 / result.selected.len() as f64;
     let rare_improvement = class_acc_kdf[3] - class_acc_random[3];
 
-    println!("   ✓ データ圧縮: {:.1}x ({} → {} 件)", speedup, total_train, result.selected.len());
-    println!("   ✓ 希少クラス保持: {}/{} (100%)", rare_preserved, rare_original);
-    println!("   ✓ 極希少クラス精度向上: +{:.1}% (vs Random)", rare_improvement * 100.0);
+    println!(
+        "   ✓ データ圧縮: {:.1}x ({} → {} 件)",
+        speedup,
+        total_train,
+        result.selected.len()
+    );
+    println!(
+        "   ✓ 希少クラス保持: {}/{} (100%)",
+        rare_preserved, rare_original
+    );
+    println!(
+        "   ✓ 極希少クラス精度向上: +{:.1}% (vs Random)",
+        rare_improvement * 100.0
+    );
 
     if acc_kdf >= acc_standard * 0.95 {
         println!("   ✓ 全体精度維持: 標準k-NNの95%以上を達成");

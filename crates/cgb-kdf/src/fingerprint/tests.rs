@@ -74,12 +74,21 @@ fn test_deterministic_fingerprint() {
 
 #[test]
 fn test_node_label_from_str() {
-    assert_eq!("isolated_truth".parse::<NodeLabel>().unwrap(), NodeLabel::IsolatedTruth);
-    assert_eq!("ISOLATED_TRUTH".parse::<NodeLabel>().unwrap(), NodeLabel::IsolatedTruth);
+    assert_eq!(
+        "isolated_truth".parse::<NodeLabel>().unwrap(),
+        NodeLabel::IsolatedTruth
+    );
+    assert_eq!(
+        "ISOLATED_TRUTH".parse::<NodeLabel>().unwrap(),
+        NodeLabel::IsolatedTruth
+    );
     assert_eq!("normal".parse::<NodeLabel>().unwrap(), NodeLabel::Normal);
     assert_eq!("garbage".parse::<NodeLabel>().unwrap(), NodeLabel::Garbage);
     assert_eq!("unknown".parse::<NodeLabel>().unwrap(), NodeLabel::Unknown);
-    assert_eq!("something_else".parse::<NodeLabel>().unwrap(), NodeLabel::Unknown);
+    assert_eq!(
+        "something_else".parse::<NodeLabel>().unwrap(),
+        NodeLabel::Unknown
+    );
 }
 
 #[test]
@@ -270,7 +279,15 @@ fn test_compute_from_ego_graph_star() {
 
     // Star topology: center connected to many leaves
     let neighbors = vec![
-        ("center".to_string(), vec!["a".to_string(), "b".to_string(), "c".to_string(), "d".to_string()]),
+        (
+            "center".to_string(),
+            vec![
+                "a".to_string(),
+                "b".to_string(),
+                "c".to_string(),
+                "d".to_string(),
+            ],
+        ),
         ("a".to_string(), vec!["center".to_string()]),
         ("b".to_string(), vec!["center".to_string()]),
         ("c".to_string(), vec!["center".to_string()]),
@@ -286,11 +303,8 @@ fn test_compute_with_laplacian() {
     let mut engine = StructuralFingerprintEngine::default();
 
     // Create a simple 3x3 Laplacian matrix
-    let laplacian = DMatrix::from_row_slice(3, 3, &[
-        2.0, -1.0, -1.0,
-        -1.0, 2.0, -1.0,
-        -1.0, -1.0, 2.0,
-    ]);
+    let laplacian =
+        DMatrix::from_row_slice(3, 3, &[2.0, -1.0, -1.0, -1.0, 2.0, -1.0, -1.0, -1.0, 2.0]);
 
     let fp = engine.compute_fingerprint("node", &NodeLabel::Normal, Some(&laplacian));
     assert_eq!(fp.len(), 32);
@@ -405,7 +419,12 @@ fn test_fingerprint_consistency_across_labels() {
     let mut engine = StructuralFingerprintEngine::default();
 
     // All labels should produce valid fingerprints
-    for label in [NodeLabel::Normal, NodeLabel::IsolatedTruth, NodeLabel::Garbage, NodeLabel::Unknown] {
+    for label in [
+        NodeLabel::Normal,
+        NodeLabel::IsolatedTruth,
+        NodeLabel::Garbage,
+        NodeLabel::Unknown,
+    ] {
         let fp = engine.compute_fingerprint(&format!("node_{:?}", label), &label, None);
         assert_eq!(fp.len(), 32);
         assert!(fp.iter().all(|&v| (0.0..=1.0).contains(&v)));
@@ -455,10 +474,7 @@ fn test_fingerprint_small_laplacian() {
     let mut engine = StructuralFingerprintEngine::default();
 
     // Small Laplacian (smaller than fingerprint dimension)
-    let laplacian = DMatrix::from_row_slice(2, 2, &[
-        1.0, -1.0,
-        -1.0, 1.0,
-    ]);
+    let laplacian = DMatrix::from_row_slice(2, 2, &[1.0, -1.0, -1.0, 1.0]);
 
     let fp = engine.compute_fingerprint("small", &NodeLabel::Normal, Some(&laplacian));
     assert_eq!(fp.len(), 32);
@@ -560,9 +576,9 @@ fn test_precomputed_fingerprint_gradient_signs() {
     let pfp = PrecomputedFingerprint::from_fingerprint(&fp);
 
     assert_eq!(pfp.gradient_signs.len(), 3);
-    assert_eq!(pfp.gradient_signs[0], 1);  // 0.5 - 0.1 > 0
+    assert_eq!(pfp.gradient_signs[0], 1); // 0.5 - 0.1 > 0
     assert_eq!(pfp.gradient_signs[1], -1); // 0.3 - 0.5 < 0
-    assert_eq!(pfp.gradient_signs[2], 0);  // 0.3 - 0.3 = 0
+    assert_eq!(pfp.gradient_signs[2], 0); // 0.3 - 0.3 = 0
 }
 
 #[test]

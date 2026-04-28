@@ -6,15 +6,15 @@
 #![allow(missing_docs)]
 
 // Module declarations
-mod types;
+mod engine;
 mod precomputed;
 mod rng;
-mod engine;
+mod types;
 
 // Re-exports
-pub use types::{Fingerprint, FingerprintKey, NodeLabel, CacheStats};
-pub use precomputed::PrecomputedFingerprint;
 pub use engine::StructuralFingerprintEngine;
+pub use precomputed::PrecomputedFingerprint;
+pub use types::{CacheStats, Fingerprint, FingerprintKey, NodeLabel};
 
 // Tests
 #[cfg(test)]

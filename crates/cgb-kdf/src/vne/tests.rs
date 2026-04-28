@@ -561,7 +561,10 @@ fn test_vne_triggered_stats_clone() {
     };
     let cloned = stats.clone();
     assert_eq!(stats.updates, cloned.updates);
-    assert_eq!(stats.total_entropy_reduction, cloned.total_entropy_reduction);
+    assert_eq!(
+        stats.total_entropy_reduction,
+        cloned.total_entropy_reduction
+    );
 }
 
 #[test]
@@ -631,12 +634,7 @@ fn test_von_neumann_entropy_complete_graph() {
 #[test]
 fn test_von_neumann_entropy_star_graph() {
     // Star graph with center node 0
-    let edges = vec![
-        (0, 1, 1.0),
-        (0, 2, 1.0),
-        (0, 3, 1.0),
-        (0, 4, 1.0),
-    ];
+    let edges = vec![(0, 1, 1.0), (0, 2, 1.0), (0, 3, 1.0), (0, 4, 1.0)];
     let result = entropy::von_neumann_entropy_detailed(5, &edges);
 
     assert!(result.entropy > 0.0);

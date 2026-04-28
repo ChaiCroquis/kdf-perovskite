@@ -9,3 +9,6 @@ keywords = ["benchmark", "bias", "reproducibility", "graph"]
 categories = ["science", "development-tools"]
 
 [dependencies]
+
+[lints]
+workspace = true

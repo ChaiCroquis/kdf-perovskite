@@ -131,7 +131,11 @@ mod tests {
     fn test_claim21_dt_ratio_5_3_1() {
         let mgr = HierarchicalRegionManager::default();
         let (dt1, dt2, dt3) = mgr.period_ratio();
-        assert_eq!((dt1, dt2, dt3), (5, 3, 1), "Claim 21: dt1:dt2:dt3 must be 5:3:1");
+        assert_eq!(
+            (dt1, dt2, dt3),
+            (5, 3, 1),
+            "Claim 21: dt1:dt2:dt3 must be 5:3:1"
+        );
     }
 
     #[test]
@@ -146,8 +150,14 @@ mod tests {
     fn test_claim22_region_threshold_differs() {
         // Claim 22: 維持基準 must be differentiable per region.
         let mgr = HierarchicalRegionManager::default();
-        assert_ne!(mgr.short_term.maintenance_threshold, mgr.long_term.maintenance_threshold);
-        assert_ne!(mgr.long_term.maintenance_threshold, mgr.rare.maintenance_threshold);
+        assert_ne!(
+            mgr.short_term.maintenance_threshold,
+            mgr.long_term.maintenance_threshold
+        );
+        assert_ne!(
+            mgr.long_term.maintenance_threshold,
+            mgr.rare.maintenance_threshold
+        );
     }
 
     #[test]

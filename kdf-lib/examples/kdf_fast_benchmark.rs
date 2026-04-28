@@ -2,7 +2,7 @@
 //!
 //! Run: cargo run --release --example kdf_fast_benchmark
 
-use kdf::{Kdf, Layer, cosine_similarity};
+use kdf::{cosine_similarity, Kdf, Layer};
 use std::time::Instant;
 
 fn generate_redundant_data(n: usize, dim: usize, redundancy: f64) -> Vec<Vec<f64>> {
@@ -37,7 +37,8 @@ fn count_layers(layers: &[Layer]) -> (usize, usize, usize) {
 }
 
 fn rare_recall(true_layers: &[Layer], predicted_layers: &[Layer]) -> f64 {
-    let true_rare: std::collections::HashSet<usize> = true_layers.iter()
+    let true_rare: std::collections::HashSet<usize> = true_layers
+        .iter()
         .enumerate()
         .filter(|(_, &l)| l == Layer::Rare)
         .map(|(i, _)| i)
@@ -47,7 +48,8 @@ fn rare_recall(true_layers: &[Layer], predicted_layers: &[Layer]) -> f64 {
         return 1.0;
     }
 
-    let predicted_rare: std::collections::HashSet<usize> = predicted_layers.iter()
+    let predicted_rare: std::collections::HashSet<usize> = predicted_layers
+        .iter()
         .enumerate()
         .filter(|(_, &l)| l == Layer::Rare)
         .map(|(i, _)| i)
@@ -72,22 +74,29 @@ fn main() {
 
         // Standard
         let start = Instant::now();
-        let std_result = kdf.process(&data, threshold, |a, b| cosine_similarity(a, b));
+        let _std_result = kdf.process(&data, threshold, |a, b| cosine_similarity(a, b));
         let std_time = start.elapsed().as_secs_f64() * 1000.0;
 
         // Fast
         let start = Instant::now();
-        let fast_result = kdf.process_fast(&data, threshold, |a, b| cosine_similarity(a, b));
+        let _fast_result = kdf.process_fast(&data, threshold, |a, b| cosine_similarity(a, b));
         let fast_time = start.elapsed().as_secs_f64() * 1000.0;
 
         // Fast + Verify
         let start = Instant::now();
-        let verify_result = kdf.process_fast_verified(&data, threshold, |a, b| cosine_similarity(a, b), true);
+        let _verify_result =
+            kdf.process_fast_verified(&data, threshold, |a, b| cosine_similarity(a, b), true);
         let verify_time = start.elapsed().as_secs_f64() * 1000.0;
 
-        println!("| {} | {:.1}ms | {:.2}ms | {:.2}ms | {:.0}x | {:.0}x |",
-                 n, std_time, fast_time, verify_time,
-                 std_time / fast_time, std_time / verify_time);
+        println!(
+            "| {} | {:.1}ms | {:.2}ms | {:.2}ms | {:.0}x | {:.0}x |",
+            n,
+            std_time,
+            fast_time,
+            verify_time,
+            std_time / fast_time,
+            std_time / verify_time
+        );
     }
 
     println!("\n## 2. Accuracy Comparison (n=2000)\n");
@@ -109,17 +118,39 @@ fn main() {
         let fast_recall = rare_recall(&std_result.layers, &fast_result.layers);
 
         // Fast + Verify
-        let verify_result = kdf.process_fast_verified(&data, threshold, |a, b| cosine_similarity(a, b), true);
+        let verify_result =
+            kdf.process_fast_verified(&data, threshold, |a, b| cosine_similarity(a, b), true);
         let (ver_core, ver_edge, ver_rare) = count_layers(&verify_result.layers);
         let ver_recall = rare_recall(&std_result.layers, &verify_result.layers);
 
-        println!("\n**Redundancy: {:.0}%** (Expected rare: {})", redundancy * 100.0, n_rare_expected);
-        println!("| Standard | {} | {} | {} | {} | 100% |",
-                 std_result.selected.len(), std_core, std_edge, std_rare);
-        println!("| Fast | {} | {} | {} | {} | {:.1}% |",
-                 fast_result.selected.len(), fast_core, fast_edge, fast_rare, fast_recall * 100.0);
-        println!("| Fast+Verify | {} | {} | {} | {} | {:.1}% |",
-                 verify_result.selected.len(), ver_core, ver_edge, ver_rare, ver_recall * 100.0);
+        println!(
+            "\n**Redundancy: {:.0}%** (Expected rare: {})",
+            redundancy * 100.0,
+            n_rare_expected
+        );
+        println!(
+            "| Standard | {} | {} | {} | {} | 100% |",
+            std_result.selected.len(),
+            std_core,
+            std_edge,
+            std_rare
+        );
+        println!(
+            "| Fast | {} | {} | {} | {} | {:.1}% |",
+            fast_result.selected.len(),
+            fast_core,
+            fast_edge,
+            fast_rare,
+            fast_recall * 100.0
+        );
+        println!(
+            "| Fast+Verify | {} | {} | {} | {} | {:.1}% |",
+            verify_result.selected.len(),
+            ver_core,
+            ver_edge,
+            ver_rare,
+            ver_recall * 100.0
+        );
     }
 
     println!("\n## 3. Summary\n");

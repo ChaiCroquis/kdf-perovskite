@@ -12,10 +12,10 @@
 //! Output: table of (hypothesis, KDF_recall, RelDensity_recall) for Chai
 //! to see whether D6 is structurally unrecoverable or just parameter-sensitive.
 
+use cgb_kdf::{Layer, NodeClassifier};
 use rand::prelude::*;
 use rand::rngs::SmallRng;
 use std::collections::HashSet;
-use cgb_kdf::{Layer, NodeClassifier};
 
 struct Forum {
     n_posts: usize,
@@ -54,17 +54,31 @@ fn synthesize(
             edges.push((reply_id, orig_id, 1.0));
         }
     }
-    Forum { n_posts: next_id as usize, edges, minority_ids }
+    Forum {
+        n_posts: next_id as usize,
+        edges,
+        minority_ids,
+    }
 }
 
 fn kdf_select(forum: &Forum, keep: usize) -> HashSet<u32> {
     let mut classifier = NodeClassifier::default();
     let class = classifier.classify(forum.n_posts, &forum.edges);
     let score = |l: Layer| -> i32 {
-        match l { Layer::Rare => 3, Layer::Core => 2, Layer::Edge => 1, Layer::Garbage => 0 }
+        match l {
+            Layer::Rare => 3,
+            Layer::Core => 2,
+            Layer::Edge => 1,
+            Layer::Garbage => 0,
+        }
     };
     let mut scored: Vec<(u32, i32)> = (0..forum.n_posts as u32)
-        .map(|id| (id, score(class.layers.get(&id).copied().unwrap_or(Layer::Edge))))
+        .map(|id| {
+            (
+                id,
+                score(class.layers.get(&id).copied().unwrap_or(Layer::Edge)),
+            )
+        })
         .collect();
     scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
     scored.into_iter().take(keep).map(|(i, _)| i).collect()
@@ -80,14 +94,21 @@ fn reldensity_select(forum: &Forum, keep: usize) -> HashSet<u32> {
         adj[u as usize].push(v);
         adj[v as usize].push(u);
     }
-    let mut scored: Vec<(u32, f64)> = (0..n as u32).map(|id| {
-        let neighbors = &adj[id as usize];
-        if neighbors.is_empty() { return (id, -1.0); }
-        let local_avg: f64 = neighbors.iter().map(|&v| deg[v as usize] as f64).sum::<f64>()
-            / neighbors.len() as f64;
-        let ratio = deg[id as usize] as f64 / local_avg.max(1.0);
-        (id, 1.0 - ratio)
-    }).collect();
+    let mut scored: Vec<(u32, f64)> = (0..n as u32)
+        .map(|id| {
+            let neighbors = &adj[id as usize];
+            if neighbors.is_empty() {
+                return (id, -1.0);
+            }
+            let local_avg: f64 = neighbors
+                .iter()
+                .map(|&v| deg[v as usize] as f64)
+                .sum::<f64>()
+                / neighbors.len() as f64;
+            let ratio = deg[id as usize] as f64 / local_avg.max(1.0);
+            (id, 1.0 - ratio)
+        })
+        .collect();
     scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
     scored.into_iter().take(keep).map(|(i, _)| i).collect()
 }
@@ -103,24 +124,32 @@ fn main() {
 
     let scenarios: Vec<(&str, Forum)> = vec![
         // Original D6 scenario
-        ("D6_original (3×30 maj + 10 min×1-2)",
-            synthesize(3, 30, 10, 2, 42)),
+        (
+            "D6_original (3×30 maj + 10 min×1-2)",
+            synthesize(3, 30, 10, 2, 42),
+        ),
         // H1: reduce majority reply count
-        ("H1a: 3×5 majority (instead of 30)",
-            synthesize(3, 5, 10, 2, 42)),
-        ("H1b: 3×10 majority",
-            synthesize(3, 10, 10, 2, 42)),
+        (
+            "H1a: 3×5 majority (instead of 30)",
+            synthesize(3, 5, 10, 2, 42),
+        ),
+        ("H1b: 3×10 majority", synthesize(3, 10, 10, 2, 42)),
         // H2: increase minority reply count
-        ("H2a: minority 5 replies each (vs 2)",
-            synthesize(3, 30, 10, 5, 42)),
-        ("H2b: minority 15 replies (match part of majority)",
-            synthesize(3, 30, 10, 15, 42)),
+        (
+            "H2a: minority 5 replies each (vs 2)",
+            synthesize(3, 30, 10, 5, 42),
+        ),
+        (
+            "H2b: minority 15 replies (match part of majority)",
+            synthesize(3, 30, 10, 15, 42),
+        ),
         // H3: more thread imbalance
-        ("H3a: 10×30 majority (heavy)",
-            synthesize(10, 30, 10, 2, 42)),
+        ("H3a: 10×30 majority (heavy)", synthesize(10, 30, 10, 2, 42)),
         // H4: different seed
-        ("H4a: original shape, seed=100",
-            synthesize(3, 30, 10, 2, 100)),
+        (
+            "H4a: original shape, seed=100",
+            synthesize(3, 30, 10, 2, 100),
+        ),
     ];
 
     println!("| Scenario | n_posts | KDF recall | RelDensity recall | Delta |");
@@ -133,13 +162,21 @@ fn main() {
         let r_r = minority_recall(forum, &r_sel);
         println!(
             "| {} | {} | {:.3} | {:.3} | {:+.3} |",
-            name, forum.n_posts, k_r, r_r, r_r - k_r
+            name,
+            forum.n_posts,
+            k_r,
+            r_r,
+            r_r - k_r
         );
     }
 
     println!("\n## Analysis\n");
     println!("- Original D6 is a KDF failure mode (known)");
     println!("- If RelDensity rescues ANY scenario, D6 is recoverable with Phase 7 S2");
-    println!("- If H2b (minority with many replies) still fails, structure is fundamentally mismatched");
-    println!("- H1 tests whether the 30:1 majority:minority reply imbalance is the pathological element");
+    println!(
+        "- If H2b (minority with many replies) still fails, structure is fundamentally mismatched"
+    );
+    println!(
+        "- H1 tests whether the 30:1 majority:minority reply imbalance is the pathological element"
+    );
 }

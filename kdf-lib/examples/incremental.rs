@@ -1,6 +1,6 @@
 //! Incremental KDF example for streaming data
 
-use kdf::{IncrementalKdf, KdfParams, cosine_similarity};
+use kdf::{cosine_similarity, IncrementalKdf, KdfParams};
 
 fn main() {
     println!("=== KDF Incremental Processing Example ===\n");
@@ -17,14 +17,20 @@ fn main() {
     }
     println!("After adding 5 redundant items:");
     println!("  Total items: {}", kdf.len());
-    println!("  Selected: {:?}\n", kdf.get_selected(|a, b| cosine_similarity(a, b)));
+    println!(
+        "  Selected: {:?}\n",
+        kdf.get_selected(|a, b| cosine_similarity(a, b))
+    );
 
     // Add rare item
     let rare_item = vec![-1.0, 0.0, 0.0, 0.0];
     kdf.add(rare_item, |a, b| cosine_similarity(a, b));
     println!("After adding 1 rare item:");
     println!("  Total items: {}", kdf.len());
-    println!("  Selected: {:?}\n", kdf.get_selected(|a, b| cosine_similarity(a, b)));
+    println!(
+        "  Selected: {:?}\n",
+        kdf.get_selected(|a, b| cosine_similarity(a, b))
+    );
 
     // Add more redundant items
     for i in 0..5 {
@@ -33,7 +39,10 @@ fn main() {
     }
     println!("After adding 5 more redundant items:");
     println!("  Total items: {}", kdf.len());
-    println!("  Selected: {:?}\n", kdf.get_selected(|a, b| cosine_similarity(a, b)));
+    println!(
+        "  Selected: {:?}\n",
+        kdf.get_selected(|a, b| cosine_similarity(a, b))
+    );
 
     println!("--- Removing items ---\n");
 
@@ -43,7 +52,10 @@ fn main() {
     }
     println!("After removing 3 items from the front:");
     println!("  Total items: {}", kdf.len());
-    println!("  Selected: {:?}\n", kdf.get_selected(|a, b| cosine_similarity(a, b)));
+    println!(
+        "  Selected: {:?}\n",
+        kdf.get_selected(|a, b| cosine_similarity(a, b))
+    );
 
     println!("--- Window-based processing ---\n");
 
@@ -62,7 +74,10 @@ fn main() {
     }
 
     println!("Initial window (size {}):", window_kdf.len());
-    println!("  Selected: {:?}", window_kdf.get_selected(|a, b| cosine_similarity(a, b)));
+    println!(
+        "  Selected: {:?}",
+        window_kdf.get_selected(|a, b| cosine_similarity(a, b))
+    );
 
     // Slide window: remove oldest, add newest
     for slide in 0..3 {
@@ -79,7 +94,10 @@ fn main() {
 
         println!("\nAfter slide {}:", slide + 1);
         println!("  Window size: {}", window_kdf.len());
-        println!("  Selected: {:?}", window_kdf.get_selected(|a, b| cosine_similarity(a, b)));
+        println!(
+            "  Selected: {:?}",
+            window_kdf.get_selected(|a, b| cosine_similarity(a, b))
+        );
     }
 
     println!("\n=== Summary ===");

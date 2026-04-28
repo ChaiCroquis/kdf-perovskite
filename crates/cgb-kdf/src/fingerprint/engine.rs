@@ -1,11 +1,11 @@
 //! Structural fingerprint engine implementation
 
-use std::collections::HashMap;
 use nalgebra::DMatrix;
+use std::collections::HashMap;
 
-use super::types::{Fingerprint, FingerprintKey, NodeLabel, CacheStats, hash_to_seed};
 use super::precomputed::PrecomputedFingerprint;
 use super::rng::SimpleRng;
+use super::types::{hash_to_seed, CacheStats, Fingerprint, FingerprintKey, NodeLabel};
 
 /// Structural Fingerprint Engine
 ///
@@ -52,7 +52,6 @@ impl Default for StructuralFingerprintEngine {
 }
 
 impl StructuralFingerprintEngine {
-
     /// Compute fingerprint for a node
     ///
     /// # Arguments
@@ -349,7 +348,12 @@ impl StructuralFingerprintEngine {
         }
 
         // Cosine similarity (using precomputed norms)
-        let dot: f64 = pfp1.raw.iter().zip(pfp2.raw.iter()).map(|(a, b)| a * b).sum();
+        let dot: f64 = pfp1
+            .raw
+            .iter()
+            .zip(pfp2.raw.iter())
+            .map(|(a, b)| a * b)
+            .sum();
         let cos_sim = dot / (pfp1.norm * pfp2.norm);
 
         // Early termination: if cosine similarity is too low, final result can't exceed threshold

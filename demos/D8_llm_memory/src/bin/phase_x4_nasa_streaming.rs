@@ -57,7 +57,6 @@
 //! - α_edge trajectory(MetaController 適応の可視化)
 //! - ActivationScore 分布(Claim 25 稼働確認)
 
-use cgb_kdf::framework::multimodal::{select_top_k_multi_modal, MultiModalWeights};
 use cgb_kdf::{
     ActivationScore, DecayManager, Layer, MasterSpecParams, MetaController, NodeClassifier,
 };
@@ -113,10 +112,10 @@ fn build_ids(
     records: &[LogRecord],
     rare_codes: &HashSet<u16>,
 ) -> (
-    HashMap<String, u32>,           // entity → id
-    Vec<(u32, u32)>,                 // (ip_id, res_id) per record (preserves order)
-    HashSet<u32>,                    // rare resource IDs (ground truth)
-    HashSet<u32>,                    // all resource IDs
+    HashMap<String, u32>, // entity → id
+    Vec<(u32, u32)>,      // (ip_id, res_id) per record (preserves order)
+    HashSet<u32>,         // rare resource IDs (ground truth)
+    HashSet<u32>,         // all resource IDs
 ) {
     let mut ids: HashMap<String, u32> = HashMap::new();
     let mut edges_ordered: Vec<(u32, u32)> = Vec::new();
@@ -156,10 +155,7 @@ fn build_ids(
 // Utilities
 // =============================================================================
 
-fn avg_degree_per_layer(
-    edges: &[(u32, u32, f64)],
-    layer_of: &HashMap<u32, Layer>,
-) -> (f64, f64) {
+fn avg_degree_per_layer(edges: &[(u32, u32, f64)], layer_of: &HashMap<u32, Layer>) -> (f64, f64) {
     let mut deg: HashMap<u32, u32> = HashMap::new();
     for &(u, v, _) in edges {
         *deg.entry(u).or_insert(0) += 1;
@@ -186,10 +182,7 @@ fn avg_degree_per_layer(
     (avg_e, avg_c)
 }
 
-fn resource_rare_recall(
-    selected: &HashSet<u32>,
-    rare_res: &HashSet<u32>,
-) -> f64 {
+fn resource_rare_recall(selected: &HashSet<u32>, rare_res: &HashSet<u32>) -> f64 {
     if rare_res.is_empty() {
         return 1.0;
     }
@@ -217,6 +210,7 @@ fn select_top_k_resources(
 // =============================================================================
 
 #[derive(Debug, Default, Clone)]
+#[allow(dead_code)]
 struct WindowMetric {
     n_edges: usize,
     n_nodes: usize,
@@ -226,6 +220,7 @@ struct WindowMetric {
     rare_recall: f64,
 }
 
+#[allow(clippy::too_many_arguments)]
 fn run_condition_streaming(
     label: &str,
     edges_ordered: &[(u32, u32)],
@@ -353,7 +348,10 @@ fn run_condition_streaming(
 
     println!(
         "  {:25} final_recall={:.4} edges_processed={} n_windows={}",
-        label, recall, cur_edges.len(), n_windows
+        label,
+        recall,
+        cur_edges.len(),
+        n_windows
     );
     (recall, trajectory)
 }
@@ -383,11 +381,7 @@ fn c0_static_baseline(
     resource_rare_recall(&selected, rare_res)
 }
 
-fn random_baseline(
-    res_ids: &HashSet<u32>,
-    rare_res: &HashSet<u32>,
-    seed: u64,
-) -> f64 {
+fn random_baseline(res_ids: &HashSet<u32>, rare_res: &HashSet<u32>, seed: u64) -> f64 {
     use rand::prelude::*;
     use rand::rngs::SmallRng;
     let mut rng = SmallRng::seed_from_u64(seed);
@@ -402,7 +396,9 @@ fn main() {
     let path = "benchmarks/real_data/data/nasa-http/access.log";
     println!("# Phase X Step 5 — NASA HTTP streaming validation(F-072 candidate)\n");
 
-    let rare_codes: HashSet<u16> = [400, 401, 403, 404, 500, 502, 503, 504].into_iter().collect();
+    let rare_codes: HashSet<u16> = [400, 401, 403, 404, 500, 502, 503, 504]
+        .into_iter()
+        .collect();
     println!("Loading NASA HTTP access log from {}", path);
     let records = load_nasa_records(path);
     println!("Parsed {} records", records.len());
@@ -417,11 +413,15 @@ fn main() {
     println!("- total unique nodes (IPs + resources): {}", n_total_nodes);
     println!("- total resources: {}", res_ids.len());
     println!("- rare resources(4xx/5xx ground truth): {}", rare_res.len());
-    println!("- rare ratio in resources: {:.2}%", rare_res.len() as f64 / res_ids.len() as f64 * 100.0);
+    println!(
+        "- rare ratio in resources: {:.2}%",
+        rare_res.len() as f64 / res_ids.len() as f64 * 100.0
+    );
     println!();
 
     // Static baselines
-    let edges_all_f64: Vec<(u32, u32, f64)> = edges_ordered.iter().map(|&(u, v)| (u, v, 1.0)).collect();
+    let edges_all_f64: Vec<(u32, u32, f64)> =
+        edges_ordered.iter().map(|&(u, v)| (u, v, 1.0)).collect();
     println!("## Static baselines\n");
     let c0 = c0_static_baseline(&edges_all_f64, n_total_nodes, &res_ids, &rare_res);
     let rnd = {
@@ -432,34 +432,64 @@ fn main() {
         sum / 5.0
     };
     println!("  {:25} final_recall={:.4}", "Random (5-seed mean)", rnd);
-    println!("  {:25} final_recall={:.4} (F-025 再現 reference)", "C0 Static KDF", c0);
+    println!(
+        "  {:25} final_recall={:.4} (F-025 再現 reference)",
+        "C0 Static KDF", c0
+    );
 
     // Streaming conditions
     let window_size = 500_usize;
     let n_windows = n_edges_total / window_size;
     println!();
-    println!("## Streaming conditions(window={} records, n_windows={})", window_size, n_windows);
+    println!(
+        "## Streaming conditions(window={} records, n_windows={})",
+        window_size, n_windows
+    );
     println!();
 
     let (c1, traj_c1) = run_condition_streaming(
         "C1 +Claim14 decay",
-        &edges_ordered, n_total_nodes, &res_ids, &rare_res,
-        window_size, true, false, false,
+        &edges_ordered,
+        n_total_nodes,
+        &res_ids,
+        &rare_res,
+        window_size,
+        true,
+        false,
+        false,
     );
     let (c2, traj_c2) = run_condition_streaming(
         "C2 C1+Claim25 act",
-        &edges_ordered, n_total_nodes, &res_ids, &rare_res,
-        window_size, true, true, false,
+        &edges_ordered,
+        n_total_nodes,
+        &res_ids,
+        &rare_res,
+        window_size,
+        true,
+        true,
+        false,
     );
     let (c3, _traj_c3) = run_condition_streaming(
         "C3 C1+Claim27-32 meta",
-        &edges_ordered, n_total_nodes, &res_ids, &rare_res,
-        window_size, true, false, true,
+        &edges_ordered,
+        n_total_nodes,
+        &res_ids,
+        &rare_res,
+        window_size,
+        true,
+        false,
+        true,
     );
     let (c4, traj_c4) = run_condition_streaming(
         "C4 Full streaming",
-        &edges_ordered, n_total_nodes, &res_ids, &rare_res,
-        window_size, true, true, true,
+        &edges_ordered,
+        n_total_nodes,
+        &res_ids,
+        &rare_res,
+        window_size,
+        true,
+        true,
+        true,
     );
 
     // Summary
@@ -468,12 +498,40 @@ fn main() {
     println!();
     println!("| 条件 | final rare recall | Δ vs C0 Static | Δ vs Random |");
     println!("|---|---:|---:|---:|");
-    println!("| Random (5-seed)      | {:.4} |  {:+.4} | — |", rnd, rnd - c0);
-    println!("| **C0 Static KDF**    | **{:.4}** | — | {:+.4} |", c0, c0 - rnd);
-    println!("| C1 +Claim14 decay    | {:.4} | {:+.4} | {:+.4} |", c1, c1 - c0, c1 - rnd);
-    println!("| C2 C1+Claim25 act    | {:.4} | {:+.4} | {:+.4} |", c2, c2 - c0, c2 - rnd);
-    println!("| C3 C1+Claim27-32 meta | {:.4} | {:+.4} | {:+.4} |", c3, c3 - c0, c3 - rnd);
-    println!("| C4 Full streaming    | {:.4} | {:+.4} | {:+.4} |", c4, c4 - c0, c4 - rnd);
+    println!(
+        "| Random (5-seed)      | {:.4} |  {:+.4} | — |",
+        rnd,
+        rnd - c0
+    );
+    println!(
+        "| **C0 Static KDF**    | **{:.4}** | — | {:+.4} |",
+        c0,
+        c0 - rnd
+    );
+    println!(
+        "| C1 +Claim14 decay    | {:.4} | {:+.4} | {:+.4} |",
+        c1,
+        c1 - c0,
+        c1 - rnd
+    );
+    println!(
+        "| C2 C1+Claim25 act    | {:.4} | {:+.4} | {:+.4} |",
+        c2,
+        c2 - c0,
+        c2 - rnd
+    );
+    println!(
+        "| C3 C1+Claim27-32 meta | {:.4} | {:+.4} | {:+.4} |",
+        c3,
+        c3 - c0,
+        c3 - rnd
+    );
+    println!(
+        "| C4 Full streaming    | {:.4} | {:+.4} | {:+.4} |",
+        c4,
+        c4 - c0,
+        c4 - rnd
+    );
 
     // Trajectory for C4 + C1 (show streaming drift)
     println!();
@@ -510,5 +568,8 @@ fn main() {
     }
     println!();
     println!("F-025 基準値(NASA-HTTP 実データ static KDF baseline): 0.237、Random 0.102");
-    println!("本実験の C0 Static = {:.4}、Random(5-seed) = {:.4}(再現性確認)", c0, rnd);
+    println!(
+        "本実験の C0 Static = {:.4}、Random(5-seed) = {:.4}(再現性確認)",
+        c0, rnd
+    );
 }

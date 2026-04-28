@@ -56,7 +56,9 @@ impl PiiMasker {
 }
 
 impl Default for PiiMasker {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 fn extract_wikilinks(masked: &str) -> Vec<String> {
@@ -84,12 +86,23 @@ pub fn build(config: &ObsidianBuildConfig) -> Result<Dataset, Box<dyn std::error
     //  to resolve links; but we only *read content* for `max_notes` of them.)
     let mut all_notes: Vec<PathBuf> = Vec::new();
     for entry in WalkDir::new(&config.vault_root) {
-        let entry = match entry { Ok(e) => e, Err(_) => continue };
-        if !entry.file_type().is_file() { continue; }
+        let entry = match entry {
+            Ok(e) => e,
+            Err(_) => continue,
+        };
+        if !entry.file_type().is_file() {
+            continue;
+        }
         let p = entry.path();
-        if p.extension().and_then(|e| e.to_str()) != Some("md") { continue; }
+        if p.extension().and_then(|e| e.to_str()) != Some("md") {
+            continue;
+        }
         // Skip hidden dirs
-        if p.components().any(|c| c.as_os_str().to_string_lossy().starts_with('.')) { continue; }
+        if p.components()
+            .any(|c| c.as_os_str().to_string_lossy().starts_with('.'))
+        {
+            continue;
+        }
         all_notes.push(p.to_path_buf());
     }
     all_notes.sort();
@@ -98,7 +111,11 @@ pub fn build(config: &ObsidianBuildConfig) -> Result<Dataset, Box<dyn std::error
     // regardless of max_notes (which only limits content-read scope).
     for p in &all_notes {
         let rel = p.strip_prefix(&config.vault_root).unwrap_or(p);
-        let stem = rel.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_string();
+        let stem = rel
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("")
+            .to_string();
         let normalized = stem.to_lowercase();
         if !path_to_id.contains_key(&normalized) {
             let id = id_to_label.len() as u32;
@@ -120,9 +137,19 @@ pub fn build(config: &ObsidianBuildConfig) -> Result<Dataset, Box<dyn std::error
     let mut indeg: HashMap<u32, u32> = HashMap::new();
     for p in &read_set {
         let rel = p.strip_prefix(&config.vault_root).unwrap_or(p);
-        let stem = rel.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_lowercase();
-        let src_id = match path_to_id.get(&stem) { Some(&i) => i, None => continue };
-        let content = match std::fs::read_to_string(p) { Ok(s) => s, Err(_) => continue };
+        let stem = rel
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("")
+            .to_lowercase();
+        let src_id = match path_to_id.get(&stem) {
+            Some(&i) => i,
+            None => continue,
+        };
+        let content = match std::fs::read_to_string(p) {
+            Ok(s) => s,
+            Err(_) => continue,
+        };
         let masked = masker.mask(&content);
         let links = extract_wikilinks(&masked);
         let mut edge_set: HashSet<u32> = HashSet::new();
@@ -205,7 +232,10 @@ mod tests {
     fn wikilinks_extracted() {
         let text = "See [[Alpha]] and [[Beta|beta alias]] and [[Gamma#section]]";
         let links = extract_wikilinks(text);
-        assert_eq!(links, vec!["Alpha".to_string(), "Beta".to_string(), "Gamma".to_string()]);
+        assert_eq!(
+            links,
+            vec!["Alpha".to_string(), "Beta".to_string(), "Gamma".to_string()]
+        );
     }
 
     #[test]

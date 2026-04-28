@@ -25,6 +25,7 @@ const N_SEEDS: usize = 5;
 const SELECTION_FRAC: f64 = 0.08;
 
 #[derive(Clone, Copy, Debug)]
+#[allow(non_camel_case_types)] // ablation index Aₙ_Description preserves output-string compatibility
 enum Ablation {
     A0_Full,
     A1_NoRarePriority,
@@ -50,20 +51,43 @@ fn select(ds: &Dataset, ablation: Ablation) -> HashSet<u32> {
 }
 
 fn score_for_layer(l: Layer) -> i32 {
-    match l { Layer::Rare => 3, Layer::Core => 2, Layer::Edge => 1, Layer::Garbage => 0 }
+    match l {
+        Layer::Rare => 3,
+        Layer::Core => 2,
+        Layer::Edge => 1,
+        Layer::Garbage => 0,
+    }
 }
 
-fn select_full(ds: &Dataset, layers: &std::collections::HashMap<u32, Layer>, budget: usize) -> HashSet<u32> {
+fn select_full(
+    ds: &Dataset,
+    layers: &std::collections::HashMap<u32, Layer>,
+    budget: usize,
+) -> HashSet<u32> {
     let mut scored: Vec<(u32, i32)> = (0..ds.n_nodes as u32)
-        .map(|id| (id, score_for_layer(layers.get(&id).copied().unwrap_or(Layer::Edge))))
+        .map(|id| {
+            (
+                id,
+                score_for_layer(layers.get(&id).copied().unwrap_or(Layer::Edge)),
+            )
+        })
         .collect();
     scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
     scored.into_iter().take(budget).map(|(i, _)| i).collect()
 }
 
-fn select_no_rare(ds: &Dataset, layers: &std::collections::HashMap<u32, Layer>, budget: usize) -> HashSet<u32> {
+fn select_no_rare(
+    ds: &Dataset,
+    layers: &std::collections::HashMap<u32, Layer>,
+    budget: usize,
+) -> HashSet<u32> {
     let score = |l: Layer| -> i32 {
-        match l { Layer::Rare => 1, Layer::Core => 2, Layer::Edge => 1, Layer::Garbage => 0 }
+        match l {
+            Layer::Rare => 1,
+            Layer::Core => 2,
+            Layer::Edge => 1,
+            Layer::Garbage => 0,
+        }
     };
     let mut scored: Vec<(u32, i32)> = (0..ds.n_nodes as u32)
         .map(|id| (id, score(layers.get(&id).copied().unwrap_or(Layer::Edge))))
@@ -72,9 +96,18 @@ fn select_no_rare(ds: &Dataset, layers: &std::collections::HashMap<u32, Layer>, 
     scored.into_iter().take(budget).map(|(i, _)| i).collect()
 }
 
-fn select_no_core(ds: &Dataset, layers: &std::collections::HashMap<u32, Layer>, budget: usize) -> HashSet<u32> {
+fn select_no_core(
+    ds: &Dataset,
+    layers: &std::collections::HashMap<u32, Layer>,
+    budget: usize,
+) -> HashSet<u32> {
     let score = |l: Layer| -> i32 {
-        match l { Layer::Rare => 3, Layer::Core => 1, Layer::Edge => 1, Layer::Garbage => 0 }
+        match l {
+            Layer::Rare => 3,
+            Layer::Core => 1,
+            Layer::Edge => 1,
+            Layer::Garbage => 0,
+        }
     };
     let mut scored: Vec<(u32, i32)> = (0..ds.n_nodes as u32)
         .map(|id| (id, score(layers.get(&id).copied().unwrap_or(Layer::Edge))))
@@ -83,9 +116,18 @@ fn select_no_core(ds: &Dataset, layers: &std::collections::HashMap<u32, Layer>, 
     scored.into_iter().take(budget).map(|(i, _)| i).collect()
 }
 
-fn select_keep_garbage(ds: &Dataset, layers: &std::collections::HashMap<u32, Layer>, budget: usize) -> HashSet<u32> {
+fn select_keep_garbage(
+    ds: &Dataset,
+    layers: &std::collections::HashMap<u32, Layer>,
+    budget: usize,
+) -> HashSet<u32> {
     let score = |l: Layer| -> i32 {
-        match l { Layer::Rare => 3, Layer::Core => 2, Layer::Edge => 1, Layer::Garbage => 1 }
+        match l {
+            Layer::Rare => 3,
+            Layer::Core => 2,
+            Layer::Edge => 1,
+            Layer::Garbage => 1,
+        }
     };
     let mut scored: Vec<(u32, i32)> = (0..ds.n_nodes as u32)
         .map(|id| (id, score(layers.get(&id).copied().unwrap_or(Layer::Edge))))
@@ -94,7 +136,11 @@ fn select_keep_garbage(ds: &Dataset, layers: &std::collections::HashMap<u32, Lay
     scored.into_iter().take(budget).map(|(i, _)| i).collect()
 }
 
-fn select_no_dedup(ds: &Dataset, layers: &std::collections::HashMap<u32, Layer>, budget: usize) -> HashSet<u32> {
+fn select_no_dedup(
+    ds: &Dataset,
+    layers: &std::collections::HashMap<u32, Layer>,
+    budget: usize,
+) -> HashSet<u32> {
     // Same as full — full Kdf already has no dedup (we do single-pick).
     // We keep this as a sanity row: ablation identical to full, verify same output.
     select_full(ds, layers, budget)
@@ -110,14 +156,21 @@ fn select_with_reldensity(ds: &Dataset, budget: usize) -> HashSet<u32> {
         adj[u as usize].push(v);
         adj[v as usize].push(u);
     }
-    let mut scored: Vec<(u32, f64)> = (0..n as u32).map(|id| {
-        let neighbors = &adj[id as usize];
-        if neighbors.is_empty() { return (id, -1.0); }
-        let local_avg: f64 = neighbors.iter().map(|&v| deg[v as usize] as f64).sum::<f64>()
-            / neighbors.len() as f64;
-        let ratio = deg[id as usize] as f64 / local_avg.max(1.0);
-        (id, 1.0 - ratio)
-    }).collect();
+    let mut scored: Vec<(u32, f64)> = (0..n as u32)
+        .map(|id| {
+            let neighbors = &adj[id as usize];
+            if neighbors.is_empty() {
+                return (id, -1.0);
+            }
+            let local_avg: f64 = neighbors
+                .iter()
+                .map(|&v| deg[v as usize] as f64)
+                .sum::<f64>()
+                / neighbors.len() as f64;
+            let ratio = deg[id as usize] as f64 / local_avg.max(1.0);
+            (id, 1.0 - ratio)
+        })
+        .collect();
     scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
     scored.into_iter().take(budget).map(|(i, _)| i).collect()
 }
@@ -138,9 +191,18 @@ fn main() {
     ];
 
     let conditions: Vec<(String, Box<dyn Fn(u64) -> Dataset>)> = vec![
-        ("A_deg1_D1type".into(), Box::new(|s| high_degree_rare(500, 1, s))),
-        ("A_deg3_D1.5type".into(), Box::new(|s| high_degree_rare(500, 3, s))),
-        ("B_deg2".into(), Box::new(|s| structurally_isolated(500, 2, s))),
+        (
+            "A_deg1_D1type".into(),
+            Box::new(|s| high_degree_rare(500, 1, s)),
+        ),
+        (
+            "A_deg3_D1.5type".into(),
+            Box::new(|s| high_degree_rare(500, 3, s)),
+        ),
+        (
+            "B_deg2".into(),
+            Box::new(|s| structurally_isolated(500, 2, s)),
+        ),
     ];
 
     let seeds: Vec<u64> = (0..N_SEEDS as u64).map(|i| 42 + i * 100).collect();
@@ -152,7 +214,10 @@ fn main() {
             for (abl, name) in &ablations {
                 let sel = select(&ds, *abl);
                 let r = eval_recall(&ds, &sel);
-                table.entry((cond_name.clone(), name.to_string())).or_default().push(r);
+                table
+                    .entry((cond_name.clone(), name.to_string()))
+                    .or_default()
+                    .push(r);
             }
         }
     }
@@ -164,19 +229,36 @@ fn main() {
 
     let cond_names: Vec<String> = conditions.iter().map(|(n, _)| n.clone()).collect();
     for cond in &cond_names {
-        let full = table.get(&(cond.clone(), "A0_Full".into())).cloned().unwrap_or_default();
+        let full = table
+            .get(&(cond.clone(), "A0_Full".into()))
+            .cloned()
+            .unwrap_or_default();
         let full_mean: f64 = full.iter().sum::<f64>() / full.len().max(1) as f64;
         for (_, abl_name) in &ablations {
-            let vals = table.get(&(cond.clone(), abl_name.to_string())).cloned().unwrap_or_default();
+            let vals = table
+                .get(&(cond.clone(), abl_name.to_string()))
+                .cloned()
+                .unwrap_or_default();
             let n = vals.len() as f64;
             let m = vals.iter().sum::<f64>() / n.max(1.0);
             let var = vals.iter().map(|x| (x - m).powi(2)).sum::<f64>() / n.max(1.0);
             let se = (var / n.max(1.0)).sqrt();
-            let delta = if *abl_name == "A0_Full" { 0.0 } else { m - full_mean };
-            let marker = if delta.abs() < 0.001 { "  ≈" }
-                         else if delta > 0.0 { " +" }
-                         else { "  " };
-            println!("| {} | {} | {:.3} ± {:.3} | {}{:+.3} |", cond, abl_name, m, se, marker, delta);
+            let delta = if *abl_name == "A0_Full" {
+                0.0
+            } else {
+                m - full_mean
+            };
+            let marker = if delta.abs() < 0.001 {
+                "  ≈"
+            } else if delta > 0.0 {
+                " +"
+            } else {
+                "  "
+            };
+            println!(
+                "| {} | {} | {:.3} ± {:.3} | {}{:+.3} |",
+                cond, abl_name, m, se, marker, delta
+            );
         }
     }
 
@@ -192,7 +274,10 @@ fn main() {
     let json = serde_json::json!({"ablation_table": table.iter()
         .map(|(k, v)| serde_json::json!({"condition": k.0, "ablation": k.1, "values": v}))
         .collect::<Vec<_>>()});
-    std::fs::write("demos/verification/ablation.json",
-        serde_json::to_string_pretty(&json).unwrap()).unwrap();
+    std::fs::write(
+        "demos/verification/ablation.json",
+        serde_json::to_string_pretty(&json).unwrap(),
+    )
+    .unwrap();
     println!("\n✅ Written demos/verification/ablation.json");
 }

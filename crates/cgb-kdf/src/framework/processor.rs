@@ -12,7 +12,6 @@ pub struct KdfProcessor {
     decay_manager: DecayManager,
 }
 
-
 impl KdfProcessor {
     /// Create a new KDF processor
     pub fn new() -> Self {
@@ -53,8 +52,12 @@ impl KdfProcessor {
 
     /// Get the layer of a node
     pub fn get_layer(&self, node: u32) -> Option<Layer> {
-        self.decay_manager.classification.as_ref()?
-            .layers.get(&node).copied()
+        self.decay_manager
+            .classification
+            .as_ref()?
+            .layers
+            .get(&node)
+            .copied()
     }
 
     /// Record node access

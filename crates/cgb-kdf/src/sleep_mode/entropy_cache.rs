@@ -193,8 +193,8 @@ impl IncrementalEntropyCache {
             + (ctx.node_degree - ctx.neighbors_in_from - ctx.neighbors_in_to);
 
         // Simplified entropy change estimation
-        let old_contribution =
-            self.module_entropy_contribution(from_stats) + self.module_entropy_contribution(to_stats);
+        let old_contribution = self.module_entropy_contribution(from_stats)
+            + self.module_entropy_contribution(to_stats);
 
         let mut new_from_stats = from_stats.clone();
         new_from_stats.volume = new_from_volume;
@@ -291,6 +291,9 @@ impl IncrementalEntropyCache {
 
     /// Get module count (non-empty modules)
     pub fn get_module_count(&self) -> usize {
-        self.module_stats.values().filter(|s| s.volume > 0.0).count()
+        self.module_stats
+            .values()
+            .filter(|s| s.volume > 0.0)
+            .count()
     }
 }

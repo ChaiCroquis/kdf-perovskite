@@ -23,7 +23,9 @@
 //! - KDF: structural rareness of utterances
 //! - KDF+TextSim (hybrid)
 
-use kdf_demos_common::{visualizer::emit_artifacts, Axis, Conclusion, DemoReport, Metric, MethodResult};
+use kdf_demos_common::{
+    visualizer::emit_artifacts, Axis, Conclusion, DemoReport, MethodResult, Metric,
+};
 use rand::prelude::*;
 use rand::rngs::SmallRng;
 use real_data_bench::Dataset;
@@ -62,7 +64,7 @@ fn synthesize_conversation(seed: u64) -> Conversation {
     let per_session = 50usize;
 
     // Templates for common boilerplate (shared across sessions)
-    let boilerplate = vec![
+    let boilerplate = [
         "thanks for the update",
         "sounds good",
         "let me check",
@@ -90,8 +92,7 @@ fn synthesize_conversation(seed: u64) -> Conversation {
     for s in 0..n_sessions {
         for _ in 0..per_session {
             // 5% of utterances are rare facts (if available)
-            let is_rare = rare_facts.len() > (next_id as usize / 20)
-                && rng.gen_bool(0.05);
+            let is_rare = rare_facts.len() > (next_id as usize / 20) && rng.gen_bool(0.05);
             let text = if is_rare {
                 let idx = next_id as usize / 20;
                 rare_fact_ids.insert(next_id);
@@ -111,7 +112,9 @@ fn synthesize_conversation(seed: u64) -> Conversation {
 
     // Ensure we have enough rare facts — force-add any missing
     for (idx, fact) in rare_facts.iter().enumerate() {
-        if rare_fact_ids.len() >= rare_facts.len() { break; }
+        if rare_fact_ids.len() >= rare_facts.len() {
+            break;
+        }
         let target_id = (idx * 20) as u32;
         if !rare_fact_ids.contains(&target_id) && (target_id as usize) < utterances.len() {
             utterances[target_id as usize].text = fact.to_string();
@@ -134,8 +137,8 @@ fn synthesize_conversation(seed: u64) -> Conversation {
     }
 
     // Shingle-share edges (planted rare facts share no shingles → will be Rare)
-    let shingles: Vec<HashSet<String>> = utterances.iter()
-        .map(|u| shingle_set(&u.text, 5)).collect();
+    let shingles: Vec<HashSet<String>> =
+        utterances.iter().map(|u| shingle_set(&u.text, 5)).collect();
     for i in 0..shingles.len() {
         for j in (i + 1)..shingles.len() {
             let share = shingles[i].intersection(&shingles[j]).count();
@@ -153,33 +156,67 @@ fn synthesize_conversation(seed: u64) -> Conversation {
         rare_ground_truth: rare_fact_ids.clone(),
         description: format!(
             "synthetic LLM conversation: {} sessions × {} utterances, {} planted rare facts",
-            n_sessions, per_session, rare_fact_ids.len()
+            n_sessions,
+            per_session,
+            rare_fact_ids.len()
         ),
     };
-    Conversation { utterances, dataset, rare_fact_ids }
+    Conversation {
+        utterances,
+        dataset,
+        rare_fact_ids,
+    }
 }
 
 fn shingle_set(s: &str, k: usize) -> HashSet<String> {
     let chars: Vec<char> = s.to_lowercase().chars().collect();
-    if chars.len() < k { return HashSet::new(); }
-    (0..=chars.len() - k).map(|i| chars[i..i + k].iter().collect::<String>()).collect()
+    if chars.len() < k {
+        return HashSet::new();
+    }
+    (0..=chars.len() - k)
+        .map(|i| chars[i..i + k].iter().collect::<String>())
+        .collect()
 }
 
 fn main() {
     let seeds: Vec<u64> = (0..N_TRIALS as u64).map(|i| 11000 + i).collect();
     let conv = synthesize_conversation(42);
-    println!("Synth convo: n={}, edges={}, rare facts={}",
-        conv.utterances.len(), conv.dataset.edges.len(), conv.rare_fact_ids.len());
+    println!(
+        "Synth convo: n={}, edges={}, rare facts={}",
+        conv.utterances.len(),
+        conv.dataset.edges.len(),
+        conv.rare_fact_ids.len()
+    );
 
     let keep = (conv.utterances.len() as f64 * SELECTION_FRAC).ceil() as usize;
 
     type Sampler = Box<dyn Fn(&Conversation, u64) -> HashSet<u32>>;
     let methods: Vec<(String, bool, Sampler)> = vec![
-        ("TTL_oldest".into(), false, Box::new(move |c, _s| sample_ttl(&c.utterances, keep))),
-        ("RecentTop".into(), false, Box::new(move |c, _s| sample_recent(&c.utterances, keep))),
-        ("FreqSummary".into(), false, Box::new(move |c, _s| sample_freq_summary(&c.utterances, keep))),
-        ("KDF".into(), false, Box::new(move |c, _s| sample_kdf(&c.dataset, keep))),
-        ("KDF+TextSim".into(), false, Box::new(move |c, _s| sample_kdf_textsim(c, keep))),
+        (
+            "TTL_oldest".into(),
+            false,
+            Box::new(move |c, _s| sample_ttl(&c.utterances, keep)),
+        ),
+        (
+            "RecentTop".into(),
+            false,
+            Box::new(move |c, _s| sample_recent(&c.utterances, keep)),
+        ),
+        (
+            "FreqSummary".into(),
+            false,
+            Box::new(move |c, _s| sample_freq_summary(&c.utterances, keep)),
+        ),
+        (
+            "KDF".into(),
+            false,
+            Box::new(move |c, _s| sample_kdf(&c.dataset, keep)),
+        ),
+        (
+            "KDF+TextSim".into(),
+            false,
+            Box::new(move |c, _s| sample_kdf_textsim(c, keep)),
+        ),
     ];
 
     let mut method_results: Vec<MethodResult> = Vec::new();
@@ -202,14 +239,20 @@ fn main() {
             recalls.push(recall);
             compressions.push(comp);
             walls.push(ms);
-            raw_trials.entry(format!("{}/rare_fact_recall", name)).or_default().push(recall);
+            raw_trials
+                .entry(format!("{}/rare_fact_recall", name))
+                .or_default()
+                .push(recall);
             let _ = k;
         }
         let mean = |v: &[f64]| v.iter().sum::<f64>() / v.len() as f64;
         let r = mean(&recalls);
         let c = mean(&compressions);
         let w = mean(&walls);
-        println!("{:16} rare_fact_recall={:.3}  comp={:.3}  ms={:.2}", name, r, c, w);
+        println!(
+            "{:16} rare_fact_recall={:.3}  comp={:.3}  ms={:.2}",
+            name, r, c, w
+        );
         let mut m = BTreeMap::new();
         m.insert("rare_fact_recall".into(), r);
         m.insert("compression".into(), c);
@@ -217,14 +260,34 @@ fn main() {
         method_results.push(MethodResult {
             method: name.clone(),
             requires_labels: *needs_label,
-            metrics: m, wall_ms: w, notes: String::new(),
+            metrics: m,
+            wall_ms: w,
+            notes: String::new(),
         });
     }
 
     let metric_definitions = vec![
-        Metric { name: "rare_fact_recall".into(), higher_is_better: true, mean: 0.0, stderr: 0.0, axis: Axis::KdfStrength },
-        Metric { name: "compression".into(), higher_is_better: true, mean: 0.0, stderr: 0.0, axis: Axis::Tie },
-        Metric { name: "wall_ms".into(), higher_is_better: false, mean: 0.0, stderr: 0.0, axis: Axis::KdfWeakness },
+        Metric {
+            name: "rare_fact_recall".into(),
+            higher_is_better: true,
+            mean: 0.0,
+            stderr: 0.0,
+            axis: Axis::KdfStrength,
+        },
+        Metric {
+            name: "compression".into(),
+            higher_is_better: true,
+            mean: 0.0,
+            stderr: 0.0,
+            axis: Axis::Tie,
+        },
+        Metric {
+            name: "wall_ms".into(),
+            higher_is_better: false,
+            mean: 0.0,
+            stderr: 0.0,
+            axis: Axis::KdfWeakness,
+        },
     ];
 
     let report = DemoReport {
@@ -277,16 +340,25 @@ fn sample_recent(utterances: &[Utterance], keep: usize) -> HashSet<u32> {
 
 fn sample_freq_summary(utterances: &[Utterance], keep: usize) -> HashSet<u32> {
     // LLM summary proxy: keep the most "central" utterances = those sharing many shingles
-    let shingles: Vec<HashSet<String>> = utterances.iter().map(|u| shingle_set(&u.text, 5)).collect();
+    let shingles: Vec<HashSet<String>> =
+        utterances.iter().map(|u| shingle_set(&u.text, 5)).collect();
     let mut sh_freq: HashMap<String, u32> = HashMap::new();
     for shs in &shingles {
-        for sh in shs { *sh_freq.entry(sh.clone()).or_insert(0) += 1; }
+        for sh in shs {
+            *sh_freq.entry(sh.clone()).or_insert(0) += 1;
+        }
     }
-    let mut scored: Vec<(u32, f64)> = shingles.iter().enumerate().map(|(i, shs)| {
-        if shs.is_empty() { return (i as u32, 0.0); }
-        let s: u32 = shs.iter().map(|sh| *sh_freq.get(sh).unwrap_or(&1)).sum();
-        (i as u32, s as f64 / shs.len() as f64)
-    }).collect();
+    let mut scored: Vec<(u32, f64)> = shingles
+        .iter()
+        .enumerate()
+        .map(|(i, shs)| {
+            if shs.is_empty() {
+                return (i as u32, 0.0);
+            }
+            let s: u32 = shs.iter().map(|sh| *sh_freq.get(sh).unwrap_or(&1)).sum();
+            (i as u32, s as f64 / shs.len() as f64)
+        })
+        .collect();
     scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
     scored.into_iter().take(keep).map(|(i, _)| i).collect()
 }
@@ -296,10 +368,20 @@ fn sample_kdf(ds: &Dataset, keep: usize) -> HashSet<u32> {
     let mut classifier = NodeClassifier::default();
     let class = classifier.classify(ds.n_nodes, &ds.edges);
     let score = |l: Layer| -> i32 {
-        match l { Layer::Rare => 3, Layer::Core => 2, Layer::Edge => 1, Layer::Garbage => 0 }
+        match l {
+            Layer::Rare => 3,
+            Layer::Core => 2,
+            Layer::Edge => 1,
+            Layer::Garbage => 0,
+        }
     };
     let mut scored: Vec<(u32, i32)> = (0..ds.n_nodes as u32)
-        .map(|id| (id, score(class.layers.get(&id).copied().unwrap_or(Layer::Edge))))
+        .map(|id| {
+            (
+                id,
+                score(class.layers.get(&id).copied().unwrap_or(Layer::Edge)),
+            )
+        })
         .collect();
     scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
     scored.into_iter().take(keep).map(|(i, _)| i).collect()
@@ -309,18 +391,33 @@ fn sample_kdf_textsim(conv: &Conversation, keep: usize) -> HashSet<u32> {
     let kdf_budget = (keep as f64 * 0.7) as usize;
     let mut out = sample_kdf(&conv.dataset, kdf_budget);
     // Text rarity: inverse shingle freq
-    let shingles: Vec<HashSet<String>> = conv.utterances.iter()
-        .map(|u| shingle_set(&u.text, 5)).collect();
+    let shingles: Vec<HashSet<String>> = conv
+        .utterances
+        .iter()
+        .map(|u| shingle_set(&u.text, 5))
+        .collect();
     let mut sh_freq: HashMap<String, u32> = HashMap::new();
     for shs in &shingles {
-        for sh in shs { *sh_freq.entry(sh.clone()).or_insert(0) += 1; }
+        for sh in shs {
+            *sh_freq.entry(sh.clone()).or_insert(0) += 1;
+        }
     }
-    let mut scored: Vec<(u32, f64)> = shingles.iter().enumerate().map(|(i, shs)| {
-        let id = i as u32;
-        if shs.is_empty() { return (id, 0.0); }
-        let inv_sum: f64 = shs.iter().map(|sh| 1.0 / *sh_freq.get(sh).unwrap_or(&1) as f64).sum();
-        (id, inv_sum / shs.len() as f64)
-    }).filter(|(id, _)| !out.contains(id)).collect();
+    let mut scored: Vec<(u32, f64)> = shingles
+        .iter()
+        .enumerate()
+        .map(|(i, shs)| {
+            let id = i as u32;
+            if shs.is_empty() {
+                return (id, 0.0);
+            }
+            let inv_sum: f64 = shs
+                .iter()
+                .map(|sh| 1.0 / *sh_freq.get(sh).unwrap_or(&1) as f64)
+                .sum();
+            (id, inv_sum / shs.len() as f64)
+        })
+        .filter(|(id, _)| !out.contains(id))
+        .collect();
     scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
     for (id, _) in scored.into_iter().take(keep.saturating_sub(out.len())) {
         out.insert(id);

@@ -12,3 +12,6 @@ nalgebra = "0.33"
 [dev-dependencies]
 proptest = "1.5"
 rand = { version = "0.8", features = ["small_rng"] }
+
+[lints]
+workspace = true

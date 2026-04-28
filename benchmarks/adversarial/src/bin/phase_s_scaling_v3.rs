@@ -4,9 +4,9 @@
 //! per sort + lots of HashMap. v3 replaces:
 //!   - HashMap<u32, Layer> → Vec<Layer> (direct indexing)
 //!   - sort_by top-K → bucket-based O(n) selection
+//!
 //! and measures if exponent approaches 1.0 or log n.
 
-use adversarial_bench as adv;
 use cgb_kdf::{FastNodeClassifier, Layer};
 use real_data_bench::Dataset;
 use std::collections::HashSet;
@@ -20,7 +20,9 @@ fn kdf_select_v3_linear(ds: &Dataset, keep: usize) -> HashSet<u32> {
     // Dense Vec<Layer> instead of HashMap
     let mut layers_vec = vec![Layer::Edge; n];
     for (&id, &l) in &class.layers {
-        if (id as usize) < n { layers_vec[id as usize] = l; }
+        if (id as usize) < n {
+            layers_vec[id as usize] = l;
+        }
     }
 
     // Bucket each node into its layer bucket (O(n))
@@ -40,7 +42,9 @@ fn kdf_select_v3_linear(ds: &Dataset, keep: usize) -> HashSet<u32> {
     let mut out: HashSet<u32> = HashSet::with_capacity(keep);
     let take = |src: &[u32], out: &mut HashSet<u32>, keep: usize| {
         for &id in src {
-            if out.len() >= keep { break; }
+            if out.len() >= keep {
+                break;
+            }
             out.insert(id);
         }
     };
@@ -66,7 +70,9 @@ fn build_sparse_graph(n: usize, seed: u64) -> Dataset {
     for u in 0..n_hubs as u32 {
         for _ in 0..20 {
             let v = rng.gen_range(0..n_hubs) as u32;
-            if u != v { edges.push((u, v, 1.0)); }
+            if u != v {
+                edges.push((u, v, 1.0));
+            }
         }
     }
     for i in 0..n_rare {
@@ -82,11 +88,25 @@ fn build_sparse_graph(n: usize, seed: u64) -> Dataset {
             edges.push((id, h, 1.0));
         }
     }
-    Dataset { name: "sparse".into(), n_nodes: n, edges, rare_ground_truth: rare, description: "sparse".into() }
+    Dataset {
+        name: "sparse".into(),
+        n_nodes: n,
+        edges,
+        rare_ground_truth: rare,
+        description: "sparse".into(),
+    }
 }
 
 fn main() {
-    let sizes = [10_000_usize, 50_000, 100_000, 200_000, 500_000, 1_000_000, 2_000_000];
+    let sizes = [
+        10_000_usize,
+        50_000,
+        100_000,
+        200_000,
+        500_000,
+        1_000_000,
+        2_000_000,
+    ];
     println!("| n | classifier ms | bucket ms | total ms | ns/n |");
     println!("|---:|---:|---:|---:|---:|");
 
@@ -108,8 +128,10 @@ fn main() {
         let bucket_ms = total_ms - class_ms;
         let ns_per_node = total_ms * 1e6 / n as f64;
 
-        println!("| {} | {:.1} | {:.1} | {:.1} | {:.1} |",
-            n, class_ms, bucket_ms, total_ms, ns_per_node);
+        println!(
+            "| {} | {:.1} | {:.1} | {:.1} | {:.1} |",
+            n, class_ms, bucket_ms, total_ms, ns_per_node
+        );
         pts.push(((n as f64).ln(), total_ms.ln()));
     }
 

@@ -57,11 +57,9 @@ fn demo_layer_accuracy() {
         (vec![-1.0, 2.0], "犬", "猫", 0.48), // 異常値で誤分類
     ];
 
-    let features: Vec<Vec<f64>> = test_data.iter()
-        .map(|(f, _, _, _)| f.clone())
-        .collect();
+    let features: Vec<Vec<f64>> = test_data.iter().map(|(f, _, _, _)| f.clone()).collect();
 
-    let result = kdf.process(&features, 0.85, euclidean_similarity);
+    let result = kdf.process(&features, 0.85, |a, b| euclidean_similarity(a, b));
 
     // 層別の精度を計算
     let mut layer_stats: HashMap<&str, (usize, usize)> = HashMap::new(); // (正解数, 総数)
@@ -78,14 +76,24 @@ fn demo_layer_accuracy() {
     }
 
     println!("   層別精度:\n");
-    println!("   {:>8} {:>10} {:>10} {:>10}", "層", "正解数", "総数", "精度");
+    println!(
+        "   {:>8} {:>10} {:>10} {:>10}",
+        "層", "正解数", "総数", "精度"
+    );
     println!("   {}", "-".repeat(45));
 
     for layer in &["Core", "Edge", "Rare"] {
         if let Some(&(correct, total)) = layer_stats.get(layer) {
-            let accuracy = if total > 0 { correct as f64 / total as f64 * 100.0 } else { 0.0 };
+            let accuracy = if total > 0 {
+                correct as f64 / total as f64 * 100.0
+            } else {
+                0.0
+            };
             let indicator = if accuracy < 70.0 { "⚠️" } else { "✅" };
-            println!("   {:>8} {:>10} {:>10} {:>9.1}% {}", layer, correct, total, accuracy, indicator);
+            println!(
+                "   {:>8} {:>10} {:>10} {:>9.1}% {}",
+                layer, correct, total, accuracy, indicator
+            );
         }
     }
 
@@ -108,47 +116,70 @@ fn demo_failure_patterns() {
         (vec![0.5, 0.5], true, true, None),
         (vec![0.6, 0.4], true, true, None),
         // 失敗ケース
-        (vec![0.75, 0.75], true, false, Some("境界ケース: 両クラスの特徴が混在")),
-        (vec![5.0, 0.0], true, false, Some("外れ値: 学習データ範囲外")),
-        (vec![0.0, 5.0], true, false, Some("外れ値: 学習データ範囲外")),
+        (
+            vec![0.75, 0.75],
+            true,
+            false,
+            Some("境界ケース: 両クラスの特徴が混在"),
+        ),
+        (
+            vec![5.0, 0.0],
+            true,
+            false,
+            Some("外れ値: 学習データ範囲外"),
+        ),
+        (
+            vec![0.0, 5.0],
+            true,
+            false,
+            Some("外れ値: 学習データ範囲外"),
+        ),
         (vec![-2.0, -2.0], true, false, Some("異常値: 負の特徴量")),
     ];
 
-    let features: Vec<Vec<f64>> = predictions.iter()
-        .map(|(f, _, _, _)| f.clone())
-        .collect();
+    let features: Vec<Vec<f64>> = predictions.iter().map(|(f, _, _, _)| f.clone()).collect();
 
-    let result = kdf.process(&features, 0.85, euclidean_similarity);
+    let result = kdf.process(&features, 0.85, |a, b| euclidean_similarity(a, b));
 
     println!("   失敗パターンの分析:\n");
 
-    let failures: Vec<_> = predictions.iter()
+    let failures: Vec<_> = predictions
+        .iter()
         .enumerate()
         .filter(|(_, (_, _, pred, _))| !pred)
         .collect();
 
-    println!("   {:>6} {:>15} {:>8} {:>30}", "Index", "特徴量", "層", "失敗理由");
+    println!(
+        "   {:>6} {:>15} {:>8} {:>30}",
+        "Index", "特徴量", "層", "失敗理由"
+    );
     println!("   {}", "-".repeat(65));
 
     for (i, (feat, _, _, reason)) in &failures {
         let layer = get_layer(&result, *i);
         let reason_str = reason.unwrap_or("不明");
-        println!("   {:>6} {:>15} {:>8} {:>30}",
-                 i,
-                 format!("[{:.1}, {:.1}]", feat[0], feat[1]),
-                 layer,
-                 reason_str);
+        println!(
+            "   {:>6} {:>15} {:>8} {:>30}",
+            i,
+            format!("[{:.1}, {:.1}]", feat[0], feat[1]),
+            layer,
+            reason_str
+        );
     }
 
     // パターン集計
-    let rare_failures = failures.iter()
+    let rare_failures = failures
+        .iter()
         .filter(|(i, _)| get_layer(&result, *i) == "Rare")
         .count();
 
     println!("\n   【失敗パターンの傾向】");
-    println!("   Rare層での失敗: {}/{} ({:.0}%)",
-             rare_failures, failures.len(),
-             rare_failures as f64 / failures.len() as f64 * 100.0);
+    println!(
+        "   Rare層での失敗: {}/{} ({:.0}%)",
+        rare_failures,
+        failures.len(),
+        rare_failures as f64 / failures.len() as f64 * 100.0
+    );
     println!("   → Rare層に集中する失敗 = エッジケースハンドリングの問題");
 }
 
@@ -160,16 +191,23 @@ fn demo_test_case_generation() {
 
     // 学習データ
     let training_data = vec![
-        vec![1.0, 1.0], vec![1.1, 0.9], vec![0.9, 1.1], vec![1.0, 1.0],
-        vec![0.5, 0.5], vec![0.6, 0.4], vec![0.4, 0.6], vec![0.5, 0.5],
-        vec![1.5, 0.8], vec![0.8, 1.5],
+        vec![1.0, 1.0],
+        vec![1.1, 0.9],
+        vec![0.9, 1.1],
+        vec![1.0, 1.0],
+        vec![0.5, 0.5],
+        vec![0.6, 0.4],
+        vec![0.4, 0.6],
+        vec![0.5, 0.5],
+        vec![1.5, 0.8],
+        vec![0.8, 1.5],
         // エッジケース
         vec![3.0, 0.5],
         vec![0.5, 3.0],
         vec![-0.5, 1.0],
     ];
 
-    let result = kdf.process(&training_data, 0.85, euclidean_similarity);
+    let result = kdf.process(&training_data, 0.85, |a, b| euclidean_similarity(a, b));
 
     println!("   学習データからのテストケース優先度:\n");
 
@@ -217,7 +255,7 @@ fn demo_improvement_suggestions() {
 
     // モデルの予測結果と信頼度
     let model_output = vec![
-        (vec![1.0, 1.0], 0.95, true),   // 高信頼度, 正解
+        (vec![1.0, 1.0], 0.95, true), // 高信頼度, 正解
         (vec![1.1, 0.9], 0.92, true),
         (vec![0.9, 1.1], 0.88, true),
         (vec![0.5, 0.5], 0.91, true),
@@ -229,11 +267,9 @@ fn demo_improvement_suggestions() {
         (vec![-1.0, 1.0], 0.55, true),   // 低信頼度, 正解 (たまたま)
     ];
 
-    let features: Vec<Vec<f64>> = model_output.iter()
-        .map(|(f, _, _)| f.clone())
-        .collect();
+    let features: Vec<Vec<f64>> = model_output.iter().map(|(f, _, _)| f.clone()).collect();
 
-    let result = kdf.process(&features, 0.85, euclidean_similarity);
+    let result = kdf.process(&features, 0.85, |a, b| euclidean_similarity(a, b));
 
     // 改善提案を生成
     println!("   モデル診断結果:\n");
@@ -247,18 +283,21 @@ fn demo_improvement_suggestions() {
             if !correct {
                 issues.push(format!(
                     "🔴 Index {}: Rare層で誤分類 (信頼度: {:.0}%) → データ拡張を検討",
-                    i, conf * 100.0
+                    i,
+                    conf * 100.0
                 ));
             } else if *conf < 0.7 {
                 issues.push(format!(
                     "🟡 Index {}: Rare層で低信頼度 ({:.0}%) → 追加学習データが必要",
-                    i, conf * 100.0
+                    i,
+                    conf * 100.0
                 ));
             }
         } else if layer == "Edge" && *conf < 0.7 {
             issues.push(format!(
                 "🟡 Index {}: Edge層で低信頼度 ({:.0}%) → 境界ケースの強化学習",
-                i, conf * 100.0
+                i,
+                conf * 100.0
             ));
         }
     }
@@ -270,12 +309,14 @@ fn demo_improvement_suggestions() {
     // 改善提案のサマリー
     println!("\n   【改善提案サマリー】");
 
-    let rare_errors = model_output.iter()
+    let rare_errors = model_output
+        .iter()
         .enumerate()
         .filter(|(i, (_, _, c))| get_layer(&result, *i) == "Rare" && !c)
         .count();
 
-    let low_conf_count = model_output.iter()
+    let low_conf_count = model_output
+        .iter()
         .filter(|(_, conf, _)| *conf < 0.7)
         .count();
 
@@ -315,8 +356,9 @@ fn get_layer(result: &kdf::KdfResult, index: usize) -> &'static str {
 }
 
 /// ユークリッド類似度
-fn euclidean_similarity(a: &Vec<f64>, b: &Vec<f64>) -> f64 {
-    let dist: f64 = a.iter()
+fn euclidean_similarity(a: &[f64], b: &[f64]) -> f64 {
+    let dist: f64 = a
+        .iter()
         .zip(b.iter())
         .map(|(x, y)| (x - y).powi(2))
         .sum::<f64>()

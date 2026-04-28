@@ -44,7 +44,10 @@ impl PersistentRareMemory {
     pub fn new(inner: Box<dyn Selector>) -> Self {
         Self {
             inner,
-            state: RefCell::new(MemoryState { activation: HashMap::new(), last_seen_name: None }),
+            state: RefCell::new(MemoryState {
+                activation: HashMap::new(),
+                last_seen_name: None,
+            }),
             decay_lambda: 0.10,
             remember_threshold: 0.30,
             display_name: "KDF+PersistMem".to_string(),
@@ -65,7 +68,9 @@ impl PersistentRareMemory {
 }
 
 impl Selector for PersistentRareMemory {
-    fn name(&self) -> &str { &self.display_name }
+    fn name(&self) -> &str {
+        &self.display_name
+    }
 
     fn select(&self, ds: &Dataset, seed: u64) -> HashSet<u32> {
         let mut state = self.state.borrow_mut();
@@ -77,12 +82,16 @@ impl Selector for PersistentRareMemory {
             .as_ref()
             .map(|prev| !prev.starts_with(&family))
             .unwrap_or(false);
-        if family_changed { state.activation.clear(); }
+        if family_changed {
+            state.activation.clear();
+        }
         state.last_seen_name = Some(family);
 
         // Decay all existing activations exp(-λ)
         let survival = (-self.decay_lambda).exp();
-        for v in state.activation.values_mut() { *v *= survival; }
+        for v in state.activation.values_mut() {
+            *v *= survival;
+        }
 
         // Baseline selection from the wrapped selector
         let mut selected = self.inner.select(ds, seed);
@@ -120,11 +129,18 @@ pub struct RelativeDensitySelector {
 }
 
 impl Default for RelativeDensitySelector {
-    fn default() -> Self { Self { rare_ratio: 0.50, core_ratio: 1.50 } }
+    fn default() -> Self {
+        Self {
+            rare_ratio: 0.50,
+            core_ratio: 1.50,
+        }
+    }
 }
 
 impl Selector for RelativeDensitySelector {
-    fn name(&self) -> &str { "KDF+RelDensity" }
+    fn name(&self) -> &str {
+        "KDF+RelDensity"
+    }
 
     fn select(&self, ds: &Dataset, _seed: u64) -> HashSet<u32> {
         let n = ds.n_nodes;
@@ -150,7 +166,8 @@ impl Selector for RelativeDensitySelector {
                 continue; // drop isolates
             }
             // Local average = mean degree of direct (1-hop) neighbors
-            let local_avg = neighbors.iter()
+            let local_avg = neighbors
+                .iter()
                 .map(|&v| deg[v as usize] as f64)
                 .sum::<f64>()
                 / neighbors.len() as f64;
@@ -170,7 +187,9 @@ impl Selector for RelativeDensitySelector {
                 edge_groups.entry(sorted_n).or_insert(i as u32);
             }
         }
-        for rep in edge_groups.values() { selected.insert(*rep); }
+        for rep in edge_groups.values() {
+            selected.insert(*rep);
+        }
         selected
     }
 }
@@ -188,24 +207,35 @@ pub struct FingerprintIsolationSelector {
 }
 
 impl Default for FingerprintIsolationSelector {
-    fn default() -> Self { Self { theta: 0.4 } }
+    fn default() -> Self {
+        Self { theta: 0.4 }
+    }
 }
 
 fn deg_fingerprint(i: usize, adj: &[Vec<u32>], deg: &[usize]) -> [f64; 4] {
     // 4-bin histogram of neighbor degrees (log-spaced)
     let mut bins = [0.0f64; 4];
     let neighbors = &adj[i];
-    if neighbors.is_empty() { return bins; }
+    if neighbors.is_empty() {
+        return bins;
+    }
     for &v in neighbors {
         let d = deg[v as usize] as f64;
-        let idx = if d < 2.0 { 0 }
-                  else if d < 5.0 { 1 }
-                  else if d < 20.0 { 2 }
-                  else { 3 };
+        let idx = if d < 2.0 {
+            0
+        } else if d < 5.0 {
+            1
+        } else if d < 20.0 {
+            2
+        } else {
+            3
+        };
         bins[idx] += 1.0;
     }
     let total: f64 = bins.iter().sum();
-    for b in bins.iter_mut() { *b /= total; }
+    for b in bins.iter_mut() {
+        *b /= total;
+    }
     bins
 }
 
@@ -214,7 +244,9 @@ fn l1_distance(a: &[f64; 4], b: &[f64; 4]) -> f64 {
 }
 
 impl Selector for FingerprintIsolationSelector {
-    fn name(&self) -> &str { "KDF+Fingerprint" }
+    fn name(&self) -> &str {
+        "KDF+Fingerprint"
+    }
 
     fn select(&self, ds: &Dataset, _seed: u64) -> HashSet<u32> {
         let n = ds.n_nodes;
@@ -240,7 +272,9 @@ impl Selector for FingerprintIsolationSelector {
 
         let mut selected: HashSet<u32> = HashSet::new();
         for i in 0..n {
-            if deg[i] == 0 { continue; }
+            if deg[i] == 0 {
+                continue;
+            }
             let d = l1_distance(&fps[i], &median);
             if d > self.theta {
                 selected.insert(i as u32);
@@ -251,7 +285,9 @@ impl Selector for FingerprintIsolationSelector {
             let k = (n as f64 * 0.30).ceil() as usize;
             let mut order: Vec<usize> = (0..n).collect();
             order.sort_by_key(|&i| std::cmp::Reverse(deg[i]));
-            for &i in order.iter().take(k) { selected.insert(i as u32); }
+            for &i in order.iter().take(k) {
+                selected.insert(i as u32);
+            }
         }
         selected
     }
@@ -293,8 +329,10 @@ mod tests {
         ds2.name = "unit_test_t1".to_string();
         let sel2 = s1.select(&ds2, 1);
         // Memory should still include node 0 via activation
-        assert!(sel2.contains(&0) || sel1.contains(&0),
-            "S1 should remember rare node from first snapshot");
+        assert!(
+            sel2.contains(&0) || sel1.contains(&0),
+            "S1 should remember rare node from first snapshot"
+        );
     }
 
     #[test]
@@ -337,7 +375,10 @@ mod tests {
         };
         let sel = s2.select(&ds, 1);
         // Node 11 has degree 1 << hub degree 11, should be marked rare
-        assert!(sel.contains(&11), "S2 should detect relatively-rare node in star");
+        assert!(
+            sel.contains(&11),
+            "S2 should detect relatively-rare node in star"
+        );
     }
 
     #[test]

@@ -96,7 +96,12 @@ fn build_graph(
             if is_answer_sess && turn.has_answer.unwrap_or(false) {
                 answer_turn_ids.insert(global_idx as u32);
             }
-            flat.push((sid.clone(), turn.role.clone(), turn.content.clone(), global_idx));
+            flat.push((
+                sid.clone(),
+                turn.role.clone(),
+                turn.content.clone(),
+                global_idx,
+            ));
         }
     }
     let mut edges: Vec<(u32, u32, f64)> = Vec::new();
@@ -124,7 +129,10 @@ fn text_rareness_scores(flat: &[(String, String, String, usize)]) -> Vec<f64> {
             if shs.is_empty() {
                 return 0.0;
             }
-            let inv: f64 = shs.iter().map(|sh| 1.0 / *freq.get(sh).unwrap_or(&1) as f64).sum();
+            let inv: f64 = shs
+                .iter()
+                .map(|sh| 1.0 / *freq.get(sh).unwrap_or(&1) as f64)
+                .sum();
             (inv / shs.len() as f64).min(1.0)
         })
         .collect()
@@ -143,7 +151,12 @@ fn kdf_select(n: usize, edges: &[(u32, u32, f64)], keep: usize) -> HashSet<u32> 
         }
     };
     let mut scored: Vec<(u32, i32)> = (0..n as u32)
-        .map(|id| (id, score(class.layers.get(&id).copied().unwrap_or(Layer::Edge))))
+        .map(|id| {
+            (
+                id,
+                score(class.layers.get(&id).copied().unwrap_or(Layer::Edge)),
+            )
+        })
         .collect();
     scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
     scored.into_iter().take(keep).map(|(i, _)| i).collect()

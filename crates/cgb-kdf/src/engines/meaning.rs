@@ -2,10 +2,10 @@
 //!
 //! Handles document management and topic learning.
 
-use std::collections::{HashMap, HashSet};
-use super::graph::SimpleGraph;
 use super::super::framework::Layer;
-use super::super::text_processor::{TextProcessor, DomainClassifier};
+use super::super::text_processor::{DomainClassifier, TextProcessor};
+use super::graph::SimpleGraph;
+use std::collections::{HashMap, HashSet};
 
 /// KDF-based Meaning Engine
 ///
@@ -63,7 +63,8 @@ impl KDFMeaningEngine {
         _domain: Option<&str>,
     ) {
         // Store document
-        self.documents.insert(doc_id.to_string(), content.to_string());
+        self.documents
+            .insert(doc_id.to_string(), content.to_string());
 
         // Extract nouns
         let nouns = self.processor.extract_nouns(content, true);
@@ -196,9 +197,18 @@ impl KDFMeaningEngine {
         stats.insert("total_documents".to_string(), self.documents.len() as f64);
         stats.insert("total_nodes".to_string(), self.graph.nodes.len() as f64);
         stats.insert("total_edges".to_string(), self.graph.edges.len() as f64);
-        stats.insert("core_nodes".to_string(), self.graph.get_nodes_by_layer(Layer::Core).len() as f64);
-        stats.insert("edge_nodes".to_string(), self.graph.get_nodes_by_layer(Layer::Edge).len() as f64);
-        stats.insert("rare_nodes".to_string(), self.graph.get_nodes_by_layer(Layer::Rare).len() as f64);
+        stats.insert(
+            "core_nodes".to_string(),
+            self.graph.get_nodes_by_layer(Layer::Core).len() as f64,
+        );
+        stats.insert(
+            "edge_nodes".to_string(),
+            self.graph.get_nodes_by_layer(Layer::Edge).len() as f64,
+        );
+        stats.insert(
+            "rare_nodes".to_string(),
+            self.graph.get_nodes_by_layer(Layer::Rare).len() as f64,
+        );
 
         stats
     }

@@ -39,19 +39,18 @@ impl TeResult {
     }
 
     /// Create a TE result with significance testing
-    pub fn with_significance(
-        te: f64,
-        source_to_target: bool,
-        p_value: f64,
-        alpha: f64,
-    ) -> Self {
+    pub fn with_significance(te: f64, source_to_target: bool, p_value: f64, alpha: f64) -> Self {
         let is_sig = p_value < alpha && te > 0.0;
         Self {
             te,
             source_to_target,
             p_value: Some(p_value),
             is_significant: is_sig,
-            confidence: if is_sig { (1.0 - p_value).min(1.0) } else { 0.0 },
+            confidence: if is_sig {
+                (1.0 - p_value).min(1.0)
+            } else {
+                0.0
+            },
         }
     }
 
@@ -82,12 +81,7 @@ pub struct CausalLink {
 
 impl CausalLink {
     /// Create a new causal link
-    pub fn new(
-        source: String,
-        target: String,
-        te: f64,
-        strategy: TeStrategy,
-    ) -> Self {
+    pub fn new(source: String, target: String, te: f64, strategy: TeStrategy) -> Self {
         Self {
             source,
             target,

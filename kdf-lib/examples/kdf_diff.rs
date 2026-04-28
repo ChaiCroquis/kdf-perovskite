@@ -93,7 +93,9 @@ fn kdf_diff(
 
     // Calculate selection stability (Jaccard similarity)
     let selected_before: HashSet<_> = result_before.selected.iter().cloned().collect();
-    let selected_after: HashSet<_> = result_after.selected.iter()
+    let selected_after: HashSet<_> = result_after
+        .selected
+        .iter()
         .filter(|&&i| i < common_count)
         .cloned()
         .collect();
@@ -180,11 +182,11 @@ fn main() {
 
     // Time T2: Same structure, slightly modified
     let items_t2 = vec![
-        vec![1.0, 0.0, 0.0], // Cluster A (same)
+        vec![1.0, 0.0, 0.0],  // Cluster A (same)
         vec![1.0, 0.15, 0.0], // Cluster A (slightly different)
-        vec![0.0, 1.0, 0.0], // Cluster B (same)
+        vec![0.0, 1.0, 0.0],  // Cluster B (same)
         vec![0.0, 1.0, 0.15], // Cluster B (slightly different)
-        vec![5.0, 5.0, 0.0], // Rare (same)
+        vec![5.0, 5.0, 0.0],  // Rare (same)
     ];
 
     let result_t1 = kdf.process(&items_t1, threshold, |a, b| cosine_similarity(a, b));
@@ -222,7 +224,12 @@ fn main() {
     println!("T1 layers: {:?}", result_shift_t1.layers);
     println!("T2 layers: {:?}", result_shift_t2.layers);
 
-    let diff_shift = kdf_diff(&result_shift_t1, &result_shift_t2, items_shift_t1.len(), items_shift_t2.len());
+    let diff_shift = kdf_diff(
+        &result_shift_t1,
+        &result_shift_t2,
+        items_shift_t1.len(),
+        items_shift_t2.len(),
+    );
     println!("{}\n", diff_shift.summary());
 
     if !diff_shift.rare_to_core.is_empty() {
@@ -240,13 +247,21 @@ fn main() {
 
     // T1: Two balanced clusters
     let items_drift_t1 = vec![
-        vec![1.0, 0.0], vec![1.0, 0.1], vec![1.0, 0.2], // Cluster A (3)
-        vec![0.0, 1.0], vec![0.1, 1.0], vec![0.2, 1.0], // Cluster B (3)
+        vec![1.0, 0.0],
+        vec![1.0, 0.1],
+        vec![1.0, 0.2], // Cluster A (3)
+        vec![0.0, 1.0],
+        vec![0.1, 1.0],
+        vec![0.2, 1.0], // Cluster B (3)
     ];
 
     // T2: Cluster A dominates, B shrinks
     let items_drift_t2 = vec![
-        vec![1.0, 0.0], vec![1.0, 0.1], vec![1.0, 0.2], vec![1.0, 0.3], vec![1.0, 0.4], // Cluster A (5)
+        vec![1.0, 0.0],
+        vec![1.0, 0.1],
+        vec![1.0, 0.2],
+        vec![1.0, 0.3],
+        vec![1.0, 0.4], // Cluster A (5)
         vec![0.0, 1.0], // Cluster B (1) - now rare!
     ];
 
@@ -266,7 +281,10 @@ fn main() {
     println!("\n{}", diff_drift.summary());
 
     if diff_drift.distribution_drift > 0.1 {
-        println!("\n** DRIFT DETECTED! Distribution drift = {:.4} **", diff_drift.distribution_drift);
+        println!(
+            "\n** DRIFT DETECTED! Distribution drift = {:.4} **",
+            diff_drift.distribution_drift
+        );
         println!("This indicates significant change in data distribution.");
     }
 
@@ -275,11 +293,7 @@ fn main() {
     // =========================================================================
     println!("\n--- Scenario 4: Streaming (New Items Emerging) ---\n");
 
-    let items_stream_t1: Vec<Vec<f64>> = vec![
-        vec![1.0, 0.0],
-        vec![1.0, 0.1],
-        vec![0.0, 1.0],
-    ];
+    let items_stream_t1: Vec<Vec<f64>> = vec![vec![1.0, 0.0], vec![1.0, 0.1], vec![0.0, 1.0]];
 
     // New items arrive
     let items_stream_t2: Vec<Vec<f64>> = vec![
@@ -294,7 +308,12 @@ fn main() {
     let result_stream_t1 = kdf.process(&items_stream_t1, threshold, |a, b| cosine_similarity(a, b));
     let result_stream_t2 = kdf.process(&items_stream_t2, threshold, |a, b| cosine_similarity(a, b));
 
-    let diff_stream = kdf_diff(&result_stream_t1, &result_stream_t2, items_stream_t1.len(), items_stream_t2.len());
+    let diff_stream = kdf_diff(
+        &result_stream_t1,
+        &result_stream_t2,
+        items_stream_t1.len(),
+        items_stream_t2.len(),
+    );
 
     println!("Existing items: {}", items_stream_t1.len());
     println!("New items: {}", diff_stream.emerged.len());

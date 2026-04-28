@@ -48,7 +48,8 @@ impl GaussianEstimator {
         x.iter()
             .zip(y.iter())
             .map(|(&xi, &yi)| (xi - mean_x) * (yi - mean_y))
-            .sum::<f64>() / n
+            .sum::<f64>()
+            / n
     }
 
     /// Compute residual variance Var(target | predictor)
@@ -78,7 +79,8 @@ impl GaussianEstimator {
         predictor1: &[f64],
         predictor2: &[f64],
     ) -> f64 {
-        if target.len() != predictor1.len() || target.len() != predictor2.len() || target.is_empty() {
+        if target.len() != predictor1.len() || target.len() != predictor2.len() || target.is_empty()
+        {
             return 0.0;
         }
 
@@ -88,11 +90,23 @@ impl GaussianEstimator {
         let sum_t: f64 = target.iter().sum();
         let sum_p1: f64 = predictor1.iter().sum();
         let sum_p2: f64 = predictor2.iter().sum();
-        let sum_p1_t: f64 = predictor1.iter().zip(target.iter()).map(|(&p1, &t)| p1 * t).sum();
-        let sum_p2_t: f64 = predictor2.iter().zip(target.iter()).map(|(&p2, &t)| p2 * t).sum();
+        let sum_p1_t: f64 = predictor1
+            .iter()
+            .zip(target.iter())
+            .map(|(&p1, &t)| p1 * t)
+            .sum();
+        let sum_p2_t: f64 = predictor2
+            .iter()
+            .zip(target.iter())
+            .map(|(&p2, &t)| p2 * t)
+            .sum();
         let sum_p1_p1: f64 = predictor1.iter().map(|&p1| p1 * p1).sum();
         let sum_p2_p2: f64 = predictor2.iter().map(|&p2| p2 * p2).sum();
-        let sum_p1_p2: f64 = predictor1.iter().zip(predictor2.iter()).map(|(&p1, &p2)| p1 * p2).sum();
+        let sum_p1_p2: f64 = predictor1
+            .iter()
+            .zip(predictor2.iter())
+            .map(|(&p1, &p2)| p1 * p2)
+            .sum();
 
         let mean_t = sum_t / n;
         let mean_p1 = sum_p1 / n;

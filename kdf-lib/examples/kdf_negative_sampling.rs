@@ -40,8 +40,11 @@ fn demo_layer_based_negatives() {
     let kdf = Kdf::with_defaults();
 
     // アンカー (正例) のクラス
-    let _anchor_class = vec![
-        vec![1.0, 1.0], vec![1.1, 0.9], vec![0.9, 1.1], vec![1.0, 1.0],
+    let _anchor_class = [
+        vec![1.0, 1.0],
+        vec![1.1, 0.9],
+        vec![0.9, 1.1],
+        vec![1.0, 1.0],
     ];
 
     // ネガティブ候補プール
@@ -59,15 +62,16 @@ fn demo_layer_based_negatives() {
         (vec![-3.0, -3.0], "遠い"),
     ];
 
-    let features: Vec<Vec<f64>> = negative_pool.iter()
-        .map(|(f, _)| f.clone())
-        .collect();
+    let features: Vec<Vec<f64>> = negative_pool.iter().map(|(f, _)| f.clone()).collect();
 
-    let result = kdf.process(&features, 0.85, euclidean_similarity);
+    let result = kdf.process(&features, 0.85, |a, b| euclidean_similarity(a, b));
 
     println!("   アンカー: クラスA の中心付近 [1.0, 1.0]\n");
     println!("   ネガティブ候補の分析:\n");
-    println!("   {:>15} {:>8} {:>12} {:>15}", "特徴量", "距離タイプ", "KDF層", "学習効果");
+    println!(
+        "   {:>15} {:>8} {:>12} {:>15}",
+        "特徴量", "距離タイプ", "KDF層", "学習効果"
+    );
     println!("   {}", "-".repeat(55));
 
     let anchor = vec![1.0, 1.0];
@@ -83,8 +87,10 @@ fn demo_layer_based_negatives() {
         };
 
         let _dist = euclidean_distance(&anchor, feat);
-        println!("   [{:>4.1}, {:>4.1}] {:>8} {:>12} {:>15}",
-                 feat[0], feat[1], dist_type, layer, effect);
+        println!(
+            "   [{:>4.1}, {:>4.1}] {:>8} {:>12} {:>15}",
+            feat[0], feat[1], dist_type, layer, effect
+        );
     }
 
     println!("\n   【発見】");
@@ -105,33 +111,39 @@ fn demo_hard_negative_mining() {
     // データベース
     let database = vec![
         // 同じクラス (ポジティブ)
-        vec![1.1, 0.9], vec![0.9, 1.1],
+        vec![1.1, 0.9],
+        vec![0.9, 1.1],
         // 異なるクラス (ネガティブ候補)
-        vec![1.5, 1.5], // 近い
-        vec![1.6, 1.4], // 近い
-        vec![2.0, 0.5], // 中程度
-        vec![0.5, 2.0], // 中程度
-        vec![3.0, 3.0], // 遠い
-        vec![4.0, 4.0], // 遠い
+        vec![1.5, 1.5],   // 近い
+        vec![1.6, 1.4],   // 近い
+        vec![2.0, 0.5],   // 中程度
+        vec![0.5, 2.0],   // 中程度
+        vec![3.0, 3.0],   // 遠い
+        vec![4.0, 4.0],   // 遠い
         vec![-2.0, -2.0], // 非常に遠い
     ];
 
-    let result = kdf.process(&database, 0.85, euclidean_similarity);
+    let result = kdf.process(&database, 0.85, |a, b| euclidean_similarity(a, b));
 
     // 異なるマイニング戦略
     println!("   クエリ: [{:.1}, {:.1}]\n", query[0], query[1]);
 
     let strategies = vec![
         ("ランダム", mine_random(&database, 3)),
-        ("距離ベース (近い順)", mine_by_distance(&database, &query, 3)),
+        (
+            "距離ベース (近い順)",
+            mine_by_distance(&database, &query, 3),
+        ),
         ("KDF層ベース (Edge優先)", mine_by_kdf(&database, &result, 3)),
     ];
 
     for (name, indices) in strategies {
         println!("   【{}】", name);
-        let avg_dist: f64 = indices.iter()
+        let avg_dist: f64 = indices
+            .iter()
             .map(|&i| euclidean_distance(&query, &database[i]))
-            .sum::<f64>() / indices.len() as f64;
+            .sum::<f64>()
+            / indices.len() as f64;
 
         print!("   選択: ");
         for &i in &indices {
@@ -165,15 +177,13 @@ fn demo_triplet_mining() {
         ("C", 2, vec![2.0, 3.0]),
         ("C", 2, vec![2.1, 2.9]),
         // 境界ケース
-        ("A", 0, vec![2.0, 1.0]),  // クラス0だがクラス1に近い
-        ("B", 1, vec![2.0, 2.0]),  // クラス1だがクラス2に近い
+        ("A", 0, vec![2.0, 1.0]), // クラス0だがクラス1に近い
+        ("B", 1, vec![2.0, 2.0]), // クラス1だがクラス2に近い
     ];
 
-    let features: Vec<Vec<f64>> = dataset.iter()
-        .map(|(_, _, f)| f.clone())
-        .collect();
+    let features: Vec<Vec<f64>> = dataset.iter().map(|(_, _, f)| f.clone()).collect();
 
-    let result = kdf.process(&features, 0.85, euclidean_similarity);
+    let result = kdf.process(&features, 0.85, |a, b| euclidean_similarity(a, b));
 
     println!("   トリプレット: (Anchor, Positive, Negative)\n");
 
@@ -182,26 +192,35 @@ fn demo_triplet_mining() {
     let anchor = &dataset[anchor_idx];
 
     // ポジティブを選択 (同じクラス)
-    let positives: Vec<usize> = dataset.iter()
+    let positives: Vec<usize> = dataset
+        .iter()
         .enumerate()
         .filter(|(i, (_, label, _))| *i != anchor_idx && *label == anchor.1)
         .map(|(i, _)| i)
         .collect();
 
     // ネガティブを選択 (異なるクラス)
-    let negatives: Vec<usize> = dataset.iter()
+    let negatives: Vec<usize> = dataset
+        .iter()
         .enumerate()
         .filter(|(_, (_, label, _))| *label != anchor.1)
         .map(|(i, _)| i)
         .collect();
 
-    println!("   Anchor: {} [クラス{}] {:?}", anchor.0, anchor.1, anchor.2);
+    println!(
+        "   Anchor: {} [クラス{}] {:?}",
+        anchor.0, anchor.1, anchor.2
+    );
 
     // ポジティブ選択 (Rare優先 - 難しいポジティブ)
     println!("\n   Positive選択 (KDF層別):");
     for &i in &positives {
         let layer = get_layer(&result, i);
-        let difficulty = if layer == "Rare" { "難 (有益)" } else { "易" };
+        let difficulty = if layer == "Rare" {
+            "難 (有益)"
+        } else {
+            "易"
+        };
         println!("      {:?} [{}] {}", dataset[i].2, layer, difficulty);
     }
 
@@ -212,10 +231,19 @@ fn demo_triplet_mining() {
         let dist = euclidean_distance(&anchor.2, &dataset[i].2);
         let usefulness = match layer {
             "Edge" => "★★★ 最適 (ハードネガ)",
-            "Rare" => if dist < 2.0 { "★★ 有効" } else { "★ 情報少" },
+            "Rare" => {
+                if dist < 2.0 {
+                    "★★ 有効"
+                } else {
+                    "★ 情報少"
+                }
+            }
             _ => "★ 基本",
         };
-        println!("      クラス{} {:?} [{}] {:.1} {}", dataset[i].1, dataset[i].2, layer, dist, usefulness);
+        println!(
+            "      クラス{} {:?} [{}] {:.1} {}",
+            dataset[i].1, dataset[i].2, layer, dist, usefulness
+        );
     }
 
     println!("\n   【トリプレット選択戦略】");
@@ -233,10 +261,10 @@ fn demo_learning_efficiency() {
     // 学習データ
     let data = generate_clustered_data();
 
-    let result = kdf.process(&data, 0.85, euclidean_similarity);
+    let result = kdf.process(&data, 0.85, |a, b| euclidean_similarity(a, b));
 
     // 異なるサンプリング戦略をシミュレート
-    let _strategies = vec![
+    let _strategies = [
         "ランダム",
         "Core優先 (イージーネガ)",
         "Edge優先 (適度)",
@@ -244,7 +272,10 @@ fn demo_learning_efficiency() {
     ];
 
     println!("   ネガティブサンプリング戦略の比較:\n");
-    println!("   {:>20} {:>15} {:>15} {:>15}", "戦略", "収束速度", "最終精度", "安定性");
+    println!(
+        "   {:>20} {:>15} {:>15} {:>15}",
+        "戦略", "収束速度", "最終精度", "安定性"
+    );
     println!("   {}", "-".repeat(65));
 
     // シミュレーション結果 (概念的)
@@ -256,7 +287,10 @@ fn demo_learning_efficiency() {
     ];
 
     for (strategy, speed, accuracy, stability) in simulated_results {
-        println!("   {:>20} {:>15} {:>15} {:>15}", strategy, speed, accuracy, stability);
+        println!(
+            "   {:>20} {:>15} {:>15} {:>15}",
+            strategy, speed, accuracy, stability
+        );
     }
 
     println!("\n   【推奨: バランス戦略】");
@@ -268,9 +302,18 @@ fn demo_learning_efficiency() {
 
     // 実際の層構成を表示
     println!("\n   データの層構成:");
-    println!("   Core: {} 件 → イージーネガティブプール", result.core_items().len());
-    println!("   Edge: {} 件 → ハードネガティブプール", result.edge_items().len());
-    println!("   Rare: {} 件 → 超ハードネガティブ (慎重に使用)", result.rare_items().len());
+    println!(
+        "   Core: {} 件 → イージーネガティブプール",
+        result.core_items().len()
+    );
+    println!(
+        "   Edge: {} 件 → ハードネガティブプール",
+        result.edge_items().len()
+    );
+    println!(
+        "   Rare: {} 件 → 超ハードネガティブ (慎重に使用)",
+        result.rare_items().len()
+    );
 }
 
 // ============================================================================
@@ -306,7 +349,8 @@ fn mine_random(data: &[Vec<f64>], n: usize) -> Vec<usize> {
 
 /// 距離ベースマイニング (近い順)
 fn mine_by_distance(data: &[Vec<f64>], query: &[f64], n: usize) -> Vec<usize> {
-    let mut distances: Vec<(usize, f64)> = data.iter()
+    let mut distances: Vec<(usize, f64)> = data
+        .iter()
         .enumerate()
         .map(|(i, d)| (i, euclidean_distance(query, d)))
         .collect();
@@ -376,7 +420,7 @@ fn rand_f64() -> f64 {
 }
 
 /// ユークリッド類似度
-fn euclidean_similarity(a: &Vec<f64>, b: &Vec<f64>) -> f64 {
+fn euclidean_similarity(a: &[f64], b: &[f64]) -> f64 {
     let dist = euclidean_distance(a, b);
     1.0 / (1.0 + dist)
 }

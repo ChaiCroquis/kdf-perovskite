@@ -28,11 +28,13 @@
 use cgb_kdf::framework::{Layer, MasterSpecParams};
 
 fn p_decay(alpha: f64, c: f64, layer: Layer) -> f64 {
-    let mut params = MasterSpecParams::default();
-    params.alpha_edge = alpha;
-    params.alpha_rare = alpha;
-    params.alpha_core = alpha;
-    params.alpha_meta = alpha;
+    let params = MasterSpecParams {
+        alpha_edge: alpha,
+        alpha_rare: alpha,
+        alpha_core: alpha,
+        alpha_meta: alpha,
+        ..Default::default()
+    };
     let lambda = params.lambda(c, layer);
     let dt = params.dt_for_layer(layer);
     1.0 - (-lambda * dt).exp()
@@ -43,8 +45,8 @@ fn alpha_ablation_discrimination_ratio() {
     // Discrimination ratio: P_decay(C_high) / P_decay(C_low).
     // Larger ratio = better selectivity against congested edges.
     let alphas = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0];
-    let c_low = 2.0_f64;      // single-connection rare-adjacent edge
-    let c_high = 20.0_f64;    // core-core edge
+    let c_low = 2.0_f64; // single-connection rare-adjacent edge
+    let c_high = 20.0_f64; // core-core edge
     let layer = Layer::Core;
 
     println!("\n# Phase V1 — Claim 10 α ablation (discrimination ratio)");
@@ -72,9 +74,13 @@ fn alpha_ablation_discrimination_ratio() {
     // (higher power ⇒ larger C^α gap ⇒ larger decay gap)
     let mut prev_ratio = ratios[0].1;
     for &(a, r) in ratios.iter().skip(1) {
-        assert!(r >= prev_ratio - 1e-9,
+        assert!(
+            r >= prev_ratio - 1e-9,
             "Discrimination ratio must be monotone non-decreasing in α; broke at α={}: {} < {}",
-            a, r, prev_ratio);
+            a,
+            r,
+            prev_ratio
+        );
         prev_ratio = r;
     }
     println!("✓ Property 2: discrimination ratio monotone non-decreasing in α");
@@ -82,25 +88,42 @@ fn alpha_ablation_discrimination_ratio() {
     // Property 3: α=2 is within a reasonable range (not at either extreme).
     // More formally: α=2 ratio is within [1.5×, 200×] — the "useful" zone where
     // KDF's decay actually discriminates but doesn't cause numerical extremes.
-    let alpha2_ratio = ratios.iter().find(|(a, _)| (a - 2.0).abs() < 1e-9).unwrap().1;
-    assert!(alpha2_ratio >= 1.5,
+    let alpha2_ratio = ratios
+        .iter()
+        .find(|(a, _)| (a - 2.0).abs() < 1e-9)
+        .unwrap()
+        .1;
+    assert!(
+        alpha2_ratio >= 1.5,
         "α=2 discrimination ratio {} < 1.5× suggests too-weak decay selectivity",
-        alpha2_ratio);
-    assert!(alpha2_ratio <= 200.0,
+        alpha2_ratio
+    );
+    assert!(
+        alpha2_ratio <= 200.0,
         "α=2 discrimination ratio {} > 200× suggests numerical extreme",
-        alpha2_ratio);
-    println!("✓ Property 3: α=2 ratio = {:.2}× falls within useful zone [1.5×, 200×]", alpha2_ratio);
+        alpha2_ratio
+    );
+    println!(
+        "✓ Property 3: α=2 ratio = {:.2}× falls within useful zone [1.5×, 200×]",
+        alpha2_ratio
+    );
 
     // Property 4: Rank of α=2. α=2 should rank at least in top-4 of 6
     // (not top-2 — that would be overclaim; α=2 is *specified*, not *optimal*).
     let rank = ratios.iter().filter(|(_, r)| *r > alpha2_ratio).count() + 1;
-    println!("α=2 rank: {} / {} (higher α gives higher discrimination; this is expected)", rank, ratios.len());
+    println!(
+        "α=2 rank: {} / {} (higher α gives higher discrimination; this is expected)",
+        rank,
+        ratios.len()
+    );
 
-    println!("\n**Conclusion**:
+    println!(
+        "\n**Conclusion**:
 - KDF's exp-survival form produces well-defined P_decay for all tested α
 - Discrimination ratio is monotonically increasing in α as theory predicts
 - α=2 (Claim 10 canonical) lies in a balanced regime: selective enough
   (ratio ≥ 1.5×) but not numerically extreme (ratio ≤ 200×)
 - The ablation does NOT establish α=2 as uniquely optimal; it establishes
-  that α=2 is a valid and well-behaved choice within the framework.");
+  that α=2 is a valid and well-behaved choice within the framework."
+    );
 }

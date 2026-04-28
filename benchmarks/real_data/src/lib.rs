@@ -28,8 +28,12 @@ pub struct Dataset {
 }
 
 impl Dataset {
-    pub fn n_edges(&self) -> usize { self.edges.len() }
-    pub fn n_rare(&self) -> usize { self.rare_ground_truth.len() }
+    pub fn n_edges(&self) -> usize {
+        self.edges.len()
+    }
+    pub fn n_rare(&self) -> usize {
+        self.rare_ground_truth.len()
+    }
 }
 
 /// Trial-level result for a single (dataset, method, seed) run.

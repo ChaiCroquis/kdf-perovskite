@@ -90,6 +90,7 @@ struct Question {
 // =============================================================================
 
 #[derive(Debug, Default)]
+#[allow(dead_code)]
 struct SessionMetrics {
     avg_k_edge: f64,
     avg_k_core: f64,
@@ -114,10 +115,7 @@ struct QuestionResult {
     session_metrics_c4: Vec<SessionMetrics>, // 全 dynamics 乗せた full-loop 条件の trajectory
 }
 
-fn avg_degree_per_layer(
-    edges: &[(u32, u32, f64)],
-    layer_of: &HashMap<u32, Layer>,
-) -> (f64, f64) {
+fn avg_degree_per_layer(edges: &[(u32, u32, f64)], layer_of: &HashMap<u32, Layer>) -> (f64, f64) {
     let mut deg: HashMap<u32, u32> = HashMap::new();
     for &(u, v, _) in edges {
         *deg.entry(u).or_insert(0) += 1;
@@ -191,7 +189,7 @@ fn run_question_streaming(q: &Question) -> QuestionResult {
 
     let mut activation = ActivationScore::default();
     let mut regions = HierarchicalRegionManager::default();
-    let mut meta = MetaController::default();
+    let meta = MetaController::default();
     let transition = TransitionController::new();
     let mut params = MasterSpecParams::default();
     let mut session_metrics: Vec<SessionMetrics> = Vec::new();
@@ -228,7 +226,11 @@ fn run_question_streaming(q: &Question) -> QuestionResult {
 
         // Incremental classify on current graph for avg⟨k⟩
         let mut cur_classifier = NodeClassifier::default();
-        let max_id = if cur_nodes.is_empty() { 0 } else { *cur_nodes.iter().max().unwrap() + 1 };
+        let max_id = if cur_nodes.is_empty() {
+            0
+        } else {
+            *cur_nodes.iter().max().unwrap() + 1
+        };
         let cur_class = cur_classifier.classify(max_id as usize, &cur_edges);
         let cur_layers = cur_class.layers.clone();
 
@@ -249,7 +251,10 @@ fn run_question_streaming(q: &Question) -> QuestionResult {
         for &node in &cur_nodes {
             let cur_region = *node_region.entry(node).or_insert(RegionKind::ShortTerm);
             let empty_nbrs: Vec<u32> = vec![];
-            let nbrs: &[u32] = neighbors.get(&node).map(|v| v.as_slice()).unwrap_or(&empty_nbrs);
+            let nbrs: &[u32] = neighbors
+                .get(&node)
+                .map(|v| v.as_slice())
+                .unwrap_or(&empty_nbrs);
             let conn = (nbrs.len() as f64 / 10.0).min(1.0);
             if let Some(new_region) = transition.step(node, cur_region, conn, nbrs) {
                 match new_region {
@@ -294,11 +299,7 @@ fn run_question_streaming(q: &Question) -> QuestionResult {
     // per-condition temporal_score signals derived from the streaming state.
 
     // C1 +Claim 25: ActivationScore as temporal_score (normalized to [0,1])
-    let max_act = activation
-        .levels
-        .values()
-        .cloned()
-        .fold(1e-9_f64, f64::max);
+    let max_act = activation.levels.values().cloned().fold(1e-9_f64, f64::max);
     let act_norm: Vec<f64> = (0..n_turns as u32)
         .map(|i| (activation.get(i) / max_act).clamp(0.0, 1.0))
         .collect();
@@ -409,7 +410,10 @@ fn main() {
     let data = std::fs::read_to_string(path).expect("Load LoCoMo temporal JSON");
     let questions: Vec<Question> = serde_json::from_str(&data).expect("Parse LoCoMo JSON");
     let n_sample = 30.min(questions.len());
-    println!("Running streaming simulation on first {} LoCoMo temporal Q\n", n_sample);
+    println!(
+        "Running streaming simulation on first {} LoCoMo temporal Q\n",
+        n_sample
+    );
 
     let mut recalls_by_cond: HashMap<&'static str, Vec<f64>> = HashMap::new();
     let mut all_metrics: Vec<Vec<SessionMetrics>> = Vec::new();
@@ -444,18 +448,41 @@ fn main() {
     println!();
     println!("| 条件 | Claim 対象 | mean recall | Δ vs C0_Static |");
     println!("|---|---|---:|---:|");
-    let static_mean = mean(recalls_by_cond.get("C0_Static").map(|v| v.as_slice()).unwrap_or(&[]));
+    let static_mean = mean(
+        recalls_by_cond
+            .get("C0_Static")
+            .map(|v| v.as_slice())
+            .unwrap_or(&[]),
+    );
     let order = [
         ("C0_Static", "(baseline)"),
         ("C1_+Claim25_Activation", "Claim 25 ActivationScore"),
-        ("C2_+Claim27-32_Meta", "Claim 27-32 MetaController(構造的 select には影響無しの is-null 対照)"),
-        ("C3_+Claim23-26_Transition", "Claim 23-26 TransitionController + SemanticImportance"),
-        ("C4_Full_loop", "Claim 20-32 統合(region+activation+meta+transition)"),
+        (
+            "C2_+Claim27-32_Meta",
+            "Claim 27-32 MetaController(構造的 select には影響無しの is-null 対照)",
+        ),
+        (
+            "C3_+Claim23-26_Transition",
+            "Claim 23-26 TransitionController + SemanticImportance",
+        ),
+        (
+            "C4_Full_loop",
+            "Claim 20-32 統合(region+activation+meta+transition)",
+        ),
     ];
     for (key, label) in &order {
-        let v = recalls_by_cond.get(*key).map(|v| v.as_slice()).unwrap_or(&[]);
+        let v = recalls_by_cond
+            .get(*key)
+            .map(|v| v.as_slice())
+            .unwrap_or(&[]);
         let m = mean(v);
-        println!("| {} | {} | {:.4} | {:+.4} |", key, label, m, m - static_mean);
+        println!(
+            "| {} | {} | {:.4} | {:+.4} |",
+            key,
+            label,
+            m,
+            m - static_mean
+        );
     }
 
     // Trajectory統計 (C4 Full loop)
@@ -526,7 +553,11 @@ fn main() {
             && (long_ratio - expected_long).abs() < 0.02;
         println!(
             "  → Claim 21 (5:3:1 比率) realistic 経験的一致: {}",
-            if claim21_ok { "✅ PASS (誤差 < 2 pt)" } else { "⚠️ 乖離あり" }
+            if claim21_ok {
+                "✅ PASS (誤差 < 2 pt)"
+            } else {
+                "⚠️ 乖離あり"
+            }
         );
     }
     println!(
@@ -544,11 +575,21 @@ fn main() {
     println!("- **Claim 21 領域周期 5:3:1** は deterministic な tick count で正確に一致");
     println!("  (integer tick 実装の reproducibility 確認)");
     println!("- **Claim 25 ActivationScore** は event 記録で累積、tick advance で exp 減衰、数値が sensible 範囲内");
-    println!("- **Claim 27-32 MetaController** は δk 観測 + α 更新ループが稼働、α が bound 内で推移");
-    println!("- **Claim 23-26 TransitionController** は promote/demote 数が計測可能、region 遷移を発火");
-    println!("- **C2 (MetaController only)** は 構造的 select にα が影響しないため C0 と同一 recall");
-    println!("  → 静的 snapshot select task では α-adaptation は selection に effect 無し(expected)");
-    println!("- **C1 (Activation)** / **C3 (Transition)** / **C4 (Full)** の recall が C0 と異なるか、");
+    println!(
+        "- **Claim 27-32 MetaController** は δk 観測 + α 更新ループが稼働、α が bound 内で推移"
+    );
+    println!(
+        "- **Claim 23-26 TransitionController** は promote/demote 数が計測可能、region 遷移を発火"
+    );
+    println!(
+        "- **C2 (MetaController only)** は 構造的 select にα が影響しないため C0 と同一 recall"
+    );
+    println!(
+        "  → 静的 snapshot select task では α-adaptation は selection に effect 無し(expected)"
+    );
+    println!(
+        "- **C1 (Activation)** / **C3 (Transition)** / **C4 (Full)** の recall が C0 と異なるか、"
+    );
     println!("  異なる場合はどの dynamic signal が効いたかを上表の Δ で判定");
     println!();
     println!("F-027 (temporal drift rescue) は adversarial Mode E synthetic 下の実証、");

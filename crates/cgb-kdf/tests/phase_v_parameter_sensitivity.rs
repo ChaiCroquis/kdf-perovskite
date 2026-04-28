@@ -21,7 +21,11 @@ fn p_decay(params: &MasterSpecParams, c: f64, layer: Layer) -> f64 {
 fn discrimination_ratio(params: &MasterSpecParams, layer: Layer) -> f64 {
     let pl = p_decay(params, 2.0, layer);
     let ph = p_decay(params, 20.0, layer);
-    if pl > 0.0 { ph / pl } else { f64::INFINITY }
+    if pl > 0.0 {
+        ph / pl
+    } else {
+        f64::INFINITY
+    }
 }
 
 #[test]
@@ -51,14 +55,24 @@ fn beta_sensitivity() {
     let r_double = discrimination_ratio(&p_double, layer);
     println!("\n**Observation**: β is a constant scalar on λ, so P_decay ratio");
     println!("should be (nearly) invariant under β scaling.");
-    println!("Canonical ratio: {:.3}×, β/2 ratio: {:.3}×, 2β ratio: {:.3}×",
-        canon_ratio, r_half, r_double);
+    println!(
+        "Canonical ratio: {:.3}×, β/2 ratio: {:.3}×, 2β ratio: {:.3}×",
+        canon_ratio, r_half, r_double
+    );
 
     // Invariance check: ratios should be within 5% of canonical
-    assert!((r_half / canon_ratio - 1.0).abs() < 0.05,
-        "β half ratio {} not within 5% of canonical {}", r_half, canon_ratio);
-    assert!((r_double / canon_ratio - 1.0).abs() < 0.5,
-        "β double ratio {} not within 50% of canonical {}", r_double, canon_ratio);
+    assert!(
+        (r_half / canon_ratio - 1.0).abs() < 0.05,
+        "β half ratio {} not within 5% of canonical {}",
+        r_half,
+        canon_ratio
+    );
+    assert!(
+        (r_double / canon_ratio - 1.0).abs() < 0.5,
+        "β double ratio {} not within 50% of canonical {}",
+        r_double,
+        canon_ratio
+    );
 }
 
 #[test]
@@ -71,8 +85,14 @@ fn gamma_sensitivity() {
     println!("\n# V2-b: γ_core sensitivity (canonical γ={})", canon_gamma);
     println!("| γ_core | discrimination ratio | deviation |");
     println!("|---:|---:|---:|");
-    let gammas = [canon_gamma * 0.5, canon_gamma * 0.75, canon_gamma,
-                  canon_gamma * 1.25, canon_gamma * 1.5, canon_gamma * 2.0];
+    let gammas = [
+        canon_gamma * 0.5,
+        canon_gamma * 0.75,
+        canon_gamma,
+        canon_gamma * 1.25,
+        canon_gamma * 1.5,
+        canon_gamma * 2.0,
+    ];
     let mut ratios = Vec::new();
     for &g in &gammas {
         let mut p = canonical.clone();
@@ -87,18 +107,27 @@ fn gamma_sensitivity() {
     let r_half = ratios[0];
     let r_double = ratios[5];
     println!("\n**Observation**: γ scales the C^α term in λ. Larger γ ⇒ more");
-    println!("discrimination. γ/2 ratio: {:.3}×, 2γ ratio: {:.3}× (canonical: {:.3}×)",
-        r_half, r_double, canon_ratio);
+    println!(
+        "discrimination. γ/2 ratio: {:.3}×, 2γ ratio: {:.3}× (canonical: {:.3}×)",
+        r_half, r_double, canon_ratio
+    );
 
     // γ は discrimination に effectively linear に効く(C^α の係数)
     // 適切な感度範囲にあることを確認
     assert!(r_half < canon_ratio, "γ/2 should give lower discrimination");
-    assert!(r_double > canon_ratio, "2γ should give higher discrimination");
+    assert!(
+        r_double > canon_ratio,
+        "2γ should give higher discrimination"
+    );
 
     // 大崩れしないことの確認: ±50% でも ratio > 1.0(依然として意味のある decay)
     for (i, &r) in ratios.iter().enumerate() {
-        assert!(r > 1.0, "γ={}: ratio {} dropped below 1.0 (decay no longer discriminating)",
-            gammas[i], r);
+        assert!(
+            r > 1.0,
+            "γ={}: ratio {} dropped below 1.0 (decay no longer discriminating)",
+            gammas[i],
+            r
+        );
     }
 }
 
@@ -151,9 +180,17 @@ fn parameter_robustness_summary() {
     let r_beta_low = discrimination_ratio(&c_beta_low, layer);
     let r_beta_high = discrimination_ratio(&c_beta_high, layer);
     let beta_retention = (r_beta_low.min(r_beta_high)) / canon_r;
-    println!("| β | 0.01 | β=0.005 → {:.2}×, β=0.015 → {:.2}× (保持率 {:.0}%) | {} |",
-        r_beta_low, r_beta_high, beta_retention * 100.0,
-        if beta_retention > 0.8 { "robust ✓" } else { "sensitive ⚠" });
+    println!(
+        "| β | 0.01 | β=0.005 → {:.2}×, β=0.015 → {:.2}× (保持率 {:.0}%) | {} |",
+        r_beta_low,
+        r_beta_high,
+        beta_retention * 100.0,
+        if beta_retention > 0.8 {
+            "robust ✓"
+        } else {
+            "sensitive ⚠"
+        }
+    );
 
     // γ sensitivity
     let mut c_g_low = c.clone();
@@ -162,7 +199,7 @@ fn parameter_robustness_summary() {
     c_g_high.gamma_core = 0.012;
     let r_g_low = discrimination_ratio(&c_g_low, layer);
     let r_g_high = discrimination_ratio(&c_g_high, layer);
-    let g_retention = (r_g_low / canon_r).min(1.0 / (r_g_high / canon_r).max(1.0));
+    let _g_retention = (r_g_low / canon_r).min(1.0 / (r_g_high / canon_r).max(1.0));
     println!("| γ_core | 0.008 | γ=0.004 → {:.2}×, γ=0.012 → {:.2}× | γ scales linearly in ratio, by design |",
         r_g_low, r_g_high);
 
@@ -176,7 +213,12 @@ fn parameter_robustness_summary() {
     println!("KDF は brittle ではない。");
 
     // 最終確認: β の ±50% では retention ≥ 80%
-    assert!(beta_retention > 0.8,
+    assert!(
+        beta_retention > 0.8,
         "β robustness failed: {}× at canonical {} vs {} / {} at ±50%",
-        beta_retention, canon_r, r_beta_low, r_beta_high);
+        beta_retention,
+        canon_r,
+        r_beta_low,
+        r_beta_high
+    );
 }

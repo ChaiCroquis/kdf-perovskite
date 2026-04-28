@@ -17,7 +17,7 @@ struct TestCase {
     /// [code_path_hash, input_complexity, mutation_score, execution_time, coverage_area]
     features: Vec<f64>,
     execution_time_ms: u64,
-    last_failure: Option<u64>,  // Days since last failure
+    last_failure: Option<u64>, // Days since last failure
 }
 
 /// Test selection strategy
@@ -100,7 +100,8 @@ fn select_tests(
         }
     }
 
-    let selected_time: u64 = selected_tests.iter()
+    let selected_time: u64 = selected_tests
+        .iter()
         .map(|&i| tests[i].execution_time_ms)
         .sum();
 
@@ -108,7 +109,8 @@ fn select_tests(
 
     // Estimate coverage based on layer distribution
     let rare_count = result.layers.iter().filter(|&&l| l == Layer::Rare).count();
-    let selected_rare = selected_tests.iter()
+    let selected_rare = selected_tests
+        .iter()
         .filter(|&&i| result.layers[i] == Layer::Rare)
         .count();
 
@@ -159,7 +161,6 @@ fn main() {
             execution_time_ms: 45,
             last_failure: None,
         },
-
         // Unit tests for module B (similar)
         TestCase {
             name: "test_module_b_basic".into(),
@@ -173,7 +174,6 @@ fn main() {
             execution_time_ms: 120,
             last_failure: Some(7),
         },
-
         // Integration tests (unique patterns)
         TestCase {
             name: "test_integration_a_b".into(),
@@ -181,7 +181,6 @@ fn main() {
             execution_time_ms: 500,
             last_failure: Some(3),
         },
-
         // Edge case tests (rare, important)
         TestCase {
             name: "test_edge_case_overflow".into(),
@@ -195,7 +194,6 @@ fn main() {
             execution_time_ms: 150,
             last_failure: None,
         },
-
         // Performance tests (expensive)
         TestCase {
             name: "test_perf_large_input".into(),
@@ -227,12 +225,15 @@ fn main() {
 
     for (i, test) in tests.iter().enumerate() {
         let layer = analysis.layers[i];
-        let selected = if analysis.selected.contains(&i) { "*" } else { " " };
-        println!("{} [{:?}] {} ({}ms)",
-            selected,
-            layer,
-            test.name,
-            test.execution_time_ms);
+        let selected = if analysis.selected.contains(&i) {
+            "*"
+        } else {
+            " "
+        };
+        println!(
+            "{} [{:?}] {} ({}ms)",
+            selected, layer, test.name, test.execution_time_ms
+        );
     }
     println!();
 
@@ -241,19 +242,33 @@ fn main() {
     // =========================================================================
     println!("--- Selection Strategies ---\n");
 
-    for strategy in [SelectionStrategy::Full, SelectionStrategy::Fast, SelectionStrategy::Focused] {
+    for strategy in [
+        SelectionStrategy::Full,
+        SelectionStrategy::Fast,
+        SelectionStrategy::Focused,
+    ] {
         let result = select_tests(&tests, strategy, 0.85);
 
         println!("{:?} Strategy:", strategy);
-        println!("  Tests selected: {} / {}", result.selected_tests.len(), tests.len());
-        println!("  Time saved: {}ms ({:.1}%)",
+        println!(
+            "  Tests selected: {} / {}",
+            result.selected_tests.len(),
+            tests.len()
+        );
+        println!(
+            "  Time saved: {}ms ({:.1}%)",
             result.time_saved_ms,
-            100.0 * result.time_saved_ms as f64 / total_time as f64);
+            100.0 * result.time_saved_ms as f64 / total_time as f64
+        );
         println!("  Est. coverage: {:.1}%", result.estimated_coverage * 100.0);
-        println!("  Selected: {:?}",
-            result.selected_tests.iter()
+        println!(
+            "  Selected: {:?}",
+            result
+                .selected_tests
+                .iter()
                 .map(|&i| tests[i].name.as_str())
-                .collect::<Vec<_>>());
+                .collect::<Vec<_>>()
+        );
         println!();
     }
 
@@ -262,24 +277,40 @@ fn main() {
     // =========================================================================
     println!("--- Prioritized Execution Order ---\n");
 
-    let mut prioritized: Vec<(usize, i32)> = (0..tests.len()).map(|i| {
-        let priority = match analysis.layers[i] {
-            Layer::Rare => 100,  // Highest priority
-            Layer::Edge => 50,
-            Layer::Core => 10,
-        };
-        // Boost recently failed tests
-        let failure_boost = tests[i].last_failure
-            .map(|days| if days < 7 { 30 } else if days < 30 { 10 } else { 0 })
-            .unwrap_or(0);
-        (i, priority + failure_boost)
-    }).collect();
+    let mut prioritized: Vec<(usize, i32)> = (0..tests.len())
+        .map(|i| {
+            let priority = match analysis.layers[i] {
+                Layer::Rare => 100, // Highest priority
+                Layer::Edge => 50,
+                Layer::Core => 10,
+            };
+            // Boost recently failed tests
+            let failure_boost = tests[i]
+                .last_failure
+                .map(|days| {
+                    if days < 7 {
+                        30
+                    } else if days < 30 {
+                        10
+                    } else {
+                        0
+                    }
+                })
+                .unwrap_or(0);
+            (i, priority + failure_boost)
+        })
+        .collect();
 
     prioritized.sort_by(|a, b| b.1.cmp(&a.1));
 
     println!("Recommended execution order:");
     for (rank, (idx, priority)) in prioritized.iter().enumerate() {
-        println!("  {}. {} (priority: {})", rank + 1, tests[*idx].name, priority);
+        println!(
+            "  {}. {} (priority: {})",
+            rank + 1,
+            tests[*idx].name,
+            priority
+        );
     }
     println!();
 

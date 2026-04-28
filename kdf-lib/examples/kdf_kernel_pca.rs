@@ -16,7 +16,12 @@ use std::time::Instant;
 
 /// Euclidean similarity for KDF
 fn euclidean_similarity(a: &[f64], b: &[f64]) -> f64 {
-    let dist: f64 = a.iter().zip(b).map(|(x, y)| (x - y).powi(2)).sum::<f64>().sqrt();
+    let dist: f64 = a
+        .iter()
+        .zip(b)
+        .map(|(x, y)| (x - y).powi(2))
+        .sum::<f64>()
+        .sqrt();
     1.0 / (1.0 + dist)
 }
 
@@ -50,7 +55,8 @@ fn center_gram_matrix(gram: &mut [Vec<f64>]) {
     }
 
     // Compute row means
-    let row_means: Vec<f64> = gram.iter()
+    let row_means: Vec<f64> = gram
+        .iter()
         .map(|row| row.iter().sum::<f64>() / n as f64)
         .collect();
 
@@ -67,7 +73,11 @@ fn center_gram_matrix(gram: &mut [Vec<f64>]) {
 
 /// Simple power iteration for finding top eigenvectors
 /// Returns (eigenvalues, eigenvectors)
-fn power_iteration_eigen(matrix: &[Vec<f64>], n_components: usize, max_iter: usize) -> (Vec<f64>, Vec<Vec<f64>>) {
+fn power_iteration_eigen(
+    matrix: &[Vec<f64>],
+    n_components: usize,
+    max_iter: usize,
+) -> (Vec<f64>, Vec<Vec<f64>>) {
     let n = matrix.len();
     if n == 0 {
         return (vec![], vec![]);
@@ -137,7 +147,11 @@ fn power_iteration_eigen(matrix: &[Vec<f64>], n_components: usize, max_iter: usi
 }
 
 /// Full Kernel PCA pipeline
-fn kernel_pca(data: &[Vec<f64>], n_components: usize, gamma: f64) -> (Vec<f64>, Vec<Vec<f64>>, f64) {
+fn kernel_pca(
+    data: &[Vec<f64>],
+    n_components: usize,
+    gamma: f64,
+) -> (Vec<f64>, Vec<Vec<f64>>, f64) {
     let start = Instant::now();
 
     // Step 1: Compute Gram matrix O(n²)
@@ -164,7 +178,8 @@ fn project_data(
     let n = train_data.len();
 
     // Compute kernel with training data
-    let k_test: Vec<f64> = train_data.iter()
+    let k_test: Vec<f64> = train_data
+        .iter()
         .map(|x| rbf_kernel(x, test_point, gamma))
         .collect();
 
@@ -173,7 +188,8 @@ fn project_data(
     let k_centered: Vec<f64> = k_test.iter().map(|&k| k - k_mean).collect();
 
     // Project onto eigenvectors
-    eigenvectors.iter()
+    eigenvectors
+        .iter()
         .map(|ev| k_centered.iter().zip(ev).map(|(k, e)| k * e).sum())
         .collect()
 }
@@ -228,11 +244,21 @@ fn reconstruction_quality(
     let mut total_similarity = 0.0;
 
     for i in 0..sample_size {
-        let proj_orig = project_data(original_data, &original_data[i], original_eigenvectors, gamma);
-        let proj_reduced = project_data(reduced_data, &original_data[i], reduced_eigenvectors, gamma);
+        let proj_orig = project_data(
+            original_data,
+            &original_data[i],
+            original_eigenvectors,
+            gamma,
+        );
+        let proj_reduced =
+            project_data(reduced_data, &original_data[i], reduced_eigenvectors, gamma);
 
         // Cosine similarity between projections
-        let dot: f64 = proj_orig.iter().zip(&proj_reduced).map(|(a, b)| a * b).sum();
+        let dot: f64 = proj_orig
+            .iter()
+            .zip(&proj_reduced)
+            .map(|(a, b)| a * b)
+            .sum();
         let norm_orig: f64 = proj_orig.iter().map(|x| x * x).sum::<f64>().sqrt();
         let norm_reduced: f64 = proj_reduced.iter().map(|x| x * x).sum::<f64>().sqrt();
 
@@ -271,17 +297,14 @@ fn main() {
         let data = generate_dataset(n, dim);
 
         // KDF compression
-        let kdf = Kdf::new(KdfParams::builder()
-            .selection_sim_threshold(0.5)
-            .build());
+        let kdf = Kdf::new(KdfParams::builder().selection_sim_threshold(0.5).build());
 
         let kdf_start = Instant::now();
         let result = kdf.process(&data, 0.85, |a, b| euclidean_similarity(a, b));
         let kdf_time = kdf_start.elapsed().as_secs_f64() * 1000.0;
 
-        let reduced_data: Vec<Vec<f64>> = result.selected.iter()
-            .map(|&i| data[i].clone())
-            .collect();
+        let reduced_data: Vec<Vec<f64>> =
+            result.selected.iter().map(|&i| data[i].clone()).collect();
 
         let m = reduced_data.len();
         let k = n as f64 / m as f64;
@@ -300,7 +323,13 @@ fn main() {
 
         // Quality assessment
         let quality = if !orig_eigenvectors.is_empty() && !reduced_eigenvectors.is_empty() {
-            reconstruction_quality(&data, &reduced_data, &orig_eigenvectors, &reduced_eigenvectors, gamma)
+            reconstruction_quality(
+                &data,
+                &reduced_data,
+                &orig_eigenvectors,
+                &reduced_eigenvectors,
+                gamma,
+            )
         } else {
             0.0
         };
@@ -321,13 +350,18 @@ fn main() {
     let result = kdf.process(&data_large, 0.9, |a, b| euclidean_similarity(a, b));
     let kdf_time = kdf_start.elapsed().as_secs_f64() * 1000.0;
 
-    let reduced_large: Vec<Vec<f64>> = result.selected.iter()
+    let reduced_large: Vec<Vec<f64>> = result
+        .selected
+        .iter()
         .map(|&i| data_large[i].clone())
         .collect();
 
     println!("   元データ: {} 件", n_large);
-    println!("   KDF圧縮後: {} 件 ({:.1}x圧縮)", reduced_large.len(),
-             n_large as f64 / reduced_large.len() as f64);
+    println!(
+        "   KDF圧縮後: {} 件 ({:.1}x圧縮)",
+        reduced_large.len(),
+        n_large as f64 / reduced_large.len() as f64
+    );
     println!("   KDF処理時間: {:.1}ms\n", kdf_time);
 
     // Time comparison
@@ -360,32 +394,55 @@ fn main() {
     for i in 0..n_components {
         let orig = orig_ev.get(i).copied().unwrap_or(0.0);
         let reduced = reduced_ev.get(i).copied().unwrap_or(0.0);
-        let ratio = if orig.abs() > 1e-10 { reduced / orig } else { 0.0 };
-        println!("   | PC{} | {:>8.4} | {:>10.4} | {:.2} |", i + 1, orig, reduced, ratio);
+        let ratio = if orig.abs() > 1e-10 {
+            reduced / orig
+        } else {
+            0.0
+        };
+        println!(
+            "   | PC{} | {:>8.4} | {:>10.4} | {:.2} |",
+            i + 1,
+            orig,
+            reduced,
+            ratio
+        );
     }
 
     // Rare preservation check
     println!("\n## 5. 希少データ保持確認\n");
 
     let rare_indices: Vec<usize> = (0..data_large.len())
-        .filter(|&i| result.layers.get(i).map_or(false, |l| *l == kdf::Layer::Rare))
+        .filter(|&i| result.layers.get(i).is_some_and(|l| *l == kdf::Layer::Rare))
         .collect();
 
-    let rare_selected: Vec<usize> = rare_indices.iter()
+    let rare_selected: Vec<usize> = rare_indices
+        .iter()
         .filter(|&&i| result.is_selected(i))
         .copied()
         .collect();
 
     println!("   希少データ数: {}", rare_indices.len());
-    println!("   選択された希少データ: {} ({:.0}%)",
-             rare_selected.len(),
-             if rare_indices.is_empty() { 0.0 } else { rare_selected.len() as f64 / rare_indices.len() as f64 * 100.0 });
+    println!(
+        "   選択された希少データ: {} ({:.0}%)",
+        rare_selected.len(),
+        if rare_indices.is_empty() {
+            0.0
+        } else {
+            rare_selected.len() as f64 / rare_indices.len() as f64 * 100.0
+        }
+    );
 
     println!("\n## 6. 主要発見\n");
 
     println!("   【高速化効果】");
-    println!("   ✓ Kernel PCA: {:.1}x高速化 (理論{:.1}x)", actual, theoretical);
-    println!("   ✓ 圧縮率k={}の時、固有値分解O(n³)がO(n³)/k³に", k as usize);
+    println!(
+        "   ✓ Kernel PCA: {:.1}x高速化 (理論{:.1}x)",
+        actual, theoretical
+    );
+    println!(
+        "   ✓ 圧縮率k={}の時、固有値分解O(n³)がO(n³)/k³に",
+        k as usize
+    );
     println!();
     println!("   【品質保持】");
     println!("   ✓ 主成分の方向は概ね保持");

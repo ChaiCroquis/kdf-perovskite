@@ -13,10 +13,13 @@
 //! - **KDF** — Rev.12 classifier + edge-cluster representative
 
 use kdf_demos_common::{
-    visualizer::emit_artifacts,
-    Axis, Conclusion, DemoReport, Metric, MethodResult,
+    visualizer::emit_artifacts, Axis, Conclusion, DemoReport, MethodResult, Metric,
 };
-use real_data_bench::{obsidian, selectors::{KdfSel, RandomSel, Selector}, Dataset};
+use real_data_bench::{
+    obsidian,
+    selectors::{KdfSel, RandomSel, Selector},
+    Dataset,
+};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::PathBuf;
 use std::time::Instant;
@@ -44,14 +47,25 @@ fn main() {
     let ds = obsidian::build(&cfg).expect("obsidian build");
     println!(
         "Loaded {}: n={} nodes, edges={}, rare_truth={}",
-        ds.name, ds.n_nodes, ds.edges.len(), ds.rare_ground_truth.len(),
+        ds.name,
+        ds.n_nodes,
+        ds.edges.len(),
+        ds.rare_ground_truth.len(),
     );
 
     // ---- methods ----
     let methods: Vec<(String, Box<dyn Selector>, bool)> = vec![
-        ("Random".to_string(), Box::new(RandomSel { p: SELECTION_FRAC }), false),
+        (
+            "Random".to_string(),
+            Box::new(RandomSel { p: SELECTION_FRAC }),
+            false,
+        ),
         ("OrphanOnly".to_string(), Box::new(OrphanOnly), false),
-        ("TextSim".to_string(), Box::new(TextSimSelector::new(SELECTION_FRAC)), false),
+        (
+            "TextSim".to_string(),
+            Box::new(TextSimSelector::new(SELECTION_FRAC)),
+            false,
+        ),
         ("KDF".to_string(), Box::new(KdfSel), false),
     ];
 
@@ -67,10 +81,16 @@ fn main() {
             let selected = sel.select(&ds, seed);
             let ms = start.elapsed().as_secs_f64() * 1000.0;
             let m = compute_metrics(&ds, &selected);
-            per_method_metrics.entry(name.clone()).or_default().push(m.clone());
+            per_method_metrics
+                .entry(name.clone())
+                .or_default()
+                .push(m.clone());
             per_method_wall.entry(name.clone()).or_default().push(ms);
             for (k, v) in m.as_iter() {
-                raw_trials.entry(format!("{}/{}", name, k)).or_default().push(v);
+                raw_trials
+                    .entry(format!("{}/{}", name, k))
+                    .or_default()
+                    .push(v);
             }
         }
     }
@@ -80,31 +100,36 @@ fn main() {
         Metric {
             name: "rare_recall".to_string(),
             higher_is_better: true,
-            mean: 0.0, stderr: 0.0,
+            mean: 0.0,
+            stderr: 0.0,
             axis: Axis::KdfStrength,
         },
         Metric {
             name: "analogy_pair_count".to_string(),
             higher_is_better: true,
-            mean: 0.0, stderr: 0.0,
+            mean: 0.0,
+            stderr: 0.0,
             axis: Axis::KdfStrength,
         },
         Metric {
             name: "compression".to_string(),
             higher_is_better: true,
-            mean: 0.0, stderr: 0.0,
+            mean: 0.0,
+            stderr: 0.0,
             axis: Axis::KdfStrength,
         },
         Metric {
             name: "precision_at_rare".to_string(),
             higher_is_better: true,
-            mean: 0.0, stderr: 0.0,
+            mean: 0.0,
+            stderr: 0.0,
             axis: Axis::Tie,
         },
         Metric {
             name: "wall_ms".to_string(),
             higher_is_better: false,
-            mean: 0.0, stderr: 0.0,
+            mean: 0.0,
+            stderr: 0.0,
             axis: Axis::KdfWeakness,
         },
     ];
@@ -115,16 +140,27 @@ fn main() {
         let walls = &per_method_wall[name];
         let n = samples.len() as f64;
         let mut metrics = BTreeMap::new();
-        metrics.insert("rare_recall".to_string(),
-            samples.iter().map(|s| s.rare_recall).sum::<f64>() / n);
-        metrics.insert("precision_at_rare".to_string(),
-            samples.iter().map(|s| s.precision_at_rare).sum::<f64>() / n);
-        metrics.insert("compression".to_string(),
-            samples.iter().map(|s| s.compression).sum::<f64>() / n);
-        metrics.insert("analogy_pair_count".to_string(),
-            samples.iter().map(|s| s.analogy_pair_count as f64).sum::<f64>() / n);
-        metrics.insert("wall_ms".to_string(),
-            walls.iter().sum::<f64>() / n);
+        metrics.insert(
+            "rare_recall".to_string(),
+            samples.iter().map(|s| s.rare_recall).sum::<f64>() / n,
+        );
+        metrics.insert(
+            "precision_at_rare".to_string(),
+            samples.iter().map(|s| s.precision_at_rare).sum::<f64>() / n,
+        );
+        metrics.insert(
+            "compression".to_string(),
+            samples.iter().map(|s| s.compression).sum::<f64>() / n,
+        );
+        metrics.insert(
+            "analogy_pair_count".to_string(),
+            samples
+                .iter()
+                .map(|s| s.analogy_pair_count as f64)
+                .sum::<f64>()
+                / n,
+        );
+        metrics.insert("wall_ms".to_string(), walls.iter().sum::<f64>() / n);
 
         method_results.push(MethodResult {
             method: name.clone(),
@@ -165,8 +201,10 @@ fn main() {
     let out_dir = std::path::Path::new("demos/D1_obsidian/out");
     emit_artifacts(&report, out_dir).expect("emit artifacts");
     println!("\n✅ D1 artifacts written to {}", out_dir.display());
-    println!("   Next: python demos/scripts/render_visualizations.py {}",
-        out_dir.join("report.json").display());
+    println!(
+        "   Next: python demos/scripts/render_visualizations.py {}",
+        out_dir.join("report.json").display()
+    );
 }
 
 // ============================================================================
@@ -196,7 +234,9 @@ fn compute_metrics(ds: &Dataset, selected: &HashSet<u32>) -> MetricSample {
     let n_rare_total = ds.rare_ground_truth.len().max(1);
     let n_rare_sel = selected.intersection(&ds.rare_ground_truth).count();
     let rare_recall = n_rare_sel as f64 / n_rare_total as f64;
-    let precision_at_rare = if selected.is_empty() { 0.0 } else {
+    let precision_at_rare = if selected.is_empty() {
+        0.0
+    } else {
         n_rare_sel as f64 / selected.len() as f64
     };
     let compression = 1.0 - selected.len() as f64 / ds.n_nodes.max(1) as f64;
@@ -206,7 +246,12 @@ fn compute_metrics(ds: &Dataset, selected: &HashSet<u32>) -> MetricSample {
     // despite being non-adjacent? This measures "structural twin discovery".
     let analogy_pair_count = count_analogy_pairs(ds, selected);
 
-    MetricSample { rare_recall, precision_at_rare, compression, analogy_pair_count }
+    MetricSample {
+        rare_recall,
+        precision_at_rare,
+        compression,
+        analogy_pair_count,
+    }
 }
 
 fn count_analogy_pairs(ds: &Dataset, selected: &HashSet<u32>) -> usize {
@@ -215,18 +260,30 @@ fn count_analogy_pairs(ds: &Dataset, selected: &HashSet<u32>) -> usize {
         neighbors.entry(u).or_default().push(v);
         neighbors.entry(v).or_default().push(u);
     }
-    for ns in neighbors.values_mut() { ns.sort(); ns.dedup(); }
+    for ns in neighbors.values_mut() {
+        ns.sort();
+        ns.dedup();
+    }
 
     let mut sig_to_ids: HashMap<Vec<u32>, Vec<u32>> = HashMap::new();
     for &id in selected {
         if let Some(ns) = neighbors.get(&id) {
-            if ns.len() < 3 { continue; }
+            if ns.len() < 3 {
+                continue;
+            }
             sig_to_ids.entry(ns.clone()).or_default().push(id);
         }
     }
-    sig_to_ids.values().map(|v| {
-        if v.len() >= 2 { v.len() * (v.len() - 1) / 2 } else { 0 }
-    }).sum()
+    sig_to_ids
+        .values()
+        .map(|v| {
+            if v.len() >= 2 {
+                v.len() * (v.len() - 1) / 2
+            } else {
+                0
+            }
+        })
+        .sum()
 }
 
 // ============================================================================
@@ -235,14 +292,22 @@ fn count_analogy_pairs(ds: &Dataset, selected: &HashSet<u32>) -> usize {
 
 struct OrphanOnly;
 impl Selector for OrphanOnly {
-    fn name(&self) -> &str { "OrphanOnly" }
+    fn name(&self) -> &str {
+        "OrphanOnly"
+    }
     fn select(&self, ds: &Dataset, _seed: u64) -> HashSet<u32> {
         let mut deg = vec![0u32; ds.n_nodes];
         for &(u, v, _) in &ds.edges {
-            if (u as usize) < ds.n_nodes { deg[u as usize] += 1; }
-            if (v as usize) < ds.n_nodes { deg[v as usize] += 1; }
+            if (u as usize) < ds.n_nodes {
+                deg[u as usize] += 1;
+            }
+            if (v as usize) < ds.n_nodes {
+                deg[v as usize] += 1;
+            }
         }
-        (0..ds.n_nodes as u32).filter(|&i| deg[i as usize] == 0).collect()
+        (0..ds.n_nodes as u32)
+            .filter(|&i| deg[i as usize] == 0)
+            .collect()
     }
 }
 
@@ -261,10 +326,14 @@ struct TextSimSelector {
     frac: f64,
 }
 impl TextSimSelector {
-    fn new(frac: f64) -> Self { Self { frac } }
+    fn new(frac: f64) -> Self {
+        Self { frac }
+    }
 }
 impl Selector for TextSimSelector {
-    fn name(&self) -> &str { "TextSim" }
+    fn name(&self) -> &str {
+        "TextSim"
+    }
     fn select(&self, ds: &Dataset, _seed: u64) -> HashSet<u32> {
         // Build neighbor index
         let mut neighbors: HashMap<u32, Vec<u32>> = HashMap::new();
@@ -272,7 +341,10 @@ impl Selector for TextSimSelector {
             neighbors.entry(u).or_default().push(v);
             neighbors.entry(v).or_default().push(u);
         }
-        for ns in neighbors.values_mut() { ns.sort(); ns.dedup(); }
+        for ns in neighbors.values_mut() {
+            ns.sort();
+            ns.dedup();
+        }
 
         // Score: 1 / (frequency of neighbor-set pattern). Rarer pattern ⇒ higher score.
         let mut pattern_count: HashMap<Vec<u32>, u32> = HashMap::new();

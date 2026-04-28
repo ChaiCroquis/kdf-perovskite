@@ -21,13 +21,14 @@ struct Individual {
 
 impl Individual {
     fn new(genes: Vec<f64>) -> Self {
-        Self { genes, fitness: 0.0 }
+        Self {
+            genes,
+            fitness: 0.0,
+        }
     }
 
     fn random(dim: usize) -> Self {
-        let genes: Vec<f64> = (0..dim)
-            .map(|_| (rand_simple() * 2.0) - 1.0)
-            .collect();
+        let genes: Vec<f64> = (0..dim).map(|_| (rand_simple() * 2.0) - 1.0).collect();
         Self::new(genes)
     }
 }
@@ -52,7 +53,8 @@ fn reset_seed(seed: u64) {
 /// Global minimum: f(0,0,...,0) = 0
 fn rastrigin(x: &[f64]) -> f64 {
     let n = x.len() as f64;
-    let sum: f64 = x.iter()
+    let sum: f64 = x
+        .iter()
         .map(|&xi| xi * xi - 10.0 * (2.0 * std::f64::consts::PI * xi).cos())
         .sum();
     10.0 * n + sum
@@ -60,7 +62,8 @@ fn rastrigin(x: &[f64]) -> f64 {
 
 /// Euclidean similarity for genes
 fn gene_similarity(a: &[f64], b: &[f64]) -> f64 {
-    let dist: f64 = a.iter()
+    let dist: f64 = a
+        .iter()
         .zip(b)
         .map(|(x, y)| (x - y).powi(2))
         .sum::<f64>()
@@ -70,11 +73,11 @@ fn gene_similarity(a: &[f64], b: &[f64]) -> f64 {
 
 /// Crossover two individuals
 fn crossover(p1: &Individual, p2: &Individual) -> Individual {
-    let genes: Vec<f64> = p1.genes.iter()
+    let genes: Vec<f64> = p1
+        .genes
+        .iter()
         .zip(&p2.genes)
-        .map(|(&g1, &g2)| {
-            if rand_simple() < 0.5 { g1 } else { g2 }
-        })
+        .map(|(&g1, &g2)| if rand_simple() < 0.5 { g1 } else { g2 })
         .collect();
     Individual::new(genes)
 }
@@ -91,9 +94,7 @@ fn mutate(ind: &mut Individual, rate: f64) {
 
 /// Standard GA with tournament selection
 fn standard_ga(pop_size: usize, dim: usize, generations: usize) -> (f64, f64, Vec<f64>) {
-    let mut population: Vec<Individual> = (0..pop_size)
-        .map(|_| Individual::random(dim))
-        .collect();
+    let mut population: Vec<Individual> = (0..pop_size).map(|_| Individual::random(dim)).collect();
 
     let mut best_fitness_history = Vec::new();
     let mut best_ever = f64::MAX;
@@ -105,7 +106,10 @@ fn standard_ga(pop_size: usize, dim: usize, generations: usize) -> (f64, f64, Ve
         }
 
         // Track best
-        let gen_best = population.iter().map(|i| i.fitness).fold(f64::MAX, f64::min);
+        let gen_best = population
+            .iter()
+            .map(|i| i.fitness)
+            .fold(f64::MAX, f64::min);
         best_ever = best_ever.min(gen_best);
         best_fitness_history.push(best_ever);
 
@@ -140,7 +144,10 @@ fn standard_ga(pop_size: usize, dim: usize, generations: usize) -> (f64, f64, Ve
     for ind in &mut population {
         ind.fitness = rastrigin(&ind.genes);
     }
-    let final_best = population.iter().map(|i| i.fitness).fold(f64::MAX, f64::min);
+    let final_best = population
+        .iter()
+        .map(|i| i.fitness)
+        .fold(f64::MAX, f64::min);
 
     // Calculate diversity (average pairwise distance)
     let diversity = calculate_diversity(&population);
@@ -150,9 +157,7 @@ fn standard_ga(pop_size: usize, dim: usize, generations: usize) -> (f64, f64, Ve
 
 /// KDF-enhanced GA with adaptive diversity control
 fn kdf_ga(pop_size: usize, dim: usize, generations: usize) -> (f64, f64, Vec<f64>) {
-    let mut population: Vec<Individual> = (0..pop_size)
-        .map(|_| Individual::random(dim))
-        .collect();
+    let mut population: Vec<Individual> = (0..pop_size).map(|_| Individual::random(dim)).collect();
 
     let mut best_fitness_history = Vec::new();
     let mut best_ever = f64::MAX;
@@ -166,7 +171,10 @@ fn kdf_ga(pop_size: usize, dim: usize, generations: usize) -> (f64, f64, Vec<f64
         }
 
         // Track best
-        let gen_best = population.iter().map(|i| i.fitness).fold(f64::MAX, f64::min);
+        let gen_best = population
+            .iter()
+            .map(|i| i.fitness)
+            .fold(f64::MAX, f64::min);
         best_ever = best_ever.min(gen_best);
         best_fitness_history.push(best_ever);
 
@@ -190,15 +198,14 @@ fn kdf_ga(pop_size: usize, dim: usize, generations: usize) -> (f64, f64, Vec<f64
 
         if apply_kdf {
             // Use KDF to identify unique individuals in the rest
-            let rest: Vec<Vec<f64>> = population.iter()
+            let rest: Vec<Vec<f64>> = population
+                .iter()
                 .skip(elite_count)
                 .map(|i| i.genes.clone())
                 .collect();
 
             if rest.len() > 5 {
-                let kdf = Kdf::new(KdfParams::builder()
-                    .selection_sim_threshold(0.5)
-                    .build());
+                let kdf = Kdf::new(KdfParams::builder().selection_sim_threshold(0.5).build());
                 let sim_threshold = if stagnation_count > 10 { 0.7 } else { 0.85 };
                 let result = kdf.process(&rest, sim_threshold, |a, b| gene_similarity(a, b));
 
@@ -252,7 +259,10 @@ fn kdf_ga(pop_size: usize, dim: usize, generations: usize) -> (f64, f64, Vec<f64
     for ind in &mut population {
         ind.fitness = rastrigin(&ind.genes);
     }
-    let final_best = population.iter().map(|i| i.fitness).fold(f64::MAX, f64::min);
+    let final_best = population
+        .iter()
+        .map(|i| i.fitness)
+        .fold(f64::MAX, f64::min);
 
     let diversity = calculate_diversity(&population);
 
@@ -261,9 +271,7 @@ fn kdf_ga(pop_size: usize, dim: usize, generations: usize) -> (f64, f64, Vec<f64
 
 /// Fitness-proportionate selection GA (roulette wheel)
 fn roulette_ga(pop_size: usize, dim: usize, generations: usize) -> (f64, f64, Vec<f64>) {
-    let mut population: Vec<Individual> = (0..pop_size)
-        .map(|_| Individual::random(dim))
-        .collect();
+    let mut population: Vec<Individual> = (0..pop_size).map(|_| Individual::random(dim)).collect();
 
     let mut best_fitness_history = Vec::new();
     let mut best_ever = f64::MAX;
@@ -275,15 +283,16 @@ fn roulette_ga(pop_size: usize, dim: usize, generations: usize) -> (f64, f64, Ve
         }
 
         // Track best
-        let gen_best = population.iter().map(|i| i.fitness).fold(f64::MAX, f64::min);
+        let gen_best = population
+            .iter()
+            .map(|i| i.fitness)
+            .fold(f64::MAX, f64::min);
         best_ever = best_ever.min(gen_best);
         best_fitness_history.push(best_ever);
 
         // Invert fitness for minimization (lower is better -> higher selection prob)
         let max_fit = population.iter().map(|i| i.fitness).fold(0.0f64, f64::max) + 1.0;
-        let inv_fitness: Vec<f64> = population.iter()
-            .map(|i| max_fit - i.fitness)
-            .collect();
+        let inv_fitness: Vec<f64> = population.iter().map(|i| max_fit - i.fitness).collect();
         let total: f64 = inv_fitness.iter().sum();
 
         // Roulette wheel selection
@@ -314,7 +323,10 @@ fn roulette_ga(pop_size: usize, dim: usize, generations: usize) -> (f64, f64, Ve
     for ind in &mut population {
         ind.fitness = rastrigin(&ind.genes);
     }
-    let final_best = population.iter().map(|i| i.fitness).fold(f64::MAX, f64::min);
+    let final_best = population
+        .iter()
+        .map(|i| i.fitness)
+        .fold(f64::MAX, f64::min);
 
     let diversity = calculate_diversity(&population);
 
@@ -332,7 +344,9 @@ fn calculate_diversity(population: &[Individual]) -> f64 {
 
     for i in 0..population.len() {
         for j in (i + 1)..population.len() {
-            let dist: f64 = population[i].genes.iter()
+            let dist: f64 = population[i]
+                .genes
+                .iter()
                 .zip(&population[j].genes)
                 .map(|(a, b)| (a - b).powi(2))
                 .sum::<f64>()
@@ -397,26 +411,44 @@ fn main() {
 
     println!("   | 手法 | 最良適応度 | 最終多様性 | 局所最適回避 |");
     println!("   |------|------------|------------|--------------|");
-    println!("   | Standard GA     | {:>10.4} | {:>10.4} | {} |",
-             std_best, std_div, if std_best < 5.0 { "○" } else { "×" });
-    println!("   | Roulette GA     | {:>10.4} | {:>10.4} | {} |",
-             rou_best, rou_div, if rou_best < 5.0 { "○" } else { "×" });
-    println!("   | KDF-enhanced GA | {:>10.4} | {:>10.4} | {} |",
-             kdf_best, kdf_div, if kdf_best < 5.0 { "○" } else { "×" });
+    println!(
+        "   | Standard GA     | {:>10.4} | {:>10.4} | {} |",
+        std_best,
+        std_div,
+        if std_best < 5.0 { "○" } else { "×" }
+    );
+    println!(
+        "   | Roulette GA     | {:>10.4} | {:>10.4} | {} |",
+        rou_best,
+        rou_div,
+        if rou_best < 5.0 { "○" } else { "×" }
+    );
+    println!(
+        "   | KDF-enhanced GA | {:>10.4} | {:>10.4} | {} |",
+        kdf_best,
+        kdf_div,
+        if kdf_best < 5.0 { "○" } else { "×" }
+    );
 
     // Analysis
     println!("\n## 分析\n");
 
     println!("   【多様性維持】");
     if kdf_div > std_div {
-        println!("   ✓ KDF: 多様性 {:.2} (Standard比 +{:.1}%)",
-                 kdf_div, (kdf_div / std_div - 1.0) * 100.0);
+        println!(
+            "   ✓ KDF: 多様性 {:.2} (Standard比 +{:.1}%)",
+            kdf_div,
+            (kdf_div / std_div - 1.0) * 100.0
+        );
     }
 
     println!("\n   【最適化性能】");
     if kdf_best < std_best {
-        println!("   ✓ KDF: 最良解 {:.4} (Standard比 -{:.1}%改善)",
-                 kdf_best, (1.0 - kdf_best / std_best) * 100.0);
+        println!(
+            "   ✓ KDF: 最良解 {:.4} (Standard比 -{:.1}%改善)",
+            kdf_best,
+            (1.0 - kdf_best / std_best) * 100.0
+        );
     }
 
     // Convergence comparison (single run for visualization)
@@ -433,8 +465,10 @@ fn main() {
     for gen in [0, 10, 25, 50, 75, 99] {
         if gen < std_hist.len() && gen < kdf_hist.len() {
             let diff = std_hist[gen] - kdf_hist[gen];
-            println!("   {:>4} | {:>8.4} | {:>8.4} | {:>+7.4}",
-                     gen, std_hist[gen], kdf_hist[gen], diff);
+            println!(
+                "   {:>4} | {:>8.4} | {:>8.4} | {:>+7.4}",
+                gen, std_hist[gen], kdf_hist[gen], diff
+            );
         }
     }
 

@@ -26,20 +26,20 @@ impl RelationType {
     /// Get compatible relation types for mapping
     pub fn compatible_types(&self) -> HashSet<RelationType> {
         match self {
-            RelationType::Causal => {
-                [RelationType::Causal, RelationType::Enables].into_iter().collect()
-            }
+            RelationType::Causal => [RelationType::Causal, RelationType::Enables]
+                .into_iter()
+                .collect(),
             RelationType::Temporal => [RelationType::Temporal].into_iter().collect(),
-            RelationType::Similarity => {
-                [RelationType::Similarity, RelationType::Contrast].into_iter().collect()
-            }
+            RelationType::Similarity => [RelationType::Similarity, RelationType::Contrast]
+                .into_iter()
+                .collect(),
             RelationType::PartOf => [RelationType::PartOf].into_iter().collect(),
-            RelationType::Enables => {
-                [RelationType::Enables, RelationType::Causal].into_iter().collect()
-            }
-            RelationType::Contrast => {
-                [RelationType::Contrast, RelationType::Similarity].into_iter().collect()
-            }
+            RelationType::Enables => [RelationType::Enables, RelationType::Causal]
+                .into_iter()
+                .collect(),
+            RelationType::Contrast => [RelationType::Contrast, RelationType::Similarity]
+                .into_iter()
+                .collect(),
             RelationType::Attribute => [RelationType::Attribute].into_iter().collect(),
         }
     }
@@ -273,7 +273,12 @@ impl AnalogyDiscoveryEngine {
     }
 
     /// Generate semantic vector (hash-based)
-    pub fn generate_semantic_vector(&self, node_id: &str, label: &NodeLabel, domain: &str) -> Vec<f64> {
+    pub fn generate_semantic_vector(
+        &self,
+        node_id: &str,
+        label: &NodeLabel,
+        domain: &str,
+    ) -> Vec<f64> {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
 
@@ -438,7 +443,8 @@ impl AnalogyDiscoveryEngine {
         let access_sim = if access_sum == 0 {
             1.0
         } else {
-            1.0 - (source.access_count as f64 - target.access_count as f64).abs() / access_sum as f64
+            1.0 - (source.access_count as f64 - target.access_count as f64).abs()
+                / access_sum as f64
         };
 
         (deg_sim + cluster_sim + access_sim) / 3.0
@@ -509,7 +515,9 @@ struct SimpleRng {
 
 impl SimpleRng {
     fn new(seed: u64) -> Self {
-        Self { state: seed.wrapping_add(1) }
+        Self {
+            state: seed.wrapping_add(1),
+        }
     }
 
     fn next(&mut self) -> u64 {
@@ -584,7 +592,9 @@ mod tests {
         let mut target2 = NodeFeatures::new("target2".to_string());
         target2.degree = 100;
         target2.clustering_coef = 0.1;
-        target2.outgoing_relation_types.insert(RelationType::Contrast);
+        target2
+            .outgoing_relation_types
+            .insert(RelationType::Contrast);
         engine.register_node("target2", target2, &NodeLabel::Garbage);
 
         let candidates = vec!["target1".to_string(), "target2".to_string()];
@@ -637,7 +647,9 @@ mod tests {
 
         let mut node2 = NodeFeatures::new("n2".to_string());
         node2.outgoing_relation_types.insert(RelationType::Causal);
-        node2.outgoing_relation_types.insert(RelationType::Similarity);
+        node2
+            .outgoing_relation_types
+            .insert(RelationType::Similarity);
 
         let sim = engine.compute_relational_similarity(&node1, &node2);
         // Jaccard: 1 intersection / 3 union = 0.333...
@@ -652,16 +664,26 @@ mod tests {
         let mut engine = AnalogyDiscoveryEngine::default();
         // Structural representation (fingerprint) generation is observable:
         let f1 = engine.fingerprint_engine_mut().compute_fingerprint(
-            "src", &NodeLabel::IsolatedTruth, None,
+            "src",
+            &NodeLabel::IsolatedTruth,
+            None,
         );
-        let f2 = engine.fingerprint_engine_mut().compute_fingerprint(
-            "tgt", &NodeLabel::Normal, None,
+        let f2 =
+            engine
+                .fingerprint_engine_mut()
+                .compute_fingerprint("tgt", &NodeLabel::Normal, None);
+        assert_eq!(
+            f1.len(),
+            32,
+            "Claim 43: 構造表現 must be a fixed-length vector"
         );
-        assert_eq!(f1.len(), 32, "Claim 43: 構造表現 must be a fixed-length vector");
         assert_eq!(f2.len(), 32);
         // Different labels ⇒ different fingerprints (representation is meaningful)
         let identical: bool = f1.iter().zip(f2.iter()).all(|(a, b)| (a - b).abs() < 1e-12);
-        assert!(!identical, "Claim 43: structural representation must encode label info");
+        assert!(
+            !identical,
+            "Claim 43: structural representation must encode label info"
+        );
     }
 
     #[test]
@@ -672,13 +694,23 @@ mod tests {
         let rel = engine.relational_weight;
         let att = engine.attribute_weight;
         // All weights positive
-        assert!(sys > 0.0 && rel > 0.0 && att > 0.0,
-            "Claim 44: all three weights must be positive");
+        assert!(
+            sys > 0.0 && rel > 0.0 && att > 0.0,
+            "Claim 44: all three weights must be positive"
+        );
         // Ratio 7:2:1 (within floating-point tolerance)
-        assert!((sys / att - 7.0).abs() < 1e-9,
-            "Claim 44: systematic:attribute = 7:1 (got {}:{})", sys, att);
-        assert!((rel / att - 2.0).abs() < 1e-9,
-            "Claim 44: relational:attribute = 2:1 (got {}:{})", rel, att);
+        assert!(
+            (sys / att - 7.0).abs() < 1e-9,
+            "Claim 44: systematic:attribute = 7:1 (got {}:{})",
+            sys,
+            att
+        );
+        assert!(
+            (rel / att - 2.0).abs() < 1e-9,
+            "Claim 44: relational:attribute = 2:1 (got {}:{})",
+            rel,
+            att
+        );
     }
 
     #[test]
@@ -708,11 +740,13 @@ mod tests {
         let _ = engine.find_analogy("src", &["tgt1".into(), "tgt2".into()]);
         // Sum-of-positive-weights bound: max achievable overall_score ≤ 1
         // (since each similarity is ≤ 1 and weights sum to 1 for default).
-        let weight_sum = engine.systematic_weight
-            + engine.relational_weight
-            + engine.attribute_weight;
-        assert!((weight_sum - 1.0).abs() < 1e-9,
-            "Claim 45: weighted sum of positive coefficients (sum={})", weight_sum);
+        let weight_sum =
+            engine.systematic_weight + engine.relational_weight + engine.attribute_weight;
+        assert!(
+            (weight_sum - 1.0).abs() < 1e-9,
+            "Claim 45: weighted sum of positive coefficients (sum={})",
+            weight_sum
+        );
     }
 
     #[test]
@@ -726,24 +760,37 @@ mod tests {
         // Build a trivial 3-node Laplacian: path graph 0-1-2
         // Degrees: [1, 2, 1]; adjacency -1 on edges.
         let mut lap = DMatrix::<f64>::zeros(3, 3);
-        lap[(0, 0)] = 1.0; lap[(0, 1)] = -1.0;
-        lap[(1, 0)] = -1.0; lap[(1, 1)] = 2.0; lap[(1, 2)] = -1.0;
-        lap[(2, 1)] = -1.0; lap[(2, 2)] = 1.0;
+        lap[(0, 0)] = 1.0;
+        lap[(0, 1)] = -1.0;
+        lap[(1, 0)] = -1.0;
+        lap[(1, 1)] = 2.0;
+        lap[(1, 2)] = -1.0;
+        lap[(2, 1)] = -1.0;
+        lap[(2, 2)] = 1.0;
 
         let fp = engine.compute_fingerprint("x", &NodeLabel::Normal, Some(&lap));
-        assert_eq!(fp.len(), 32,
-            "Claim 46: fixed-length eigenvalue-derived vector expected");
+        assert_eq!(
+            fp.len(),
+            32,
+            "Claim 46: fixed-length eigenvalue-derived vector expected"
+        );
 
         // θ_L default must be within [0.70, 0.80] (Claim 46 explicit range)
         let adj = crate::analogy::AnalogyDiscoveryEngine::default();
-        assert!((0.70..=0.80).contains(&adj.discovery_threshold),
-            "Claim 46: θ_L default must be inside [0.70, 0.80]");
+        assert!(
+            (0.70..=0.80).contains(&adj.discovery_threshold),
+            "Claim 46: θ_L default must be inside [0.70, 0.80]"
+        );
 
         // Pre-screening is enabled with top-k percent ≤ some reasonable narrowing
-        assert!(adj.screening_enabled,
-            "Claim 46: simple-distance pre-screening must be enabled");
-        assert!(adj.top_k_percent > 0.0 && adj.top_k_percent <= 0.5,
-            "Claim 46: top-k% must narrow candidate pool");
+        assert!(
+            adj.screening_enabled,
+            "Claim 46: simple-distance pre-screening must be enabled"
+        );
+        assert!(
+            adj.top_k_percent > 0.0 && adj.top_k_percent <= 0.5,
+            "Claim 46: top-k% must narrow candidate pool"
+        );
     }
 
     #[test]

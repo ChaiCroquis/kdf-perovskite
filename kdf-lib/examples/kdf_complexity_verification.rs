@@ -6,7 +6,7 @@
 //!
 //! Run: cargo run --release --example kdf_complexity_verification
 
-use kdf::{Kdf, Layer, cosine_similarity};
+use kdf::{cosine_similarity, Kdf, Layer};
 use std::time::Instant;
 
 /// Count similarity comparisons (instrumented version)
@@ -41,7 +41,7 @@ fn generate_redundant_data(n: usize, dim: usize) -> Vec<Vec<f64>> {
     // 10% rare (orthogonal)
     for i in 0..(n / 10) {
         let mut rare = vec![0.0; dim];
-        rare[i % dim] = 1.0;  // Each rare point is unique
+        rare[i % dim] = 1.0; // Each rare point is unique
         data.push(rare);
     }
 
@@ -54,9 +54,7 @@ fn generate_diverse_data(n: usize, dim: usize) -> Vec<Vec<f64>> {
 
     for i in 0..n {
         let angle = (i as f64) * std::f64::consts::PI / n as f64;
-        let point: Vec<f64> = (0..dim)
-            .map(|d| (angle + d as f64 * 0.1).sin())
-            .collect();
+        let point: Vec<f64> = (0..dim).map(|d| (angle + d as f64 * 0.1).sin()).collect();
         data.push(point);
     }
 
@@ -95,8 +93,13 @@ fn main() {
         let data = generate_redundant_data(n, dim);
         let (actual, _, theoretical) = count_comparisons(&data, threshold);
         let matches = actual == theoretical;
-        println!("| {} | {} | {} | {} |",
-                 n, theoretical, actual, if matches { "✓" } else { "✗" });
+        println!(
+            "| {} | {} | {} | {} |",
+            n,
+            theoretical,
+            actual,
+            if matches { "✓" } else { "✗" }
+        );
     }
 
     println!("\n### 2.2 Processing Time: Redundant vs Diverse\n");
@@ -127,8 +130,10 @@ fn main() {
         let diverse_time = start.elapsed().as_secs_f64() / 3.0 * 1000.0;
 
         let ratio = redundant_time / diverse_time;
-        println!("| {} | {:.2}ms | {:.2}ms | {:.2}x |",
-                 n, redundant_time, diverse_time, ratio);
+        println!(
+            "| {} | {:.2}ms | {:.2}ms | {:.2}x |",
+            n, redundant_time, diverse_time, ratio
+        );
     }
 
     println!("\n### 2.3 Layer Distribution (n=500)\n");
@@ -153,8 +158,20 @@ fn main() {
 
     println!("| Dataset | Core | Edge | Rare | Selected |");
     println!("|---------|------|------|------|----------|");
-    println!("| Redundant (90% same) | {} | {} | {} | {} |", rc, re, rr, result_r.selected.len());
-    println!("| Diverse (all diff) | {} | {} | {} | {} |", dc, de, dr, result_d.selected.len());
+    println!(
+        "| Redundant (90% same) | {} | {} | {} | {} |",
+        rc,
+        re,
+        rr,
+        result_r.selected.len()
+    );
+    println!(
+        "| Diverse (all diff) | {} | {} | {} | {} |",
+        dc,
+        de,
+        dr,
+        result_d.selected.len()
+    );
 
     println!("\n## 3. Conclusion\n");
     println!("┌────────────────────────────────────────────────────────────┐");

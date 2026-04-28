@@ -392,7 +392,8 @@ mod tests {
         let (source, target) = create_test_series();
         let mut engine = engine::CausalEngine::default();
 
-        let result = engine.compute_bidirectional("A", "B", &source, &target, TeStrategy::Screening);
+        let result =
+            engine.compute_bidirectional("A", "B", &source, &target, TeStrategy::Screening);
         assert!(result.is_some());
 
         let (a_to_b, b_to_a) = result.unwrap();
@@ -413,7 +414,12 @@ mod tests {
     fn test_causal_engine_filter_significant() {
         let links = vec![
             CausalLink::new("A".to_string(), "B".to_string(), 0.5, TeStrategy::Screening),
-            CausalLink::new("C".to_string(), "D".to_string(), 0.001, TeStrategy::Screening),
+            CausalLink::new(
+                "C".to_string(),
+                "D".to_string(),
+                0.001,
+                TeStrategy::Screening,
+            ),
         ];
 
         let mut engine = engine::CausalEngine::default();
@@ -609,7 +615,14 @@ mod tests {
         ];
 
         let builder = partition::CausalPartitionBuilder::default();
-        let all_nodes = vec!["A".to_string(), "B".to_string(), "C".to_string(), "D".to_string(), "E".to_string(), "F".to_string()];
+        let all_nodes = vec![
+            "A".to_string(),
+            "B".to_string(),
+            "C".to_string(),
+            "D".to_string(),
+            "E".to_string(),
+            "F".to_string(),
+        ];
         let partition = builder.build_partition_from_links(&links, Some(&all_nodes));
 
         // A, B, C should be in same cluster
@@ -633,9 +646,12 @@ mod tests {
 
     #[test]
     fn test_partition_builder_no_all_nodes() {
-        let links = vec![
-            CausalLink::new("A".to_string(), "B".to_string(), 0.5, TeStrategy::Screening),
-        ];
+        let links = vec![CausalLink::new(
+            "A".to_string(),
+            "B".to_string(),
+            0.5,
+            TeStrategy::Screening,
+        )];
 
         let builder = partition::CausalPartitionBuilder::default();
         let partition = builder.build_partition_from_links(&links, None);
@@ -652,7 +668,8 @@ mod tests {
         data.insert("B".to_string(), target);
 
         let builder = partition::CausalPartitionBuilder::new(0.001, 2, 50);
-        let (partition, links) = builder.build_partition_from_time_series(&data, TeStrategy::Screening);
+        let (partition, links) =
+            builder.build_partition_from_time_series(&data, TeStrategy::Screening);
 
         assert!(!partition.is_empty());
         let _ = links; // Use variable
@@ -718,9 +735,12 @@ mod tests {
             ("B".to_string(), "C".to_string(), 1.0),
         ];
 
-        let links = vec![
-            CausalLink::new("A".to_string(), "B".to_string(), 0.5, TeStrategy::Screening),
-        ];
+        let links = vec![CausalLink::new(
+            "A".to_string(),
+            "B".to_string(),
+            0.5,
+            TeStrategy::Screening,
+        )];
 
         let mut optimizer = nrem::CausalEnhancedNREMOptimizer::default();
         let result = optimizer.optimize_with_causal_links(&edges, &links);
@@ -731,9 +751,7 @@ mod tests {
 
     #[test]
     fn test_causal_enhanced_nrem_without_causal_init() {
-        let edges = vec![
-            ("A".to_string(), "B".to_string(), 1.0),
-        ];
+        let edges = vec![("A".to_string(), "B".to_string(), 1.0)];
 
         let mut optimizer = nrem::CausalEnhancedNREMOptimizer::new(0.01, 100, false);
         let result = optimizer.optimize_with_causal_links(&edges, &[]);
@@ -743,9 +761,7 @@ mod tests {
 
     #[test]
     fn test_causal_enhanced_nrem_empty_links() {
-        let edges = vec![
-            ("A".to_string(), "B".to_string(), 1.0),
-        ];
+        let edges = vec![("A".to_string(), "B".to_string(), 1.0)];
 
         let mut optimizer = nrem::CausalEnhancedNREMOptimizer::default();
         let result = optimizer.optimize_with_causal_links(&edges, &[]);
@@ -755,13 +771,14 @@ mod tests {
 
     #[test]
     fn test_causal_enhanced_nrem_statistics() {
-        let edges = vec![
-            ("A".to_string(), "B".to_string(), 1.0),
-        ];
+        let edges = vec![("A".to_string(), "B".to_string(), 1.0)];
 
-        let links = vec![
-            CausalLink::new("A".to_string(), "B".to_string(), 0.5, TeStrategy::Screening),
-        ];
+        let links = vec![CausalLink::new(
+            "A".to_string(),
+            "B".to_string(),
+            0.5,
+            TeStrategy::Screening,
+        )];
 
         let mut optimizer = nrem::CausalEnhancedNREMOptimizer::default();
         optimizer.optimize_with_causal_links(&edges, &links);

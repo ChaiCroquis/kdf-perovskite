@@ -39,13 +39,24 @@ fn demo_task_knowledge_retention() {
 
     // タスク1のデータ
     println!("   【タスク1: 数字認識 (0-4)】");
-    let task1_data = generate_task_data(0, 5, 50);  // クラス0-4
-    let task1_result = kdf.process(&task1_data.features, 0.85, euclidean_similarity);
+    let task1_data = generate_task_data(0, 5, 50); // クラス0-4
+    let task1_result = kdf.process(&task1_data.features, 0.85, |a, b| {
+        euclidean_similarity(a, b)
+    });
 
     println!("   データ: {} 件", task1_data.features.len());
-    println!("   Core: {} 件 (一般的パターン)", task1_result.core_items().len());
-    println!("   Edge: {} 件 (境界パターン)", task1_result.edge_items().len());
-    println!("   Rare: {} 件 (固有パターン)\n", task1_result.rare_items().len());
+    println!(
+        "   Core: {} 件 (一般的パターン)",
+        task1_result.core_items().len()
+    );
+    println!(
+        "   Edge: {} 件 (境界パターン)",
+        task1_result.edge_items().len()
+    );
+    println!(
+        "   Rare: {} 件 (固有パターン)\n",
+        task1_result.rare_items().len()
+    );
 
     // タスク2を学習する前に、タスク1の重要データを選択
     println!("   【タスク2学習前: タスク1からの保持データ選択】");
@@ -61,8 +72,14 @@ fn demo_task_knowledge_retention() {
     println!("   保持データ: 15件\n");
     println!("   戦略              Rare保持数   期待される忘却防止効果");
     println!("   {}", "-".repeat(55));
-    println!("   ランダム          {:>5}        低 (固有パターンを失いやすい)", random_rare_kept);
-    println!("   KDF優先           {:>5}        高 (固有パターンを優先保持)", kdf_rare_kept);
+    println!(
+        "   ランダム          {:>5}        低 (固有パターンを失いやすい)",
+        random_rare_kept
+    );
+    println!(
+        "   KDF優先           {:>5}        高 (固有パターンを優先保持)",
+        kdf_rare_kept
+    );
 
     println!("\n   → KDF優先戦略はRare層を優先的に保持し、破滅的忘却を軽減\n");
 }
@@ -88,7 +105,7 @@ fn demo_memory_efficient_replay() {
         all_data.push(task_data.clone());
 
         // 現在のタスクにKDFを適用
-        let result = kdf.process(&task_data.features, 0.85, euclidean_similarity);
+        let result = kdf.process(&task_data.features, 0.85, |a, b| euclidean_similarity(a, b));
 
         // Rare層を優先的にバッファに追加
         let mut new_entries: Vec<(usize, Vec<f64>)> = Vec::new();
@@ -116,11 +133,13 @@ fn demo_memory_efficient_replay() {
         }
 
         // タスクごとの保持状況を表示
-        let task_counts: HashMap<usize, usize> = replay_buffer.iter()
-            .fold(HashMap::new(), |mut acc, (tid, _)| {
-                *acc.entry(*tid).or_insert(0) += 1;
-                acc
-            });
+        let task_counts: HashMap<usize, usize> =
+            replay_buffer
+                .iter()
+                .fold(HashMap::new(), |mut acc, (tid, _)| {
+                    *acc.entry(*tid).or_insert(0) += 1;
+                    acc
+                });
 
         print!("   バッファ状況: ");
         for t in 0..=task_id {
@@ -147,12 +166,17 @@ fn demo_class_incremental() {
         let class_start = phase * 2;
         let class_end = class_start + 2;
 
-        println!("   【Phase {}: クラス {}-{} を学習】", phase + 1, class_start, class_end - 1);
+        println!(
+            "   【Phase {}: クラス {}-{} を学習】",
+            phase + 1,
+            class_start,
+            class_end - 1
+        );
 
         // 新クラスのデータ
         for class_id in class_start..class_end {
             let class_data = generate_class_data(class_id, 30);
-            let result = kdf.process(&class_data, 0.85, euclidean_similarity);
+            let result = kdf.process(&class_data, 0.85, |a, b| euclidean_similarity(a, b));
 
             // 各クラスから代表サンプルを選択 (KDF優先)
             let mut selected = Vec::new();
@@ -177,11 +201,13 @@ fn demo_class_incremental() {
         }
 
         // 現在の exemplar set の状況
-        let class_counts: HashMap<usize, usize> = exemplar_set.iter()
-            .fold(HashMap::new(), |mut acc, (cid, _)| {
-                *acc.entry(*cid).or_insert(0) += 1;
-                acc
-            });
+        let class_counts: HashMap<usize, usize> =
+            exemplar_set
+                .iter()
+                .fold(HashMap::new(), |mut acc, (cid, _)| {
+                    *acc.entry(*cid).or_insert(0) += 1;
+                    acc
+                });
 
         println!("   Exemplar Set: {:?}", class_counts);
     }
@@ -208,7 +234,11 @@ struct TaskData {
 }
 
 /// タスクデータの生成
-fn generate_task_data(class_start: usize, num_classes: usize, samples_per_class: usize) -> TaskData {
+fn generate_task_data(
+    class_start: usize,
+    num_classes: usize,
+    samples_per_class: usize,
+) -> TaskData {
     let mut features = Vec::new();
     let mut labels = Vec::new();
 
@@ -246,7 +276,7 @@ fn generate_class_data(class_id: usize, n: usize) -> Vec<Vec<f64>> {
     }
 
     // 固有サンプル (Rare向け)
-    for i in 0..(n * 1 / 10 + 1) {
+    for i in 0..(n / 10 + 1) {
         let x = center_x + (i as f64 - 1.0) * 2.0;
         let y = center_y + 3.0;
         data.push(vec![x, y]);
@@ -321,7 +351,7 @@ fn compress_buffer(
             }
         } else {
             // KDFで選択
-            let result = kdf.process(&features, 0.85, euclidean_similarity);
+            let result = kdf.process(&features, 0.85, |a, b| euclidean_similarity(a, b));
             let selected = select_kdf_priority(&result, per_task);
             for i in selected {
                 new_buffer.push((tid, features[i].clone()));
@@ -349,8 +379,9 @@ fn rand_f64() -> f64 {
 }
 
 /// ユークリッド類似度
-fn euclidean_similarity(a: &Vec<f64>, b: &Vec<f64>) -> f64 {
-    let dist: f64 = a.iter()
+fn euclidean_similarity(a: &[f64], b: &[f64]) -> f64 {
+    let dist: f64 = a
+        .iter()
         .zip(b.iter())
         .map(|(x, y)| (x - y).powi(2))
         .sum::<f64>()

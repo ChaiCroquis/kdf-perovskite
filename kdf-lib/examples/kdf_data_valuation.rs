@@ -44,22 +44,32 @@ fn demo_basic_valuation() {
     // データセット: 冗長なデータと希少なデータの混合
     let data = vec![
         // 冗長データ (多数の類似点)
-        vec![1.0, 1.0], vec![1.1, 0.9], vec![0.9, 1.1], vec![1.0, 1.0],
-        vec![1.0, 1.0], vec![1.1, 1.0], vec![1.0, 1.1], vec![0.9, 0.9],
+        vec![1.0, 1.0],
+        vec![1.1, 0.9],
+        vec![0.9, 1.1],
+        vec![1.0, 1.0],
+        vec![1.0, 1.0],
+        vec![1.1, 1.0],
+        vec![1.0, 1.1],
+        vec![0.9, 0.9],
         // 境界データ
-        vec![2.5, 2.5], vec![2.6, 2.4],
+        vec![2.5, 2.5],
+        vec![2.6, 2.4],
         // 希少データ
-        vec![5.0, 5.0],  // 孤立点1
+        vec![5.0, 5.0],   // 孤立点1
         vec![-3.0, -3.0], // 孤立点2
     ];
 
-    let result = kdf.process(&data, 0.85, euclidean_similarity);
+    let result = kdf.process(&data, 0.85, |a, b| euclidean_similarity(a, b));
 
     // 価値評価
     let valuator = DataValuator::new(&result);
 
     println!("   データ価値評価結果:\n");
-    println!("   {:>5} {:>8} {:>10} {:>12}", "Index", "層", "価値", "価値スコア");
+    println!(
+        "   {:>5} {:>8} {:>10} {:>12}",
+        "Index", "層", "価値", "価値スコア"
+    );
     println!("   {}", "-".repeat(40));
 
     for i in 0..data.len() {
@@ -68,9 +78,18 @@ fn demo_basic_valuation() {
     }
 
     println!("\n   【代替可能性の分布】");
-    println!("   Rare:  {} 件 → 代替不可能（ただし価値は不明）", result.rare_items().len());
-    println!("   Edge:  {} 件 → 部分的に代替可能", result.edge_items().len());
-    println!("   Core:  {} 件 → 代替可能（冗長情報）\n", result.core_items().len());
+    println!(
+        "   Rare:  {} 件 → 代替不可能（ただし価値は不明）",
+        result.rare_items().len()
+    );
+    println!(
+        "   Edge:  {} 件 → 部分的に代替可能",
+        result.edge_items().len()
+    );
+    println!(
+        "   Core:  {} 件 → 代替可能（冗長情報）\n",
+        result.core_items().len()
+    );
 }
 
 /// データマーケットプレイス
@@ -98,11 +117,9 @@ fn demo_data_marketplace() {
         ("難病B", vec![-2.0, 3.0, 5.0]),
     ];
 
-    let features: Vec<Vec<f64>> = medical_records.iter()
-        .map(|(_, f)| f.clone())
-        .collect();
+    let features: Vec<Vec<f64>> = medical_records.iter().map(|(_, f)| f.clone()).collect();
 
-    let result = kdf.process(&features, 0.85, euclidean_similarity);
+    let result = kdf.process(&features, 0.85, |a, b| euclidean_similarity(a, b));
     let valuator = DataValuator::new(&result);
 
     println!("   医療データの価値評価:\n");
@@ -123,9 +140,12 @@ fn demo_data_marketplace() {
         .sum();
 
     println!("\n   総データ価値: {:.0} 単位", total_value);
-    println!("   希少データの価値比率: {:.0}%",
-             result.rare_items().len() as f64 / medical_records.len() as f64 * 100.0 *
-             (10.0 / (10.0 + 3.0 + 1.0) * 3.0)); // 概算
+    println!(
+        "   希少データの価値比率: {:.0}%",
+        result.rare_items().len() as f64 / medical_records.len() as f64
+            * 100.0
+            * (10.0 / (10.0 + 3.0 + 1.0) * 3.0)
+    ); // 概算
 }
 
 /// 学習データの価値
@@ -155,37 +175,50 @@ fn demo_training_data_value() {
         // 希少ケース
         ("珍しい猫種", vec![3.0, 0.2]),
         ("珍しい犬種", vec![0.2, 3.0]),
-        ("猫犬同居", vec![1.0, 1.0]),  // 両方の特徴
+        ("猫犬同居", vec![1.0, 1.0]), // 両方の特徴
     ];
 
-    let features: Vec<Vec<f64>> = image_features.iter()
-        .map(|(_, f)| f.clone())
-        .collect();
+    let features: Vec<Vec<f64>> = image_features.iter().map(|(_, f)| f.clone()).collect();
 
-    let result = kdf.process(&features, 0.85, euclidean_similarity);
+    let result = kdf.process(&features, 0.85, |a, b| euclidean_similarity(a, b));
     let _valuator = DataValuator::new(&result);
 
     println!("   学習への貢献度:\n");
 
     // 層ごとの分析
-    let core_labels: Vec<_> = result.core_items().iter()
+    let core_labels: Vec<_> = result
+        .core_items()
+        .iter()
         .map(|&i| image_features[i].0)
         .collect();
-    let edge_labels: Vec<_> = result.edge_items().iter()
+    let edge_labels: Vec<_> = result
+        .edge_items()
+        .iter()
         .map(|&i| image_features[i].0)
         .collect();
-    let rare_labels: Vec<_> = result.rare_items().iter()
+    let rare_labels: Vec<_> = result
+        .rare_items()
+        .iter()
         .map(|&i| image_features[i].0)
         .collect();
 
     println!("   【Core層】 基本パターンの学習に使用");
-    println!("      {} (低価値: 類似データで代替可能)", core_labels.join(", "));
+    println!(
+        "      {} (低価値: 類似データで代替可能)",
+        core_labels.join(", ")
+    );
 
     println!("\n   【Edge層】 境界ケースの学習に使用");
-    println!("      {} (中価値: 汎化性能向上に寄与)", edge_labels.join(", "));
+    println!(
+        "      {} (中価値: 汎化性能向上に寄与)",
+        edge_labels.join(", ")
+    );
 
     println!("\n   【Rare層】 判断材料不足のケース");
-    println!("      {} (代替不可能: 捨てると判断できなくなる)", rare_labels.join(", "));
+    println!(
+        "      {} (代替不可能: 捨てると判断できなくなる)",
+        rare_labels.join(", ")
+    );
 
     // 価値ベースのデータ削減提案
     println!("\n   【データ削減提案】");
@@ -223,7 +256,7 @@ fn demo_value_based_sampling() {
     data.push(vec![-4.0, -4.0]);
     data.push(vec![6.0, 0.0]);
 
-    let result = kdf.process(&data, 0.85, euclidean_similarity);
+    let result = kdf.process(&data, 0.85, |a, b| euclidean_similarity(a, b));
     let valuator = DataValuator::new(&result);
 
     println!("   元データ: {} 件", data.len());
@@ -243,13 +276,12 @@ fn demo_value_based_sampling() {
 
     for (name, sampled) in strategies {
         // サンプル中の希少データ数をカウント
-        let rare_in_sample = sampled.iter()
+        let rare_in_sample = sampled
+            .iter()
             .filter(|&&i| rare_indices.contains(&i))
             .count();
 
-        let total_value: f64 = sampled.iter()
-            .map(|&i| valuator.evaluate(i).2)
-            .sum();
+        let total_value: f64 = sampled.iter().map(|&i| valuator.evaluate(i).2).sum();
 
         println!("   【{}】", name);
         println!("      希少データ保持: {}/5 件", rare_in_sample);
@@ -286,11 +318,11 @@ impl DataValuator {
     /// 注意: スコアは代替可能性の逆数であり、価値とは限らない
     fn evaluate(&self, index: usize) -> (&str, &str, f64) {
         if self.rare_indices.contains(&index) {
-            ("Rare", "代替不可", 10.0)  // 判断材料不足
+            ("Rare", "代替不可", 10.0) // 判断材料不足
         } else if self.edge_indices.contains(&index) {
-            ("Edge", "部分代替", 3.0)   // 知識に余地
+            ("Edge", "部分代替", 3.0) // 知識に余地
         } else if self.core_indices.contains(&index) {
-            ("Core", "代替可能", 1.0)   // 知識飽和
+            ("Core", "代替可能", 1.0) // 知識飽和
         } else {
             ("不明", "未評価", 0.0)
         }
@@ -334,8 +366,9 @@ fn sample_by_value(result: &kdf::KdfResult, n: usize) -> Vec<usize> {
 }
 
 /// ユークリッド類似度
-fn euclidean_similarity(a: &Vec<f64>, b: &Vec<f64>) -> f64 {
-    let dist: f64 = a.iter()
+fn euclidean_similarity(a: &[f64], b: &[f64]) -> f64 {
+    let dist: f64 = a
+        .iter()
         .zip(b.iter())
         .map(|(x, y)| (x - y).powi(2))
         .sum::<f64>()

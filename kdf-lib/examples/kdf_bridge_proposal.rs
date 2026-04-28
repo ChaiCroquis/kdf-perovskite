@@ -16,7 +16,11 @@
 use kdf::Kdf;
 
 fn euclidean_distance(a: &[f64], b: &[f64]) -> f64 {
-    a.iter().zip(b).map(|(x, y)| (x - y).powi(2)).sum::<f64>().sqrt()
+    a.iter()
+        .zip(b)
+        .map(|(x, y)| (x - y).powi(2))
+        .sum::<f64>()
+        .sqrt()
 }
 
 fn euclidean_similarity(a: &[f64], b: &[f64]) -> f64 {
@@ -42,7 +46,7 @@ struct BridgeProposal {
     /// Modification vector (what needs to change)
     modification: Vec<f64>,
     /// Key dimensions that were modified
-    key_changes: Vec<(usize, f64, String)>,  // (dim, change, interpretation)
+    key_changes: Vec<(usize, f64, String)>, // (dim, change, interpretation)
 }
 
 /// Analyze the gap between Rare and Core
@@ -60,20 +64,18 @@ impl GapAnalyzer {
     }
 
     /// Find bridge proposals for all Rare items
-    fn analyze(
-        &self,
-        data: &[Vec<f64>],
-        dim_names: Option<&[&str]>,
-    ) -> Vec<BridgeProposal>
-    {
-        let result = self.kdf.process(data, self.sim_threshold, |a, b| euclidean_similarity(a, b));
+    fn analyze(&self, data: &[Vec<f64>], dim_names: Option<&[&str]>) -> Vec<BridgeProposal> {
+        let result = self
+            .kdf
+            .process(data, self.sim_threshold, |a, b| euclidean_similarity(a, b));
 
         let rare_items = result.rare_items();
         let core_items = result.core_items();
         let edge_items = result.edge_items();
 
         // Potential bridge targets (Core + Edge)
-        let targets: Vec<usize> = core_items.iter()
+        let targets: Vec<usize> = core_items
+            .iter()
             .chain(edge_items.iter())
             .copied()
             .collect();
@@ -86,7 +88,8 @@ impl GapAnalyzer {
 
         for &rare_idx in &rare_items {
             // Find nearest target
-            let (nearest_idx, _nearest_dist) = targets.iter()
+            let (nearest_idx, _nearest_dist) = targets
+                .iter()
                 .map(|&t| (t, euclidean_distance(&data[rare_idx], &data[t])))
                 .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
                 .unwrap();
@@ -104,16 +107,15 @@ impl GapAnalyzer {
             let target = &data[nearest_idx];
 
             // Bridged position
-            let bridged: Vec<f64> = original.iter()
+            let bridged: Vec<f64> = original
+                .iter()
                 .zip(target)
                 .map(|(o, t)| o + (t - o) * bridge_ratio)
                 .collect();
 
             // Modification vector
-            let modification: Vec<f64> = bridged.iter()
-                .zip(&original)
-                .map(|(b, o)| b - o)
-                .collect();
+            let modification: Vec<f64> =
+                bridged.iter().zip(&original).map(|(b, o)| b - o).collect();
 
             // Uniqueness preserved = 1 - bridge_ratio
             let uniqueness_preserved = 1.0 - bridge_ratio;
@@ -155,24 +157,27 @@ impl GapAnalyzer {
             let mid = (low + high) / 2.0;
 
             // Calculate bridged position
-            let bridged: Vec<f64> = rare.iter()
+            let bridged: Vec<f64> = rare
+                .iter()
                 .zip(core)
                 .map(|(r, c)| r + (c - r) * mid)
                 .collect();
 
             // Check if this achieves connectivity
-            let connected = result.core_items().iter()
+            let connected = result
+                .core_items()
+                .iter()
                 .any(|&i| euclidean_similarity(&bridged, &data[i]) >= self.sim_threshold);
 
             if connected {
-                high = mid;  // Can achieve with less modification
+                high = mid; // Can achieve with less modification
             } else {
-                low = mid;   // Need more modification
+                low = mid; // Need more modification
             }
         }
 
         // Return slightly above threshold to ensure connectivity
-        (high + 0.05).min(0.8)  // Cap at 0.8 to preserve some uniqueness
+        (high + 0.05).min(0.8) // Cap at 0.8 to preserve some uniqueness
     }
 
     /// Identify which dimensions changed the most
@@ -181,14 +186,16 @@ impl GapAnalyzer {
         modification: &[f64],
         dim_names: Option<&[&str]>,
     ) -> Vec<(usize, f64, String)> {
-        let mut changes: Vec<(usize, f64)> = modification.iter()
+        let mut changes: Vec<(usize, f64)> = modification
+            .iter()
             .enumerate()
             .map(|(i, &m)| (i, m.abs()))
             .collect();
 
         changes.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
 
-        changes.into_iter()
+        changes
+            .into_iter()
             .take(3)
             .map(|(dim, _change)| {
                 let name = dim_names
@@ -196,7 +203,11 @@ impl GapAnalyzer {
                     .map(|s| s.to_string())
                     .unwrap_or_else(|| format!("Dim{}", dim));
 
-                let direction = if modification[dim] > 0.0 { "↑" } else { "↓" };
+                let direction = if modification[dim] > 0.0 {
+                    "↑"
+                } else {
+                    "↓"
+                };
                 let interpretation = format!("{} {}", name, direction);
 
                 (dim, modification[dim], interpretation)
@@ -210,22 +221,41 @@ impl GapAnalyzer {
 fn generate_consultation(proposal: &BridgeProposal, _dim_names: Option<&[&str]>) -> String {
     let mut text = String::new();
 
-    text.push_str(&format!("【提案】アイテム {} の橋渡し戦略\n\n", proposal.rare_idx));
+    text.push_str(&format!(
+        "【提案】アイテム {} の橋渡し戦略\n\n",
+        proposal.rare_idx
+    ));
 
-    text.push_str(&format!("  現状: 孤立点 (Core層との接続なし)\n"));
-    text.push_str(&format!("  目標: Core層アイテム {} に接続\n\n", proposal.target_core_idx));
+    text.push_str("  現状: 孤立点 (Core層との接続なし)\n");
+    text.push_str(&format!(
+        "  目標: Core層アイテム {} に接続\n\n",
+        proposal.target_core_idx
+    ));
 
     text.push_str("  推奨される調整:\n");
     for (_dim, change, interp) in &proposal.key_changes {
-        let magnitude = if change.abs() > 0.5 { "大幅に" }
-            else if change.abs() > 0.2 { "中程度" }
-            else { "少し" };
-        text.push_str(&format!("    - {} {} 調整 ({:+.2})\n", interp, magnitude, change));
+        let magnitude = if change.abs() > 0.5 {
+            "大幅に"
+        } else if change.abs() > 0.2 {
+            "中程度"
+        } else {
+            "少し"
+        };
+        text.push_str(&format!(
+            "    - {} {} 調整 ({:+.2})\n",
+            interp, magnitude, change
+        ));
     }
 
-    text.push_str(&format!("\n  予測効果:\n"));
-    text.push_str(&format!("    - ユニークさ保持: {:.0}%\n", proposal.uniqueness_preserved * 100.0));
-    text.push_str(&format!("    - 接続性獲得: {:.0}%\n", proposal.connectivity_gained * 100.0));
+    text.push_str("\n  予測効果:\n");
+    text.push_str(&format!(
+        "    - ユニークさ保持: {:.0}%\n",
+        proposal.uniqueness_preserved * 100.0
+    ));
+    text.push_str(&format!(
+        "    - 接続性獲得: {:.0}%\n",
+        proposal.connectivity_gained * 100.0
+    ));
 
     text
 }
@@ -246,10 +276,10 @@ fn opinion_bridging_demo() {
     // Mainstream opinions (Core候補)
     for i in 0..20 {
         opinions.push(vec![
-            0.3 + (i as f64 * 0.01),  // 中程度の革新性
-            0.7 + (i as f64 * 0.01),  // 高い実用性
-            0.6,                       // 中程度のコスト意識
-            0.3,                       // 低いリスク許容度
+            0.3 + (i as f64 * 0.01), // 中程度の革新性
+            0.7 + (i as f64 * 0.01), // 高い実用性
+            0.6,                     // 中程度のコスト意識
+            0.3,                     // 低いリスク許容度
         ]);
         labels.push("主流派");
     }
@@ -268,10 +298,7 @@ fn opinion_bridging_demo() {
     labels.push("リスクテイカー");
 
     let analyzer = GapAnalyzer::new(0.8);
-    let proposals = analyzer.analyze(
-        &opinions,
-        Some(&dim_names),
-    );
+    let proposals = analyzer.analyze(&opinions, Some(&dim_names));
 
     println!("   少数派の意見と橋渡し提案:\n");
 
@@ -285,7 +312,9 @@ fn opinion_bridging_demo() {
         // Original position
         print!("   現在の立場: ");
         for (i, (&val, name)) in proposal.original.iter().zip(dim_names.iter()).enumerate() {
-            if i > 0 { print!(", "); }
+            if i > 0 {
+                print!(", ");
+            }
             print!("{}={:.1}", name, val);
         }
         println!();
@@ -294,7 +323,9 @@ fn opinion_bridging_demo() {
         print!("   最寄りの主流派: ");
         let target = &opinions[proposal.target_core_idx];
         for (i, (&val, name)) in target.iter().zip(dim_names.iter()).enumerate() {
-            if i > 0 { print!(", "); }
+            if i > 0 {
+                print!(", ");
+            }
             print!("{}={:.1}", name, val);
         }
         println!();
@@ -306,16 +337,28 @@ fn opinion_bridging_demo() {
             let name = dim_names[*dim];
             let original = proposal.original[*dim];
             let new_val = original + change;
-            let direction = if *change > 0.0 { "↑上げる" } else { "↓下げる" };
+            let direction = if *change > 0.0 {
+                "↑上げる"
+            } else {
+                "↓下げる"
+            };
 
-            println!("      {} を {:.1} → {:.1} ({}) ",
-                     name, original, new_val, direction);
+            println!(
+                "      {} を {:.1} → {:.1} ({}) ",
+                name, original, new_val, direction
+            );
         }
 
         println!();
         println!("   📊 効果予測:");
-        println!("      ユニークさ: {:.0}% 維持", proposal.uniqueness_preserved * 100.0);
-        println!("      接続性: {:.0}% 獲得", proposal.connectivity_gained * 100.0);
+        println!(
+            "      ユニークさ: {:.0}% 維持",
+            proposal.uniqueness_preserved * 100.0
+        );
+        println!(
+            "      接続性: {:.0}% 獲得",
+            proposal.connectivity_gained * 100.0
+        );
         println!();
     }
 }
@@ -345,17 +388,14 @@ fn product_bridging_demo() {
     }
 
     // Niche products
-    products.push(vec![0.95, 0.3, 0.2, 0.5]);  // 超先進的だが使いにくい
+    products.push(vec![0.95, 0.3, 0.2, 0.5]); // 超先進的だが使いにくい
     names.push("先進製品X".to_string());
 
-    products.push(vec![0.2, 0.9, 0.9, 0.4]);   // 安くて簡単だが古い
+    products.push(vec![0.2, 0.9, 0.9, 0.4]); // 安くて簡単だが古い
     names.push("廉価製品Y".to_string());
 
     let analyzer = GapAnalyzer::new(0.85);
-    let proposals = analyzer.analyze(
-        &products,
-        Some(&dim_names),
-    );
+    let proposals = analyzer.analyze(&products, Some(&dim_names));
 
     println!("   ニッチ製品の主流市場参入戦略:\n");
 
@@ -365,11 +405,16 @@ fn product_bridging_demo() {
         println!("   【{}】", name);
 
         // Current features
-        println!("   現在: {:?}", proposal.original.iter()
-            .zip(dim_names.iter())
-            .map(|(v, n)| format!("{}:{:.1}", n, v))
-            .collect::<Vec<_>>()
-            .join(", "));
+        println!(
+            "   現在: {:?}",
+            proposal
+                .original
+                .iter()
+                .zip(dim_names.iter())
+                .map(|(v, n)| format!("{}:{:.1}", n, v))
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
 
         // Recommended changes
         println!("   提案:");
@@ -380,9 +425,11 @@ fn product_bridging_demo() {
             }
         }
 
-        println!("   効果: 独自性{:.0}%維持 / 市場適合{:.0}%\n",
-                 proposal.uniqueness_preserved * 100.0,
-                 proposal.connectivity_gained * 100.0);
+        println!(
+            "   効果: 独自性{:.0}%維持 / 市場適合{:.0}%\n",
+            proposal.uniqueness_preserved * 100.0,
+            proposal.connectivity_gained * 100.0
+        );
     }
 }
 
@@ -400,28 +447,24 @@ fn communication_demo() {
 
     // Messages that resonate (Core)
     for i in 0..12 {
-        messages.push(vec![
-            0.6 + (i as f64 * 0.02),
-            0.5,
-            0.7,
-            0.3,
-        ]);
+        messages.push(vec![0.6 + (i as f64 * 0.02), 0.5, 0.7, 0.3]);
     }
 
     // Messages that don't resonate (Rare)
-    messages.push(vec![0.9, 0.1, 0.3, 0.8]);  // Too abstract and new
-    messages.push(vec![0.2, 0.9, 0.2, 0.2]);  // Too emotional, vague
+    messages.push(vec![0.9, 0.1, 0.3, 0.8]); // Too abstract and new
+    messages.push(vec![0.2, 0.9, 0.2, 0.2]); // Too emotional, vague
 
     let analyzer = GapAnalyzer::new(0.8);
-    let proposals = analyzer.analyze(
-        &messages,
-        Some(&dim_names),
-    );
+    let proposals = analyzer.analyze(&messages, Some(&dim_names));
 
     println!("   伝わりにくいメッセージの改善提案:\n");
 
     for (i, proposal) in proposals.iter().enumerate() {
-        let msg_type = if i == 0 { "論理重視型" } else { "感情重視型" };
+        let msg_type = if i == 0 {
+            "論理重視型"
+        } else {
+            "感情重視型"
+        };
 
         println!("   【メッセージ: {}】", msg_type);
         println!("   問題: 聴衆に届いていない\n");
@@ -443,9 +486,11 @@ fn communication_demo() {
             println!("     → {}: {}", name, suggestion);
         }
 
-        println!("\n   期待効果: 独自性{:.0}%維持、共感{:.0}%獲得\n",
-                 proposal.uniqueness_preserved * 100.0,
-                 proposal.connectivity_gained * 100.0);
+        println!(
+            "\n   期待効果: 独自性{:.0}%維持、共感{:.0}%獲得\n",
+            proposal.uniqueness_preserved * 100.0,
+            proposal.connectivity_gained * 100.0
+        );
     }
 }
 

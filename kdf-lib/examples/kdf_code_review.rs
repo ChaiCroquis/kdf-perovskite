@@ -107,7 +107,7 @@ fn main() {
         // Routine changes (Core)
         CodeChange {
             file_path: "src/utils/helpers.rs".into(),
-            features: vec![0.1, 0.05, 0.1, 0.0, 0.0, 0.8],  // Small, simple
+            features: vec![0.1, 0.05, 0.1, 0.0, 0.0, 0.8], // Small, simple
             description: "Fix typo in helper function".into(),
         },
         CodeChange {
@@ -120,7 +120,6 @@ fn main() {
             features: vec![0.1, 0.0, 0.05, 0.0, 0.0, 0.9],
             description: "Add new config option".into(),
         },
-
         // Moderate changes (Edge)
         CodeChange {
             file_path: "src/api/handlers.rs".into(),
@@ -132,24 +131,22 @@ fn main() {
             features: vec![0.3, 0.1, 0.4, 0.0, 0.0, 0.5],
             description: "Optimize database query".into(),
         },
-
         // Unusual changes (Rare)
         CodeChange {
             file_path: "src/security/auth.rs".into(),
-            features: vec![0.5, 0.3, 0.6, 1.0, 0.0, 0.4],  // Security sensitive!
+            features: vec![0.5, 0.3, 0.6, 1.0, 0.0, 0.4], // Security sensitive!
             description: "Modify authentication flow".into(),
         },
         CodeChange {
             file_path: "src/core/engine.rs".into(),
-            features: vec![0.8, 0.6, 0.8, 0.0, 0.0, 0.3],  // Large, complex
+            features: vec![0.8, 0.6, 0.8, 0.0, 0.0, 0.3], // Large, complex
             description: "Refactor core processing engine".into(),
         },
         CodeChange {
             file_path: "src/experimental/new_algo.rs".into(),
-            features: vec![0.9, 0.0, 0.9, 0.0, 0.0, 0.2],  // New code, junior dev
+            features: vec![0.9, 0.0, 0.9, 0.0, 0.0, 0.2], // New code, junior dev
             description: "Implement experimental algorithm".into(),
         },
-
         // Test changes
         CodeChange {
             file_path: "tests/integration_test.rs".into(),
@@ -213,10 +210,22 @@ fn main() {
     // =========================================================================
     println!("--- Review Summary ---\n");
 
-    let critical = recommendations.iter().filter(|r| r.priority == ReviewPriority::Critical).count();
-    let high = recommendations.iter().filter(|r| r.priority == ReviewPriority::High).count();
-    let medium = recommendations.iter().filter(|r| r.priority == ReviewPriority::Medium).count();
-    let low = recommendations.iter().filter(|r| r.priority == ReviewPriority::Low).count();
+    let critical = recommendations
+        .iter()
+        .filter(|r| r.priority == ReviewPriority::Critical)
+        .count();
+    let high = recommendations
+        .iter()
+        .filter(|r| r.priority == ReviewPriority::High)
+        .count();
+    let medium = recommendations
+        .iter()
+        .filter(|r| r.priority == ReviewPriority::Medium)
+        .count();
+    let low = recommendations
+        .iter()
+        .filter(|r| r.priority == ReviewPriority::Low)
+        .count();
 
     println!("Priority breakdown:");
     println!("  🚨 Critical: {}", critical);

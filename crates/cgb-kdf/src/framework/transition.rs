@@ -9,8 +9,8 @@
 //! | 25 | Activation: increases on event, decays in time | [`ActivationScore`] |
 //! | 26 | Semantic importance from reference set or external model | [`SemanticImportance`] |
 
-use std::collections::HashMap;
 use super::region::RegionKind;
+use std::collections::HashMap;
 
 /// Activation score with event-based increment and time decay (Claim 25).
 #[derive(Clone, Debug)]
@@ -70,7 +70,10 @@ impl SemanticImportance {
         let ref_score = if self.reference_set.is_empty() || neighbors.is_empty() {
             0.0
         } else {
-            let hits = neighbors.iter().filter(|n| self.reference_set.contains(n)).count();
+            let hits = neighbors
+                .iter()
+                .filter(|n| self.reference_set.contains(n))
+                .count();
             hits as f64 / neighbors.len() as f64
         };
         let ext_score = self.external_scores.get(&node).copied().unwrap_or(0.0);
@@ -92,7 +95,11 @@ pub struct TransitionScore {
 impl Default for TransitionScore {
     fn default() -> Self {
         // Default: all three active (full compliance with Claim 24's "at least two").
-        Self { w_connectivity: 0.4, w_activation: 0.3, w_semantic: 0.3 }
+        Self {
+            w_connectivity: 0.4,
+            w_activation: 0.3,
+            w_semantic: 0.3,
+        }
     }
 }
 
@@ -107,7 +114,9 @@ impl TransitionScore {
     }
 
     pub fn compute(&self, connectivity: f64, activation: f64, semantic: f64) -> f64 {
-        self.w_connectivity * connectivity + self.w_activation * activation + self.w_semantic * semantic
+        self.w_connectivity * connectivity
+            + self.w_activation * activation
+            + self.w_semantic * semantic
     }
 }
 
@@ -140,7 +149,9 @@ impl TransitionController {
         activation: f64,
         semantic: f64,
     ) -> RegionKind {
-        let s = self.score_config.compute(connectivity, activation, semantic);
+        let s = self
+            .score_config
+            .compute(connectivity, activation, semantic);
         match current {
             RegionKind::ShortTerm if s >= self.promote_threshold => RegionKind::LongTerm,
             RegionKind::LongTerm if s < self.demote_threshold => RegionKind::ShortTerm,
@@ -159,7 +170,11 @@ impl TransitionController {
         let a = self.activation.get(node);
         let s = self.semantic.score(node, neighbors);
         let new_region = self.target_region(current, connectivity, a, s);
-        if new_region != current { Some(new_region) } else { None }
+        if new_region != current {
+            Some(new_region)
+        } else {
+            None
+        }
     }
 }
 
@@ -212,7 +227,10 @@ mod tests {
         s.w_semantic = 0.0;
         assert!(s.is_claim24_valid(), "2 of 3 weights is still compliant");
         s.w_activation = 0.0;
-        assert!(!s.is_claim24_valid(), "only 1 weight non-zero violates Claim 24");
+        assert!(
+            !s.is_claim24_valid(),
+            "only 1 weight non-zero violates Claim 24"
+        );
     }
 
     #[test]

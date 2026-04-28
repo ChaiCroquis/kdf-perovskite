@@ -1,5 +1,5 @@
 //! Test new features: Builder pattern, Levenshtein, DTW, parallel processing
-use kdf::{Kdf, KdfParams, cosine_similarity, levenshtein_similarity, dtw_similarity};
+use kdf::{cosine_similarity, dtw_similarity, levenshtein_similarity, Kdf, KdfParams};
 
 fn main() {
     println!("=== New Features Test ===\n");
@@ -21,11 +21,7 @@ fn main() {
     println!("   beta: {} (default)", params.beta);
 
     let kdf = Kdf::new(params);
-    let items = vec![
-        vec![1.0, 0.0],
-        vec![0.9, 0.1],
-        vec![0.0, 1.0],
-    ];
+    let items = vec![vec![1.0, 0.0], vec![0.9, 0.1], vec![0.0, 1.0]];
     let result = kdf.process(&items, 0.85, |a, b| cosine_similarity(a, b));
     println!("   Process result: {} selected\n", result.selected.len());
 
@@ -34,13 +30,7 @@ fn main() {
     // ========================================================================
     println!("## 2. Levenshtein Similarity (strings)");
 
-    let strings = vec![
-        "hello",
-        "hallo",
-        "world",
-        "words",
-        "xxxxx",
-    ];
+    let strings = vec!["hello", "hallo", "world", "words", "xxxxx"];
 
     println!("   Similarity matrix:");
     for s1 in &strings {
@@ -67,11 +57,11 @@ fn main() {
     println!("\n## 3. DTW Similarity (time series)");
 
     let time_series = vec![
-        vec![1.0, 2.0, 3.0, 4.0, 5.0],           // Rising
-        vec![1.1, 2.1, 3.1, 4.1, 5.1],           // Rising (similar)
-        vec![5.0, 4.0, 3.0, 2.0, 1.0],           // Falling
-        vec![1.0, 1.0, 1.0, 1.0, 1.0],           // Flat
-        vec![1.0, 5.0, 1.0, 5.0, 1.0],           // Oscillating
+        vec![1.0, 2.0, 3.0, 4.0, 5.0], // Rising
+        vec![1.1, 2.1, 3.1, 4.1, 5.1], // Rising (similar)
+        vec![5.0, 4.0, 3.0, 2.0, 1.0], // Falling
+        vec![1.0, 1.0, 1.0, 1.0, 1.0], // Flat
+        vec![1.0, 5.0, 1.0, 5.0, 1.0], // Oscillating
     ];
 
     println!("   Similarity matrix:");
@@ -111,9 +101,20 @@ fn main() {
         let result_par = kdf.process_parallel(&large_data, 0.95, |a, b| cosine_similarity(a, b));
         let par_time = start.elapsed();
 
-        println!("   Sequential: {:?} ({} selected)", seq_time, result_seq.selected.len());
-        println!("   Parallel:   {:?} ({} selected)", par_time, result_par.selected.len());
-        println!("   Results match: {}", result_seq.selected == result_par.selected);
+        println!(
+            "   Sequential: {:?} ({} selected)",
+            seq_time,
+            result_seq.selected.len()
+        );
+        println!(
+            "   Parallel:   {:?} ({} selected)",
+            par_time,
+            result_par.selected.len()
+        );
+        println!(
+            "   Results match: {}",
+            result_seq.selected == result_par.selected
+        );
     }
 
     #[cfg(not(feature = "parallel"))]

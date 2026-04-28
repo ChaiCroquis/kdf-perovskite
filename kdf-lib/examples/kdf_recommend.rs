@@ -16,8 +16,8 @@ use std::collections::HashSet;
 struct Item {
     id: usize,
     name: String,
-    features: Vec<f64>,  // Embedding or feature vector
-    popularity: f64,     // 0-1, higher = more popular
+    features: Vec<f64>, // Embedding or feature vector
+    popularity: f64,    // 0-1, higher = more popular
 }
 
 /// Recommendation result with explanation
@@ -31,7 +31,7 @@ struct Recommendation {
 struct KdfRecommender {
     kdf: Kdf,
     threshold: f64,
-    diversity_weight: f64,  // 0-1, higher = more diverse
+    diversity_weight: f64, // 0-1, higher = more diverse
 }
 
 impl KdfRecommender {
@@ -52,18 +52,15 @@ impl KdfRecommender {
     ) -> Vec<Recommendation> {
         // Filter out items user has already seen
         let seen: HashSet<_> = user_history.iter().cloned().collect();
-        let candidate_indices: Vec<usize> = (0..items.len())
-            .filter(|i| !seen.contains(i))
-            .collect();
+        let candidate_indices: Vec<usize> =
+            (0..items.len()).filter(|i| !seen.contains(i)).collect();
 
         if candidate_indices.is_empty() {
             return vec![];
         }
 
         // Get candidates
-        let candidates: Vec<&Item> = candidate_indices.iter()
-            .map(|&i| &items[i])
-            .collect();
+        let candidates: Vec<&Item> = candidate_indices.iter().map(|&i| &items[i]).collect();
 
         // Apply KDF to find layer structure
         let result = self.kdf.process(&candidates, self.threshold, |a, b| {
@@ -83,18 +80,17 @@ impl KdfRecommender {
 
             // Layer bonus
             let layer_bonus = match layer {
-                Layer::Rare => self.diversity_weight * 0.5,   // Boost rare items
-                Layer::Edge => self.diversity_weight * 0.25,  // Medium boost
-                Layer::Core => 0.0,                           // No bonus for common
+                Layer::Rare => self.diversity_weight * 0.5, // Boost rare items
+                Layer::Edge => self.diversity_weight * 0.25, // Medium boost
+                Layer::Core => 0.0,                         // No bonus for common
             };
 
             // Selection penalty (avoid redundant items)
             let selection_bonus = if is_selected { 0.1 } else { 0.0 };
 
             // Combined score
-            let final_score = (1.0 - self.diversity_weight) * pop_score
-                            + layer_bonus
-                            + selection_bonus;
+            let final_score =
+                (1.0 - self.diversity_weight) * pop_score + layer_bonus + selection_bonus;
 
             let reason = match layer {
                 Layer::Rare => "Unique find",
@@ -168,22 +164,69 @@ fn main() {
     // Create item catalog
     let items = vec![
         // Popular action movies (Core cluster)
-        Item { id: 0, name: "Action Hero 1".to_string(), features: vec![1.0, 0.0, 0.5, 0.8], popularity: 0.9 },
-        Item { id: 1, name: "Action Hero 2".to_string(), features: vec![1.0, 0.1, 0.5, 0.7], popularity: 0.85 },
-        Item { id: 2, name: "Action Hero 3".to_string(), features: vec![1.0, 0.0, 0.6, 0.8], popularity: 0.8 },
-
+        Item {
+            id: 0,
+            name: "Action Hero 1".to_string(),
+            features: vec![1.0, 0.0, 0.5, 0.8],
+            popularity: 0.9,
+        },
+        Item {
+            id: 1,
+            name: "Action Hero 2".to_string(),
+            features: vec![1.0, 0.1, 0.5, 0.7],
+            popularity: 0.85,
+        },
+        Item {
+            id: 2,
+            name: "Action Hero 3".to_string(),
+            features: vec![1.0, 0.0, 0.6, 0.8],
+            popularity: 0.8,
+        },
         // Popular comedies (Core cluster)
-        Item { id: 3, name: "Comedy Night 1".to_string(), features: vec![0.0, 1.0, 0.3, 0.2], popularity: 0.88 },
-        Item { id: 4, name: "Comedy Night 2".to_string(), features: vec![0.1, 1.0, 0.3, 0.3], popularity: 0.75 },
-
+        Item {
+            id: 3,
+            name: "Comedy Night 1".to_string(),
+            features: vec![0.0, 1.0, 0.3, 0.2],
+            popularity: 0.88,
+        },
+        Item {
+            id: 4,
+            name: "Comedy Night 2".to_string(),
+            features: vec![0.1, 1.0, 0.3, 0.3],
+            popularity: 0.75,
+        },
         // Edge items (moderate popularity, somewhat unique)
-        Item { id: 5, name: "Action Comedy".to_string(), features: vec![0.5, 0.5, 0.5, 0.5], popularity: 0.6 },
-        Item { id: 6, name: "Dramedy".to_string(), features: vec![0.3, 0.7, 0.1, 0.4], popularity: 0.55 },
-
+        Item {
+            id: 5,
+            name: "Action Comedy".to_string(),
+            features: vec![0.5, 0.5, 0.5, 0.5],
+            popularity: 0.6,
+        },
+        Item {
+            id: 6,
+            name: "Dramedy".to_string(),
+            features: vec![0.3, 0.7, 0.1, 0.4],
+            popularity: 0.55,
+        },
         // Rare items (unique, niche)
-        Item { id: 7, name: "Art House Film".to_string(), features: vec![0.2, 0.1, 0.9, 0.1], popularity: 0.3 },
-        Item { id: 8, name: "Documentary Special".to_string(), features: vec![0.0, 0.0, 0.1, 0.9], popularity: 0.25 },
-        Item { id: 9, name: "Experimental Cinema".to_string(), features: vec![0.3, 0.3, 0.3, 0.1], popularity: 0.15 },
+        Item {
+            id: 7,
+            name: "Art House Film".to_string(),
+            features: vec![0.2, 0.1, 0.9, 0.1],
+            popularity: 0.3,
+        },
+        Item {
+            id: 8,
+            name: "Documentary Special".to_string(),
+            features: vec![0.0, 0.0, 0.1, 0.9],
+            popularity: 0.25,
+        },
+        Item {
+            id: 9,
+            name: "Experimental Cinema".to_string(),
+            features: vec![0.3, 0.3, 0.3, 0.1],
+            popularity: 0.15,
+        },
     ];
 
     // =========================================================================
@@ -199,8 +242,10 @@ fn main() {
 
     println!("Standard Recommendations (diversity=0.2):");
     for rec in &std_recs {
-        println!("  {} - \"{}\" (score: {:.2}, {})",
-            rec.item_idx, items[rec.item_idx].name, rec.score, rec.reason);
+        println!(
+            "  {} - \"{}\" (score: {:.2}, {})",
+            rec.item_idx, items[rec.item_idx].name, rec.score, rec.reason
+        );
     }
     println!();
 
@@ -210,8 +255,10 @@ fn main() {
 
     println!("Diverse Recommendations (diversity=0.8):");
     for rec in &div_recs {
-        println!("  {} - \"{}\" (score: {:.2}, {})",
-            rec.item_idx, items[rec.item_idx].name, rec.score, rec.reason);
+        println!(
+            "  {} - \"{}\" (score: {:.2}, {})",
+            rec.item_idx, items[rec.item_idx].name, rec.score, rec.reason
+        );
     }
     println!();
 
@@ -222,9 +269,21 @@ fn main() {
 
     let (core, edge, rare) = diverse_rec.analyze_diversity(&items);
     println!("Item distribution:");
-    println!("  Core (common): {} items ({:.0}%)", core, 100.0 * core as f64 / items.len() as f64);
-    println!("  Edge (moderate): {} items ({:.0}%)", edge, 100.0 * edge as f64 / items.len() as f64);
-    println!("  Rare (unique): {} items ({:.0}%)", rare, 100.0 * rare as f64 / items.len() as f64);
+    println!(
+        "  Core (common): {} items ({:.0}%)",
+        core,
+        100.0 * core as f64 / items.len() as f64
+    );
+    println!(
+        "  Edge (moderate): {} items ({:.0}%)",
+        edge,
+        100.0 * edge as f64 / items.len() as f64
+    );
+    println!(
+        "  Rare (unique): {} items ({:.0}%)",
+        rare,
+        100.0 * rare as f64 / items.len() as f64
+    );
     println!();
 
     // =========================================================================
@@ -238,7 +297,10 @@ fn main() {
 
     println!("For Action Fan (diverse recommendations):");
     for rec in &recs {
-        println!("  {} - \"{}\" ({})", rec.item_idx, items[rec.item_idx].name, rec.reason);
+        println!(
+            "  {} - \"{}\" ({})",
+            rec.item_idx, items[rec.item_idx].name, rec.reason
+        );
     }
     println!();
 
@@ -248,7 +310,10 @@ fn main() {
 
     println!("For New User:");
     for rec in &recs {
-        println!("  {} - \"{}\" ({})", rec.item_idx, items[rec.item_idx].name, rec.reason);
+        println!(
+            "  {} - \"{}\" ({})",
+            rec.item_idx, items[rec.item_idx].name, rec.reason
+        );
     }
     println!();
 
@@ -257,7 +322,9 @@ fn main() {
     // =========================================================================
     println!("--- Pure Popularity vs KDF Recommendation ---\n");
 
-    let mut pop_sorted: Vec<_> = items.iter().enumerate()
+    let mut pop_sorted: Vec<_> = items
+        .iter()
+        .enumerate()
         .filter(|(i, _)| !user_history.contains(i))
         .collect();
     pop_sorted.sort_by(|a, b| b.1.popularity.partial_cmp(&a.1.popularity).unwrap());
@@ -271,9 +338,10 @@ fn main() {
     let kdf_recs = diverse_rec.recommend(&items, &user_history, 5);
     println!("KDF Diverse (top 5):");
     for rec in &kdf_recs {
-        println!("  {} - \"{}\" (pop: {:.2}, {})",
-            rec.item_idx, items[rec.item_idx].name,
-            items[rec.item_idx].popularity, rec.reason);
+        println!(
+            "  {} - \"{}\" (pop: {:.2}, {})",
+            rec.item_idx, items[rec.item_idx].name, items[rec.item_idx].popularity, rec.reason
+        );
     }
     println!();
 

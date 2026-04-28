@@ -1,18 +1,18 @@
 //! Explanation generation demonstration
-use kdf::{Kdf, cosine_similarity};
+use kdf::{cosine_similarity, Kdf};
 
 fn main() {
     println!("=== KDF Explanation Generation ===\n");
 
     // Create test dataset
     let items = vec![
-        vec![1.0, 0.0, 0.0],    // 0: Cluster A representative
-        vec![0.98, 0.1, 0.0],   // 1: Cluster A member
-        vec![0.95, 0.15, 0.0],  // 2: Cluster A member
-        vec![0.0, 1.0, 0.0],    // 3: Cluster B representative
-        vec![0.05, 0.98, 0.0],  // 4: Cluster B member
-        vec![-1.0, 0.0, 0.0],   // 5: Rare item
-        vec![0.5, 0.5, 0.5],    // 6: Edge item
+        vec![1.0, 0.0, 0.0],   // 0: Cluster A representative
+        vec![0.98, 0.1, 0.0],  // 1: Cluster A member
+        vec![0.95, 0.15, 0.0], // 2: Cluster A member
+        vec![0.0, 1.0, 0.0],   // 3: Cluster B representative
+        vec![0.05, 0.98, 0.0], // 4: Cluster B member
+        vec![-1.0, 0.0, 0.0],  // 5: Rare item
+        vec![0.5, 0.5, 0.5],   // 6: Edge item
     ];
 
     let kdf = Kdf::with_defaults();
@@ -52,7 +52,7 @@ fn main() {
         "Deep learning improves accuracy",
         "AI improves model accuracy",
         "Natural language processing overview",
-        "Quantum computing introduction",  // Rare
+        "Quantum computing introduction", // Rare
     ];
 
     let result = kdf.process(&documents, 0.5, |a, b| kdf::levenshtein_similarity(a, b));

@@ -14,14 +14,15 @@ use std::collections::HashMap;
 #[derive(Clone)]
 struct Sample {
     embedding: Vec<f64>,
-    augmentation_id: usize,  // Samples with same ID are positive pairs
+    augmentation_id: usize, // Samples with same ID are positive pairs
 }
 
 /// Contrastive learning batch with KDF-guided negative selection
+#[allow(dead_code)]
 struct KdfContrastiveBatch {
     anchors: Vec<usize>,
     positives: Vec<usize>,
-    hard_negatives: Vec<Vec<usize>>,  // Per anchor
+    hard_negatives: Vec<Vec<usize>>, // Per anchor
     layer_distribution: HashMap<String, usize>,
 }
 
@@ -39,27 +40,56 @@ fn main() {
     // Same augmentation_id = positive pair
     let samples = vec![
         // Group 1: Similar embeddings (same semantic content)
-        Sample { embedding: vec![1.0, 0.0, 0.0, 0.0], augmentation_id: 0 },
-        Sample { embedding: vec![0.95, 0.05, 0.0, 0.0], augmentation_id: 0 },  // Aug of 0
-
-        Sample { embedding: vec![0.0, 1.0, 0.0, 0.0], augmentation_id: 1 },
-        Sample { embedding: vec![0.05, 0.95, 0.0, 0.0], augmentation_id: 1 },  // Aug of 2
-
+        Sample {
+            embedding: vec![1.0, 0.0, 0.0, 0.0],
+            augmentation_id: 0,
+        },
+        Sample {
+            embedding: vec![0.95, 0.05, 0.0, 0.0],
+            augmentation_id: 0,
+        }, // Aug of 0
+        Sample {
+            embedding: vec![0.0, 1.0, 0.0, 0.0],
+            augmentation_id: 1,
+        },
+        Sample {
+            embedding: vec![0.05, 0.95, 0.0, 0.0],
+            augmentation_id: 1,
+        }, // Aug of 2
         // Group 2: Different semantic content
-        Sample { embedding: vec![0.0, 0.0, 1.0, 0.0], augmentation_id: 2 },
-        Sample { embedding: vec![0.0, 0.0, 0.9, 0.1], augmentation_id: 2 },  // Aug of 4
-
+        Sample {
+            embedding: vec![0.0, 0.0, 1.0, 0.0],
+            augmentation_id: 2,
+        },
+        Sample {
+            embedding: vec![0.0, 0.0, 0.9, 0.1],
+            augmentation_id: 2,
+        }, // Aug of 4
         // Hard negatives: Similar embedding but different semantic
-        Sample { embedding: vec![0.7, 0.3, 0.0, 0.0], augmentation_id: 3 },  // Close to 0 but different
-        Sample { embedding: vec![0.3, 0.7, 0.0, 0.0], augmentation_id: 4 },  // Close to 2 but different
-
+        Sample {
+            embedding: vec![0.7, 0.3, 0.0, 0.0],
+            augmentation_id: 3,
+        }, // Close to 0 but different
+        Sample {
+            embedding: vec![0.3, 0.7, 0.0, 0.0],
+            augmentation_id: 4,
+        }, // Close to 2 but different
         // Easy negatives: Very different
-        Sample { embedding: vec![0.0, 0.0, 0.0, 1.0], augmentation_id: 5 },
+        Sample {
+            embedding: vec![0.0, 0.0, 0.0, 1.0],
+            augmentation_id: 5,
+        },
     ];
 
     println!("Total samples: {}", samples.len());
-    println!("Augmentation groups: {} unique",
-        samples.iter().map(|s| s.augmentation_id).collect::<std::collections::HashSet<_>>().len());
+    println!(
+        "Augmentation groups: {} unique",
+        samples
+            .iter()
+            .map(|s| s.augmentation_id)
+            .collect::<std::collections::HashSet<_>>()
+            .len()
+    );
     println!();
 
     // =========================================================================
@@ -78,8 +108,10 @@ fn main() {
     for (i, sample) in samples.iter().enumerate() {
         let layer = result.layers[i];
         let degree = result.degrees[i];
-        println!("  {} [aug={}]: {:?} (degree={})",
-            i, sample.augmentation_id, layer, degree);
+        println!(
+            "  {} [aug={}]: {:?} (degree={})",
+            i, sample.augmentation_id, layer, degree
+        );
     }
     println!();
 
@@ -117,24 +149,30 @@ fn main() {
     let anchor = &samples[anchor_idx];
 
     // Positive: same augmentation_id
-    let positive_idx = samples.iter()
-        .position(|s| s.augmentation_id == anchor.augmentation_id && std::ptr::eq(s, anchor) == false)
+    let positive_idx = samples
+        .iter()
+        .position(|s| s.augmentation_id == anchor.augmentation_id && !std::ptr::eq(s, anchor))
         .unwrap_or(anchor_idx);
 
     // Hard negatives: Edge items with different augmentation_id
-    let hard_negatives: Vec<usize> = edge_items.iter()
+    let hard_negatives: Vec<usize> = edge_items
+        .iter()
         .filter(|&&i| samples[i].augmentation_id != anchor.augmentation_id)
         .cloned()
         .collect();
 
     // Easy negatives: Core items with different augmentation_id
-    let easy_negatives: Vec<usize> = core_items.iter()
+    let easy_negatives: Vec<usize> = core_items
+        .iter()
         .filter(|&&i| samples[i].augmentation_id != anchor.augmentation_id)
         .cloned()
         .collect();
 
     println!("Anchor: {} (aug={})", anchor_idx, anchor.augmentation_id);
-    println!("Positive: {} (aug={})", positive_idx, samples[positive_idx].augmentation_id);
+    println!(
+        "Positive: {} (aug={})",
+        positive_idx, samples[positive_idx].augmentation_id
+    );
     println!("Hard negatives: {:?}", hard_negatives);
     println!("Easy negatives: {:?}", easy_negatives);
     println!();

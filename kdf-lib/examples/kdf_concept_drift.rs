@@ -48,14 +48,16 @@ fn demo_gradual_drift() {
         let center = t as f64 * 0.5;
         let data = generate_cluster_data(100, center, 0.3);
 
-        let result = kdf.process(&data, 0.85, euclidean_similarity);
+        let result = kdf.process(&data, 0.85, |a, b| euclidean_similarity(a, b));
         let metrics = LayerMetrics::from_result(&result, &data);
 
         let drift = drift_detector.update(metrics.clone());
 
         println!("   時刻 t={}: センター={:.1}", t, center);
-        println!("      Core: {} 件, 重心=({:.2}, {:.2})",
-                 metrics.core_count, metrics.core_centroid.0, metrics.core_centroid.1);
+        println!(
+            "      Core: {} 件, 重心=({:.2}, {:.2})",
+            metrics.core_count, metrics.core_centroid.0, metrics.core_centroid.1
+        );
         println!("      Rare: {} 件", metrics.rare_count);
 
         if let Some(d) = drift {
@@ -79,14 +81,14 @@ fn demo_sudden_drift() {
     let scenarios = vec![
         ("正常期", 0.0, 0.3),
         ("正常期", 0.0, 0.3),
-        ("突発変化", 3.0, 0.3),  // 突然センターが移動
+        ("突発変化", 3.0, 0.3), // 突然センターが移動
         ("新正常", 3.0, 0.3),
         ("新正常", 3.0, 0.3),
     ];
 
     for (t, (label, center, _std)) in scenarios.iter().enumerate() {
         let data = generate_cluster_data(100, *center, 0.3);
-        let result = kdf.process(&data, 0.85, euclidean_similarity);
+        let result = kdf.process(&data, 0.85, |a, b| euclidean_similarity(a, b));
         let metrics = LayerMetrics::from_result(&result, &data);
 
         let drift = drift_detector.update(metrics.clone());
@@ -121,7 +123,7 @@ fn demo_seasonal_pattern() {
         ("夏", vec![(0.0, 1.0), (1.0, 1.0)]),
         ("秋", vec![(0.0, 0.0), (1.0, 0.0)]),
         ("冬", vec![(0.0, -1.0), (1.0, -1.0)]),
-        ("春", vec![(0.0, 0.0), (1.0, 0.0)]),  // 周期の繰り返し
+        ("春", vec![(0.0, 0.0), (1.0, 0.0)]), // 周期の繰り返し
         ("夏", vec![(0.0, 1.0), (1.0, 1.0)]),
     ];
 
@@ -137,7 +139,7 @@ fn demo_seasonal_pattern() {
         // 少数の異常を追加
         data.push(vec![5.0, 5.0]);
 
-        let result = kdf.process(&data, 0.85, euclidean_similarity);
+        let result = kdf.process(&data, 0.85, |a, b| euclidean_similarity(a, b));
         let rare_set: HashSet<usize> = result.rare_items().iter().copied().collect();
 
         // 過去との類似性を計算
@@ -174,7 +176,7 @@ fn demo_anomaly_emergence() {
     let scenarios = vec![
         ("通常", false),
         ("通常", false),
-        ("異常出現", true),   // 新しいタイプの異常が出現
+        ("異常出現", true), // 新しいタイプの異常が出現
         ("異常継続", true),
         ("通常復帰", false),
     ];
@@ -191,7 +193,7 @@ fn demo_anomaly_emergence() {
             data.push(vec![-5.0, -5.0]);
         }
 
-        let result = kdf.process(&data, 0.85, euclidean_similarity);
+        let result = kdf.process(&data, 0.85, |a, b| euclidean_similarity(a, b));
         let rare_set: HashSet<usize> = result.rare_items().iter().copied().collect();
 
         // 新規Rare項目を検出
@@ -200,7 +202,7 @@ fn demo_anomaly_emergence() {
             let mut new_count = 0;
             for &idx in &rare_set {
                 let current_pos = &data[idx];
-                let is_new = prev_data.as_ref().map_or(true, |pd| {
+                let is_new = prev_data.as_ref().is_none_or(|pd| {
                     // 以前のRare位置と比較
                     !prev.iter().any(|&pi| {
                         if pi < pd.len() {
@@ -260,7 +262,8 @@ impl LayerMetrics {
         let core_centroid = if core.is_empty() {
             (0.0, 0.0)
         } else {
-            let sum: (f64, f64) = core.iter()
+            let sum: (f64, f64) = core
+                .iter()
                 .map(|&i| (data[i][0], data[i][1]))
                 .fold((0.0, 0.0), |acc, (x, y)| (acc.0 + x, acc.1 + y));
             (sum.0 / core.len() as f64, sum.1 / core.len() as f64)
@@ -289,8 +292,8 @@ impl DriftDetector {
     fn update(&mut self, current: LayerMetrics) -> Option<DriftInfo> {
         let result = if let Some(ref prev) = self.prev_metrics {
             let core_shift = euclidean_distance(
-                &vec![prev.core_centroid.0, prev.core_centroid.1],
-                &vec![current.core_centroid.0, current.core_centroid.1],
+                &[prev.core_centroid.0, prev.core_centroid.1],
+                &[current.core_centroid.0, current.core_centroid.1],
             );
 
             let rare_change = (current.rare_count as i32 - prev.rare_count as i32).abs();
@@ -356,7 +359,7 @@ fn rand_f64() -> f64 {
 }
 
 /// ユークリッド類似度
-fn euclidean_similarity(a: &Vec<f64>, b: &Vec<f64>) -> f64 {
+fn euclidean_similarity(a: &[f64], b: &[f64]) -> f64 {
     let dist = euclidean_distance(a, b);
     1.0 / (1.0 + dist)
 }

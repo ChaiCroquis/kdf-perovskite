@@ -1,8 +1,8 @@
 //! Causal Discovery Engine
 
+use super::estimators::{GaussianEstimator, KsgEstimator, SymbolicEstimator};
+use super::types::{CausalLink, TeStrategy};
 use std::collections::HashMap;
-use super::types::{TeStrategy, CausalLink};
-use super::estimators::{GaussianEstimator, SymbolicEstimator, KsgEstimator};
 
 /// Statistics for batch computation
 #[derive(Clone, Debug, Default)]
@@ -176,7 +176,8 @@ impl CausalEngine {
         series_b: &[f64],
         strategy: TeStrategy,
     ) -> Option<f64> {
-        let (a_to_b, b_to_a) = self.compute_bidirectional(id_a, id_b, series_a, series_b, strategy)?;
+        let (a_to_b, b_to_a) =
+            self.compute_bidirectional(id_a, id_b, series_a, series_b, strategy)?;
         Some(a_to_b.te - b_to_a.te)
     }
 

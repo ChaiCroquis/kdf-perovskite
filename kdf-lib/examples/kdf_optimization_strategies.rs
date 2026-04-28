@@ -13,7 +13,11 @@ use std::time::Instant;
 
 /// Euclidean distance
 fn euclidean_distance(a: &[f64], b: &[f64]) -> f64 {
-    a.iter().zip(b).map(|(x, y)| (x - y).powi(2)).sum::<f64>().sqrt()
+    a.iter()
+        .zip(b)
+        .map(|(x, y)| (x - y).powi(2))
+        .sum::<f64>()
+        .sqrt()
 }
 
 /// Euclidean similarity
@@ -29,26 +33,29 @@ fn euclidean_similarity(a: &[f64], b: &[f64]) -> f64 {
 fn early_stopping_kdf(
     data: &[Vec<f64>],
     sim_threshold: f64,
-    core_degree_threshold: usize,  // degree >= this → Core
+    core_degree_threshold: usize, // degree >= this → Core
 ) -> (Vec<usize>, Vec<Layer>, f64, usize) {
     let start = Instant::now();
     let n = data.len();
 
     let mut degrees = vec![0usize; n];
-    let mut layers = vec![Layer::Rare; n];  // Default to Rare
+    let mut layers = vec![Layer::Rare; n]; // Default to Rare
     let mut determined = vec![false; n];
     let mut comparisons = 0usize;
 
     // For each pair, check if we need to compare
     for i in 0..n {
         if determined[i] && layers[i] == Layer::Core {
-            continue;  // Already determined as Core, skip
+            continue; // Already determined as Core, skip
         }
 
         for j in (i + 1)..n {
             // Skip if both are already determined as Core
-            if determined[i] && determined[j] &&
-               layers[i] == Layer::Core && layers[j] == Layer::Core {
+            if determined[i]
+                && determined[j]
+                && layers[i] == Layer::Core
+                && layers[j] == Layer::Core
+            {
                 continue;
             }
 
@@ -95,7 +102,8 @@ fn early_stopping_kdf(
             Layer::Rare => selected.push(i),
             Layer::Edge => selected.push(i),
             Layer::Core => {
-                if core_count % 3 == 0 {  // Sample 1/3 of Core
+                if core_count % 3 == 0 {
+                    // Sample 1/3 of Core
                     selected.push(i);
                 }
                 core_count += 1;
@@ -207,7 +215,8 @@ fn reduce_dimensions(data: &[Vec<f64>], target_dim: usize) -> Vec<Vec<f64>> {
         *m /= n as f64;
     }
 
-    let centered: Vec<Vec<f64>> = data.iter()
+    let centered: Vec<Vec<f64>> = data
+        .iter()
         .map(|p| p.iter().zip(&means).map(|(v, m)| v - m).collect())
         .collect();
 
@@ -225,9 +234,11 @@ fn reduce_dimensions(data: &[Vec<f64>], target_dim: usize) -> Vec<Vec<f64>> {
     }
 
     // Project data
-    centered.iter()
+    centered
+        .iter()
         .map(|point| {
-            projection.iter()
+            projection
+                .iter()
                 .map(|proj| point.iter().zip(proj).map(|(a, b)| a * b).sum())
                 .collect()
         })
@@ -341,12 +352,12 @@ fn lsh_kdf(
 
     for i in 0..n {
         if degrees[i] == 0 {
-            selected.push(i);  // Rare
+            selected.push(i); // Rare
         } else if degrees[i] as f64 / max_degree as f64 <= 0.3 {
-            selected.push(i);  // Edge
+            selected.push(i); // Edge
         } else {
             if core_count % 3 == 0 {
-                selected.push(i);  // Sample Core
+                selected.push(i); // Sample Core
             }
             core_count += 1;
         }
@@ -361,16 +372,14 @@ fn lsh_kdf(
 // ============================================================================
 
 /// Pruning: Skip pairs that are obviously too far apart
-fn pruning_kdf(
-    data: &[Vec<f64>],
-    sim_threshold: f64,
-) -> (Vec<usize>, f64, usize) {
+fn pruning_kdf(data: &[Vec<f64>], sim_threshold: f64) -> (Vec<usize>, f64, usize) {
     let start = Instant::now();
     let n = data.len();
     let mut comparisons = 0usize;
 
     // Precompute norms for triangle inequality pruning
-    let norms: Vec<f64> = data.iter()
+    let norms: Vec<f64> = data
+        .iter()
         .map(|p| p.iter().map(|x| x * x).sum::<f64>().sqrt())
         .collect();
 
@@ -384,7 +393,7 @@ fn pruning_kdf(
             // Triangle inequality pruning
             let norm_diff = (norms[i] - norms[j]).abs();
             if norm_diff > dist_threshold {
-                continue;  // Cannot be similar enough
+                continue; // Cannot be similar enough
             }
 
             comparisons += 1;
@@ -403,9 +412,7 @@ fn pruning_kdf(
     let mut core_count = 0;
 
     for i in 0..n {
-        if degrees[i] == 0 {
-            selected.push(i);
-        } else if degrees[i] as f64 / max_degree as f64 <= 0.3 {
+        if degrees[i] == 0 || degrees[i] as f64 / max_degree as f64 <= 0.3 {
             selected.push(i);
         } else {
             if core_count % 3 == 0 {
@@ -472,7 +479,8 @@ fn generate_dataset(n: usize, dim: usize) -> Vec<Vec<f64>> {
 }
 
 fn check_rare_preservation(layers_true: &[Layer], selected: &[usize]) -> f64 {
-    let rare_indices: HashSet<usize> = layers_true.iter()
+    let rare_indices: HashSet<usize> = layers_true
+        .iter()
         .enumerate()
         .filter(|(_, &l)| l == Layer::Rare)
         .map(|(i, _)| i)
@@ -482,7 +490,10 @@ fn check_rare_preservation(layers_true: &[Layer], selected: &[usize]) -> f64 {
         return 1.0;
     }
 
-    let preserved = selected.iter().filter(|&&i| rare_indices.contains(&i)).count();
+    let preserved = selected
+        .iter()
+        .filter(|&&i| rare_indices.contains(&i))
+        .count();
     preserved as f64 / rare_indices.len() as f64
 }
 
@@ -521,8 +532,7 @@ fn main() {
 
         // k-NN
         let k = (n as f64).sqrt() as usize;
-        let (knn_sel, _knn_layers, knn_time, knn_comp) =
-            knn_graph_kdf(&data, k, sim_threshold);
+        let (knn_sel, _knn_layers, knn_time, knn_comp) = knn_graph_kdf(&data, k, sim_threshold);
         let knn_rare = check_rare_preservation(&std_layers, &knn_sel);
 
         // Dimension reduction
@@ -539,22 +549,51 @@ fn main() {
 
         println!("   | 戦略 | 時間 | 比較回数 | 削減率 | 希少保持 | 選択数 |");
         println!("   |------|------|----------|--------|----------|--------|");
-        println!("   | Standard | {:>5.1}ms | {:>8} | 100.0% | 100.0% | {:>6} |",
-                 std_time, full_comparisons, std_sel.len());
-        println!("   | 早期終了 | {:>5.1}ms | {:>8} | {:>5.1}% | {:>5.1}% | {:>6} |",
-                 early_time, early_comp, early_comp as f64 / full_comparisons as f64 * 100.0,
-                 early_rare * 100.0, early_sel.len());
-        println!("   | k-NN | {:>5.1}ms | {:>8} | {:>5.1}% | {:>5.1}% | {:>6} |",
-                 knn_time, knn_comp, knn_comp as f64 / full_comparisons as f64 * 100.0,
-                 knn_rare * 100.0, knn_sel.len());
-        println!("   | 次元削減 | {:>5.1}ms | {:>8} | - | {:>5.1}% | {:>6} |",
-                 dim_time, full_comparisons, dim_rare * 100.0, dim_sel.len());
-        println!("   | LSH | {:>5.1}ms | {:>8} | {:>5.1}% | {:>5.1}% | {:>6} |",
-                 lsh_time, lsh_comp, lsh_comp as f64 / full_comparisons as f64 * 100.0,
-                 lsh_rare * 100.0, lsh_sel.len());
-        println!("   | 枝刈り | {:>5.1}ms | {:>8} | {:>5.1}% | {:>5.1}% | {:>6} |",
-                 prune_time, prune_comp, prune_comp as f64 / full_comparisons as f64 * 100.0,
-                 prune_rare * 100.0, prune_sel.len());
+        println!(
+            "   | Standard | {:>5.1}ms | {:>8} | 100.0% | 100.0% | {:>6} |",
+            std_time,
+            full_comparisons,
+            std_sel.len()
+        );
+        println!(
+            "   | 早期終了 | {:>5.1}ms | {:>8} | {:>5.1}% | {:>5.1}% | {:>6} |",
+            early_time,
+            early_comp,
+            early_comp as f64 / full_comparisons as f64 * 100.0,
+            early_rare * 100.0,
+            early_sel.len()
+        );
+        println!(
+            "   | k-NN | {:>5.1}ms | {:>8} | {:>5.1}% | {:>5.1}% | {:>6} |",
+            knn_time,
+            knn_comp,
+            knn_comp as f64 / full_comparisons as f64 * 100.0,
+            knn_rare * 100.0,
+            knn_sel.len()
+        );
+        println!(
+            "   | 次元削減 | {:>5.1}ms | {:>8} | - | {:>5.1}% | {:>6} |",
+            dim_time,
+            full_comparisons,
+            dim_rare * 100.0,
+            dim_sel.len()
+        );
+        println!(
+            "   | LSH | {:>5.1}ms | {:>8} | {:>5.1}% | {:>5.1}% | {:>6} |",
+            lsh_time,
+            lsh_comp,
+            lsh_comp as f64 / full_comparisons as f64 * 100.0,
+            lsh_rare * 100.0,
+            lsh_sel.len()
+        );
+        println!(
+            "   | 枝刈り | {:>5.1}ms | {:>8} | {:>5.1}% | {:>5.1}% | {:>6} |",
+            prune_time,
+            prune_comp,
+            prune_comp as f64 / full_comparisons as f64 * 100.0,
+            prune_rare * 100.0,
+            prune_sel.len()
+        );
         println!();
     }
 
@@ -577,11 +616,22 @@ fn main() {
     println!("   組み合わせ: 次元削減(10→3) + LSH(10 hyperplanes)\n");
     println!("   | 指標 | Standard | 組み合わせ | 改善率 |");
     println!("   |------|----------|------------|--------|");
-    println!("   | 時間 | {:>5.1}ms | {:>9.1}ms | {:>5.1}x |",
-             std_time, combo_time, std_time / combo_time);
-    println!("   | 比較回数 | {:>8} | {:>10} | {:>5.1}% |",
-             full_comp, combo_lsh_comp, combo_lsh_comp as f64 / full_comp as f64 * 100.0);
-    println!("   | 希少保持 | 100.0% | {:>9.1}% | - |", combo_rare * 100.0);
+    println!(
+        "   | 時間 | {:>5.1}ms | {:>9.1}ms | {:>5.1}x |",
+        std_time,
+        combo_time,
+        std_time / combo_time
+    );
+    println!(
+        "   | 比較回数 | {:>8} | {:>10} | {:>5.1}% |",
+        full_comp,
+        combo_lsh_comp,
+        combo_lsh_comp as f64 / full_comp as f64 * 100.0
+    );
+    println!(
+        "   | 希少保持 | 100.0% | {:>9.1}% | - |",
+        combo_rare * 100.0
+    );
 
     println!("\n## 4. 各戦略の特性分析\n");
 

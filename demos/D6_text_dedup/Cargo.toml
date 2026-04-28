@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 license-file = "../../LICENSE"
 description = "KDF Showcase D6 — Forum / SNS text dedup preserving minority opinions"
+default-run = "demo-d6-text-dedup"
 
 [[bin]]
 name = "demo-d6-text-dedup"
@@ -16,3 +17,6 @@ real-data-bench = { path = "../../benchmarks/real_data" }
 rand = { version = "0.8", features = ["small_rng"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+[lints]
+workspace = true

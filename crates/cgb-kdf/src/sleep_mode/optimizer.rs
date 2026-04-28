@@ -5,10 +5,8 @@ use std::collections::HashMap;
 use crate::interning::NodeIdMap;
 
 use super::{
-    context::NodeMoveContext,
-    cooling::AdaptiveCoolingScheduler,
-    entropy_cache::IncrementalEntropyCache,
-    rng::SimpleRng,
+    context::NodeMoveContext, cooling::AdaptiveCoolingScheduler,
+    entropy_cache::IncrementalEntropyCache, rng::SimpleRng,
 };
 
 /// NREM optimization result

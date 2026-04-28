@@ -97,7 +97,10 @@ fn text_rareness_scores(flat: &[(String, String, usize)]) -> Vec<f64> {
             if shs.is_empty() {
                 return 0.0;
             }
-            let inv: f64 = shs.iter().map(|sh| 1.0 / *freq.get(sh).unwrap_or(&1) as f64).sum();
+            let inv: f64 = shs
+                .iter()
+                .map(|sh| 1.0 / *freq.get(sh).unwrap_or(&1) as f64)
+                .sum();
             (inv / shs.len() as f64).min(1.0)
         })
         .collect()
@@ -218,10 +221,13 @@ fn main() {
     println!("Pre-computed graphs for {} questions\n", pre.len());
 
     // Table header
-    println!("| method | keep_rate | answer_turn_recall | answer_session_recall | compression | ms/q |");
+    println!(
+        "| method | keep_rate | answer_turn_recall | answer_session_recall | compression | ms/q |"
+    );
     println!("|---|---:|---:|---:|---:|---:|");
 
-    let mut csv = String::from("method,keep_rate,turn_recall,session_recall,compression,ms_per_q\n");
+    let mut csv =
+        String::from("method,keep_rate,turn_recall,session_recall,compression,ms_per_q\n");
 
     for &rate in &rates {
         for method in &methods {
@@ -273,7 +279,10 @@ fn main() {
                 "| {} | {:.2} | {:.4} | {:.4} | {:.4} | {:.2} |",
                 method, rate, r, sr, c, w
             );
-            csv.push_str(&format!("{},{},{:.4},{:.4},{:.4},{:.2}\n", method, rate, r, sr, c, w));
+            csv.push_str(&format!(
+                "{},{},{:.4},{:.4},{:.4},{:.2}\n",
+                method, rate, r, sr, c, w
+            ));
         }
     }
 

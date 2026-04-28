@@ -1,8 +1,8 @@
 //! VNE calculation and change detection
 
+use super::matrix::{density_matrix, laplacian_matrix};
+use super::types::{ChangeDetection, VNEResult};
 use nalgebra::SymmetricEigen;
-use super::matrix::{laplacian_matrix, density_matrix};
-use super::types::{VNEResult, ChangeDetection};
 
 /// Compute Von Neumann Entropy from edge list
 ///

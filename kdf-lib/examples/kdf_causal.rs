@@ -29,20 +29,60 @@ fn main() {
 
     // Control group (no treatment)
     let control: Vec<CausalSample> = vec![
-        CausalSample { features: vec![1.0, 0.5, 0.3], treated: false, outcome: 10.0 },
-        CausalSample { features: vec![1.0, 0.6, 0.3], treated: false, outcome: 11.0 },
-        CausalSample { features: vec![1.0, 0.5, 0.4], treated: false, outcome: 10.5 },
-        CausalSample { features: vec![0.5, 0.5, 0.5], treated: false, outcome: 8.0 },
-        CausalSample { features: vec![0.5, 0.6, 0.5], treated: false, outcome: 8.5 },
+        CausalSample {
+            features: vec![1.0, 0.5, 0.3],
+            treated: false,
+            outcome: 10.0,
+        },
+        CausalSample {
+            features: vec![1.0, 0.6, 0.3],
+            treated: false,
+            outcome: 11.0,
+        },
+        CausalSample {
+            features: vec![1.0, 0.5, 0.4],
+            treated: false,
+            outcome: 10.5,
+        },
+        CausalSample {
+            features: vec![0.5, 0.5, 0.5],
+            treated: false,
+            outcome: 8.0,
+        },
+        CausalSample {
+            features: vec![0.5, 0.6, 0.5],
+            treated: false,
+            outcome: 8.5,
+        },
     ];
 
     // Treatment group (with intervention)
     let treatment: Vec<CausalSample> = vec![
-        CausalSample { features: vec![1.0, 0.5, 0.3], treated: true, outcome: 15.0 },  // Effect!
-        CausalSample { features: vec![1.0, 0.6, 0.3], treated: true, outcome: 16.0 },  // Effect!
-        CausalSample { features: vec![1.0, 0.5, 0.4], treated: true, outcome: 15.5 },  // Effect!
-        CausalSample { features: vec![0.5, 0.5, 0.5], treated: true, outcome: 8.5 },   // No effect
-        CausalSample { features: vec![0.5, 0.6, 0.5], treated: true, outcome: 9.0 },   // Slight effect
+        CausalSample {
+            features: vec![1.0, 0.5, 0.3],
+            treated: true,
+            outcome: 15.0,
+        }, // Effect!
+        CausalSample {
+            features: vec![1.0, 0.6, 0.3],
+            treated: true,
+            outcome: 16.0,
+        }, // Effect!
+        CausalSample {
+            features: vec![1.0, 0.5, 0.4],
+            treated: true,
+            outcome: 15.5,
+        }, // Effect!
+        CausalSample {
+            features: vec![0.5, 0.5, 0.5],
+            treated: true,
+            outcome: 8.5,
+        }, // No effect
+        CausalSample {
+            features: vec![0.5, 0.6, 0.5],
+            treated: true,
+            outcome: 9.0,
+        }, // Slight effect
     ];
 
     // Analyze control group
@@ -62,12 +102,14 @@ fn main() {
     println!("\nLayer changes under treatment:");
     for i in 0..control.len() {
         if control_result.layers[i] != treatment_result.layers[i] {
-            println!("  Sample {}: {:?} -> {:?} (outcome: {:.1} -> {:.1})",
+            println!(
+                "  Sample {}: {:?} -> {:?} (outcome: {:.1} -> {:.1})",
                 i,
                 control_result.layers[i],
                 treatment_result.layers[i],
                 control[i].outcome,
-                treatment[i].outcome);
+                treatment[i].outcome
+            );
         }
     }
     println!();
@@ -78,10 +120,7 @@ fn main() {
     println!("--- Heterogeneous Treatment Effects ---\n");
 
     // Combine all samples
-    let all_samples: Vec<CausalSample> = control.iter()
-        .chain(treatment.iter())
-        .cloned()
-        .collect();
+    let all_samples: Vec<CausalSample> = control.iter().chain(treatment.iter()).cloned().collect();
 
     let combined_result = kdf.process(&all_samples, 0.9, |a, b| {
         cosine_similarity(&a.features, &b.features)
@@ -94,8 +133,10 @@ fn main() {
     // These might represent unusual treatment effects
     for &idx in &rare_in_combined {
         let sample = &all_samples[idx];
-        println!("  Index {}: treated={}, outcome={:.1}, features={:?}",
-            idx, sample.treated, sample.outcome, sample.features);
+        println!(
+            "  Index {}: treated={}, outcome={:.1}, features={:?}",
+            idx, sample.treated, sample.outcome, sample.features
+        );
     }
     println!();
 

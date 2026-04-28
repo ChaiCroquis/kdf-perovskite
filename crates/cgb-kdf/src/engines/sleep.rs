@@ -2,9 +2,9 @@
 //!
 //! Background optimization and crystallization.
 
-use std::collections::HashMap;
-use super::TaskType;
 use super::super::sleep_mode::SleepModeOptimizer;
+use super::TaskType;
+use std::collections::HashMap;
 
 /// Heavy task for background processing
 #[derive(Clone, Debug)]
@@ -86,7 +86,8 @@ impl KDFSleepEngine {
     /// Queue a task
     pub fn queue_task(&mut self, task: HeavyTask) {
         // Insert by priority (higher priority at end so pop() gets them first)
-        let pos = self.task_queue
+        let pos = self
+            .task_queue
             .iter()
             .position(|t| t.priority > task.priority)
             .unwrap_or(self.task_queue.len());

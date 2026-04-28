@@ -16,7 +16,11 @@ use std::time::Instant;
 
 /// Euclidean distance
 fn euclidean_distance(a: &[f64], b: &[f64]) -> f64 {
-    a.iter().zip(b).map(|(x, y)| (x - y).powi(2)).sum::<f64>().sqrt()
+    a.iter()
+        .zip(b)
+        .map(|(x, y)| (x - y).powi(2))
+        .sum::<f64>()
+        .sqrt()
 }
 
 /// Euclidean similarity (for KDF)
@@ -142,7 +146,8 @@ fn compute_gram_matrix(data: &[Vec<f64>], gamma: f64) -> Vec<Vec<f64>> {
     for i in 0..n {
         for j in i..n {
             // RBF kernel: K(x,y) = exp(-gamma * ||x-y||²)
-            let dist_sq: f64 = data[i].iter()
+            let dist_sq: f64 = data[i]
+                .iter()
                 .zip(&data[j])
                 .map(|(a, b)| (a - b).powi(2))
                 .sum();
@@ -186,7 +191,7 @@ struct BenchResult {
     original_time_ms: f64,
     reduced_time_ms: f64,
     speedup: f64,
-    theoretical_speedup: f64,  // Based on O(n²)
+    theoretical_speedup: f64, // Based on O(n²)
     quality_preserved: f64,
 }
 
@@ -213,23 +218,25 @@ fn main() {
         let data = generate_dataset(n, dim);
 
         // Apply KDF
-        let kdf = Kdf::new(KdfParams::builder()
-            .selection_sim_threshold(0.6)
-            .build());
+        let kdf = Kdf::new(KdfParams::builder().selection_sim_threshold(0.6).build());
 
         let start = Instant::now();
         let result = kdf.process(&data, 0.9, |a, b| euclidean_similarity(a, b));
         let kdf_time = start.elapsed().as_secs_f64() * 1000.0;
 
-        let reduced_data: Vec<Vec<f64>> = result.selected.iter()
-            .map(|&i| data[i].clone())
-            .collect();
+        let reduced_data: Vec<Vec<f64>> =
+            result.selected.iter().map(|&i| data[i].clone()).collect();
 
         let compression = data.len() as f64 / reduced_data.len() as f64;
         let theoretical_speedup_n2 = compression * compression;
 
         println!("   KDF前処理: {:.2}ms", kdf_time);
-        println!("   圧縮率: {:.1}x ({} → {} 件)", compression, n, reduced_data.len());
+        println!(
+            "   圧縮率: {:.1}x ({} → {} 件)",
+            compression,
+            n,
+            reduced_data.len()
+        );
         println!("   理論的O(n²)高速化: {:.1}x\n", theoretical_speedup_n2);
 
         let mut results: Vec<BenchResult> = Vec::new();
@@ -251,11 +258,12 @@ fn main() {
             reduced_time_ms: t1_reduced + kdf_time,
             speedup: t1_orig / (t1_reduced + kdf_time),
             theoretical_speedup: theoretical_speedup_n2,
-            quality_preserved: 1.0,  // Exact for selected items
+            quality_preserved: 1.0, // Exact for selected items
         });
 
         // ----- Algorithm 2: Hierarchical Clustering -----
-        if n <= 1000 {  // Skip for large n (too slow)
+        if n <= 1000 {
+            // Skip for large n (too slow)
             let start = Instant::now();
             let clusters1 = hierarchical_cluster(&data, 5);
             let t2_orig = start.elapsed().as_secs_f64() * 1000.0;
@@ -266,7 +274,7 @@ fn main() {
 
             // Quality: check if rare items are still in distinct clusters
             let rare_in_orig: Vec<usize> = (0..n)
-                .filter(|&i| result.layers.get(i).map_or(false, |l| *l == kdf::Layer::Rare))
+                .filter(|&i| result.layers.get(i).is_some_and(|l| *l == kdf::Layer::Rare))
                 .map(|i| clusters1[i])
                 .collect();
             let _rare_clusters: std::collections::HashSet<_> = rare_in_orig.iter().collect();
@@ -327,9 +335,10 @@ fn main() {
         println!("   | アルゴリズム | 元時間(ms) | KDF+時間(ms) | 実測高速化 | 理論値 |");
         println!("   |--------------|------------|--------------|------------|--------|");
         for r in &results {
-            println!("   | {:14} | {:>10.2} | {:>12.2} | {:>9.1}x | {:>5.1}x |",
-                     r.name, r.original_time_ms, r.reduced_time_ms,
-                     r.speedup, r.theoretical_speedup);
+            println!(
+                "   | {:14} | {:>10.2} | {:>12.2} | {:>9.1}x | {:>5.1}x |",
+                r.name, r.original_time_ms, r.reduced_time_ms, r.speedup, r.theoretical_speedup
+            );
         }
         println!();
     }
@@ -352,9 +361,8 @@ fn main() {
         let theoretical = compression * compression;
 
         // Measure actual speedup (distance matrix as representative)
-        let reduced_data: Vec<Vec<f64>> = result.selected.iter()
-            .map(|&i| data[i].clone())
-            .collect();
+        let reduced_data: Vec<Vec<f64>> =
+            result.selected.iter().map(|&i| data[i].clone()).collect();
 
         let start = Instant::now();
         let _ = compute_distance_matrix(&data);
@@ -367,8 +375,10 @@ fn main() {
         let actual = t_orig / t_reduced;
         let efficiency = actual / theoretical * 100.0;
 
-        println!("   | {:>4} | {:>6} | {:>8.1}x | {:>7.1}x | {:>4.0}% |",
-                 n, reduced_n, theoretical, actual, efficiency);
+        println!(
+            "   | {:>4} | {:>6} | {:>8.1}x | {:>7.1}x | {:>4.0}% |",
+            n, reduced_n, theoretical, actual, efficiency
+        );
     }
 
     // ========================================================================

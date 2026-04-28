@@ -14,8 +14,8 @@
 //! またはこれらの時間的推移の少なくとも一つ** に基づく") allows
 //! composite indicators. text/temporal scores fit within this.
 
-use std::collections::HashMap;
 use super::Layer;
+use std::collections::HashMap;
 
 /// Multi-modal scoring weights.
 ///
@@ -34,15 +34,39 @@ pub struct MultiModalWeights {
 
 impl Default for MultiModalWeights {
     fn default() -> Self {
-        Self { alpha: 0.5, beta: 0.3, gamma: 0.2 }
+        Self {
+            alpha: 0.5,
+            beta: 0.3,
+            gamma: 0.2,
+        }
     }
 }
 
 impl MultiModalWeights {
-    pub fn graph_heavy() -> Self { Self { alpha: 0.8, beta: 0.1, gamma: 0.1 } }
-    pub fn text_heavy() -> Self { Self { alpha: 0.2, beta: 0.6, gamma: 0.2 } }
-    pub fn balanced() -> Self { Self::default() }
-    pub fn graph_only() -> Self { Self { alpha: 1.0, beta: 0.0, gamma: 0.0 } }
+    pub fn graph_heavy() -> Self {
+        Self {
+            alpha: 0.8,
+            beta: 0.1,
+            gamma: 0.1,
+        }
+    }
+    pub fn text_heavy() -> Self {
+        Self {
+            alpha: 0.2,
+            beta: 0.6,
+            gamma: 0.2,
+        }
+    }
+    pub fn balanced() -> Self {
+        Self::default()
+    }
+    pub fn graph_only() -> Self {
+        Self {
+            alpha: 1.0,
+            beta: 0.0,
+            gamma: 0.0,
+        }
+    }
 }
 
 /// Score a node using graph-layer score + optional text/temporal signals.
@@ -52,8 +76,8 @@ impl MultiModalWeights {
 pub fn score_multi_modal(
     n_nodes: usize,
     layer_of: &HashMap<u32, Layer>,
-    text_rareness: Option<&[f64]>,    // per-node in [0, 1]; None = skip
-    temporal_score: Option<&[f64]>,   // per-node in [0, 1]; None = skip
+    text_rareness: Option<&[f64]>,  // per-node in [0, 1]; None = skip
+    temporal_score: Option<&[f64]>, // per-node in [0, 1]; None = skip
     weights: &MultiModalWeights,
 ) -> Vec<(u32, f64)> {
     (0..n_nodes as u32)
@@ -70,9 +94,7 @@ pub fn score_multi_modal(
             let temp_s = temporal_score
                 .and_then(|arr| arr.get(id as usize).copied())
                 .unwrap_or(0.0);
-            let score = weights.alpha * layer_s
-                      + weights.beta * text_s
-                      + weights.gamma * temp_s;
+            let score = weights.alpha * layer_s + weights.beta * text_s + weights.gamma * temp_s;
             (id, score)
         })
         .collect()
@@ -119,7 +141,10 @@ mod tests {
         let text_rare = vec![0.0, 1.0]; // node 1 has unique text
         let w = MultiModalWeights::text_heavy();
         let s = score_multi_modal(2, &layers, Some(&text_rare), None, &w);
-        assert!(s[1].1 > s[0].1, "text-heavy weight should rank unique-text higher");
+        assert!(
+            s[1].1 > s[0].1,
+            "text-heavy weight should rank unique-text higher"
+        );
     }
 
     #[test]
@@ -129,11 +154,26 @@ mod tests {
         layers.insert(1u32, Layer::Rare); // graph=high, text=low
         let text = vec![1.0, 0.0];
         let keep = 1;
-        let graph_pick = select_top_k_multi_modal(2, &layers, Some(&text), None, keep,
-            &MultiModalWeights::graph_heavy());
-        let text_pick = select_top_k_multi_modal(2, &layers, Some(&text), None, keep,
-            &MultiModalWeights::text_heavy());
+        let graph_pick = select_top_k_multi_modal(
+            2,
+            &layers,
+            Some(&text),
+            None,
+            keep,
+            &MultiModalWeights::graph_heavy(),
+        );
+        let text_pick = select_top_k_multi_modal(
+            2,
+            &layers,
+            Some(&text),
+            None,
+            keep,
+            &MultiModalWeights::text_heavy(),
+        );
         assert!(graph_pick.contains(&1), "graph-heavy picks Rare node");
-        assert!(text_pick.contains(&0), "text-heavy picks high-text-rare node");
+        assert!(
+            text_pick.contains(&0),
+            "text-heavy picks high-text-rare node"
+        );
     }
 }

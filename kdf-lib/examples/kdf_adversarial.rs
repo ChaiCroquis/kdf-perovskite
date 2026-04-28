@@ -89,7 +89,9 @@ fn detect_adversarial(samples: &[Sample], threshold: f64) -> AdversarialAnalysis
 
 /// Generate a simple adversarial perturbation
 fn add_perturbation(sample: &Sample, epsilon: f64, direction: &[f64]) -> Sample {
-    let perturbed_features: Vec<f64> = sample.features.iter()
+    let perturbed_features: Vec<f64> = sample
+        .features
+        .iter()
         .zip(direction.iter())
         .map(|(&f, &d)| f + epsilon * d)
         .collect();
@@ -107,19 +109,53 @@ fn main() {
     // Create clean dataset
     let mut samples: Vec<Sample> = vec![
         // Class 0: Dense cluster
-        Sample { features: vec![1.0, 0.0, 0.0], label: 0, is_adversarial: false },
-        Sample { features: vec![1.0, 0.1, 0.0], label: 0, is_adversarial: false },
-        Sample { features: vec![1.0, 0.0, 0.1], label: 0, is_adversarial: false },
-        Sample { features: vec![0.9, 0.1, 0.1], label: 0, is_adversarial: false },
-
+        Sample {
+            features: vec![1.0, 0.0, 0.0],
+            label: 0,
+            is_adversarial: false,
+        },
+        Sample {
+            features: vec![1.0, 0.1, 0.0],
+            label: 0,
+            is_adversarial: false,
+        },
+        Sample {
+            features: vec![1.0, 0.0, 0.1],
+            label: 0,
+            is_adversarial: false,
+        },
+        Sample {
+            features: vec![0.9, 0.1, 0.1],
+            label: 0,
+            is_adversarial: false,
+        },
         // Class 1: Another cluster
-        Sample { features: vec![0.0, 1.0, 0.0], label: 1, is_adversarial: false },
-        Sample { features: vec![0.1, 1.0, 0.0], label: 1, is_adversarial: false },
-        Sample { features: vec![0.0, 0.9, 0.1], label: 1, is_adversarial: false },
-
+        Sample {
+            features: vec![0.0, 1.0, 0.0],
+            label: 1,
+            is_adversarial: false,
+        },
+        Sample {
+            features: vec![0.1, 1.0, 0.0],
+            label: 1,
+            is_adversarial: false,
+        },
+        Sample {
+            features: vec![0.0, 0.9, 0.1],
+            label: 1,
+            is_adversarial: false,
+        },
         // Class 2: Sparse cluster
-        Sample { features: vec![0.0, 0.0, 1.0], label: 2, is_adversarial: false },
-        Sample { features: vec![0.0, 0.2, 0.8], label: 2, is_adversarial: false },
+        Sample {
+            features: vec![0.0, 0.0, 1.0],
+            label: 2,
+            is_adversarial: false,
+        },
+        Sample {
+            features: vec![0.0, 0.2, 0.8],
+            label: 2,
+            is_adversarial: false,
+        },
     ];
 
     // =========================================================================
@@ -129,12 +165,17 @@ fn main() {
 
     let clean_analysis = detect_adversarial(&samples, 0.85);
 
-    println!("Layer distribution (clean): Core={}, Edge={}, Rare={}",
+    println!(
+        "Layer distribution (clean): Core={}, Edge={}, Rare={}",
         clean_analysis.layer_distribution.0,
         clean_analysis.layer_distribution.1,
-        clean_analysis.layer_distribution.2);
+        clean_analysis.layer_distribution.2
+    );
 
-    println!("Suspicious samples (clean): {:?}", clean_analysis.suspicious_indices);
+    println!(
+        "Suspicious samples (clean): {:?}",
+        clean_analysis.suspicious_indices
+    );
     println!();
 
     // =========================================================================
@@ -144,8 +185,8 @@ fn main() {
 
     // Adversarial: designed to be between class 0 and class 1
     let adv1 = Sample {
-        features: vec![0.5, 0.5, 0.0],  // Between class 0 and 1
-        label: 0,  // Mislabeled as class 0
+        features: vec![0.5, 0.5, 0.0], // Between class 0 and 1
+        label: 0,                      // Mislabeled as class 0
         is_adversarial: true,
     };
 
@@ -154,7 +195,7 @@ fn main() {
 
     // Adversarial: outlier disguised as class 2
     let adv3 = Sample {
-        features: vec![0.3, 0.3, 0.4],  // Unusual pattern
+        features: vec![0.3, 0.3, 0.4], // Unusual pattern
         label: 2,
         is_adversarial: true,
     };
@@ -173,20 +214,30 @@ fn main() {
 
     let analysis = detect_adversarial(&samples, 0.85);
 
-    println!("Layer distribution: Core={}, Edge={}, Rare={}",
-        analysis.layer_distribution.0,
-        analysis.layer_distribution.1,
-        analysis.layer_distribution.2);
+    println!(
+        "Layer distribution: Core={}, Edge={}, Rare={}",
+        analysis.layer_distribution.0, analysis.layer_distribution.1, analysis.layer_distribution.2
+    );
     println!();
 
     println!("Sample analysis:");
     for (i, sample) in samples.iter().enumerate() {
         let score = analysis.confidence_scores[i];
-        let flag = if analysis.suspicious_indices.contains(&i) { "SUSPICIOUS" } else { "" };
-        let adv = if sample.is_adversarial { "[ADV]" } else { "     " };
+        let flag = if analysis.suspicious_indices.contains(&i) {
+            "SUSPICIOUS"
+        } else {
+            ""
+        };
+        let adv = if sample.is_adversarial {
+            "[ADV]"
+        } else {
+            "     "
+        };
 
-        println!("  {} {:2}: score={:.2} {} {}",
-            adv, i, score, flag.to_string(), format!("{:?}", sample.features));
+        println!(
+            "  {} {:2}: score={:.2} {} {:?}",
+            adv, i, score, flag, sample.features
+        );
     }
     println!();
 
@@ -195,22 +246,27 @@ fn main() {
     // =========================================================================
     println!("--- Detection Evaluation ---\n");
 
-    let true_adversarial: Vec<usize> = samples.iter().enumerate()
+    let true_adversarial: Vec<usize> = samples
+        .iter()
+        .enumerate()
         .filter(|(_, s)| s.is_adversarial)
         .map(|(i, _)| i)
         .collect();
 
     let detected: &Vec<usize> = &analysis.suspicious_indices;
 
-    let true_positives: usize = detected.iter()
+    let true_positives: usize = detected
+        .iter()
         .filter(|&i| true_adversarial.contains(i))
         .count();
 
-    let false_positives: usize = detected.iter()
+    let false_positives: usize = detected
+        .iter()
         .filter(|&i| !true_adversarial.contains(i))
         .count();
 
-    let false_negatives: usize = true_adversarial.iter()
+    let false_negatives: usize = true_adversarial
+        .iter()
         .filter(|&i| !detected.contains(i))
         .count();
 
@@ -223,11 +279,15 @@ fn main() {
 
     let precision = if true_positives + false_positives > 0 {
         true_positives as f64 / (true_positives + false_positives) as f64
-    } else { 0.0 };
+    } else {
+        0.0
+    };
 
     let recall = if true_positives + false_negatives > 0 {
         true_positives as f64 / (true_positives + false_negatives) as f64
-    } else { 0.0 };
+    } else {
+        0.0
+    };
 
     println!("Precision: {:.2}", precision);
     println!("Recall: {:.2}", recall);

@@ -1,8 +1,8 @@
 //! Phase 6 real-data benchmark runner (Obsidian + public datasets).
 
 use real_data_bench::{
-    metrics, obsidian, public_datasets, selectors::all_selectors,
-    wilcoxon::wilcoxon_signed_rank, Dataset, TrialResult,
+    metrics, obsidian, public_datasets, selectors::all_selectors, wilcoxon::wilcoxon_signed_rank,
+    Dataset, TrialResult,
 };
 use std::collections::{BTreeMap, HashSet};
 use std::path::PathBuf;
@@ -27,7 +27,13 @@ fn main() {
     let mut all: Vec<TrialResult> = Vec::new();
 
     for ds in &datasets {
-        println!("## Dataset: {} — n={}, edges={}, rare={}", ds.name, ds.n_nodes, ds.n_edges(), ds.n_rare());
+        println!(
+            "## Dataset: {} — n={}, edges={}, rare={}",
+            ds.name,
+            ds.n_nodes,
+            ds.n_edges(),
+            ds.n_rare()
+        );
         for trial in 0..N_TRIALS {
             let seed = 2000 + trial as u64;
             for sel in &selectors {
@@ -35,7 +41,13 @@ fn main() {
                 let selected = sel.select(ds, seed);
                 let elapsed = start.elapsed().as_secs_f64() * 1000.0;
                 all.push(metrics::evaluate(
-                    &ds.name, sel.name(), seed, trial, ds, &selected, elapsed
+                    &ds.name,
+                    sel.name(),
+                    seed,
+                    trial,
+                    ds,
+                    &selected,
+                    elapsed,
                 ));
             }
         }
@@ -46,8 +58,7 @@ fn main() {
 
     std::fs::create_dir_all("benchmarks/results").ok();
     let out_path = "benchmarks/results/real_data.json";
-    std::fs::write(out_path, serde_json::to_string_pretty(&all).unwrap())
-        .expect("write results");
+    std::fs::write(out_path, serde_json::to_string_pretty(&all).unwrap()).expect("write results");
     println!("\nResults written to {}", out_path);
 }
 
@@ -71,7 +82,13 @@ fn collect_datasets(_scale: &str) -> Vec<Dataset> {
         };
         match obsidian::build(&cfg) {
             Ok(ds) => {
-                println!("Loaded {} ({} nodes, {} edges, {} rare)", ds.name, ds.n_nodes, ds.n_edges(), ds.n_rare());
+                println!(
+                    "Loaded {} ({} nodes, {} edges, {} rare)",
+                    ds.name,
+                    ds.n_nodes,
+                    ds.n_edges(),
+                    ds.n_rare()
+                );
                 out.push(ds);
             }
             Err(e) => eprintln!("Obsidian build failed: {}", e),
@@ -97,7 +114,10 @@ fn collect_datasets(_scale: &str) -> Vec<Dataset> {
 fn print_table(all: &[TrialResult]) {
     let mut by_key: BTreeMap<(String, String), Vec<&TrialResult>> = BTreeMap::new();
     for r in all {
-        by_key.entry((r.dataset.clone(), r.method.clone())).or_default().push(r);
+        by_key
+            .entry((r.dataset.clone(), r.method.clone()))
+            .or_default()
+            .push(r);
     }
     println!("\n## Aggregated results");
     println!("| Dataset | Method | Rare Recall | Precision@Rare | F1 | Compression | Time (ms) | trials |");
@@ -112,8 +132,10 @@ fn print_table(all: &[TrialResult]) {
         };
         println!(
             "| {} | {} | {:.3} ± {:.3} | {:.3} | {:.3} | {:.3} | {:.2} | {} |",
-            ds, method,
-            mean(|r| r.rare_recall), se(|r| r.rare_recall),
+            ds,
+            method,
+            mean(|r| r.rare_recall),
+            se(|r| r.rare_recall),
             mean(|r| r.precision_at_rare),
             mean(|r| r.f1_at_rare),
             mean(|r| r.compression_rate),
@@ -130,15 +152,24 @@ fn run_wilcoxon_vs_random(all: &[TrialResult]) {
     let mut by_ds: BTreeMap<String, (Vec<f64>, Vec<f64>)> = BTreeMap::new();
     for r in all {
         let entry = by_ds.entry(r.dataset.clone()).or_default();
-        if r.method == "KDF" { entry.0.push(r.rare_recall); }
-        else if r.method == "Random" { entry.1.push(r.rare_recall); }
+        if r.method == "KDF" {
+            entry.0.push(r.rare_recall);
+        } else if r.method == "Random" {
+            entry.1.push(r.rare_recall);
+        }
     }
     for (ds, (kdf, rand)) in &by_ds {
-        if kdf.is_empty() || rand.is_empty() || kdf.len() != rand.len() { continue; }
+        if kdf.is_empty() || rand.is_empty() || kdf.len() != rand.len() {
+            continue;
+        }
         if let Some(w) = wilcoxon_signed_rank(kdf, rand) {
             println!(
                 "| {} | {} | {:+.3} | {:.2} | {:.3} | {} |",
-                ds, w.n_effective, w.median_diff, w.z, w.p_value_two_sided,
+                ds,
+                w.n_effective,
+                w.median_diff,
+                w.z,
+                w.p_value_two_sided,
                 if w.significant_at_01 { "YES" } else { "no" }
             );
         } else {

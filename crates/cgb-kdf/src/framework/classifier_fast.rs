@@ -34,11 +34,7 @@ impl FastNodeClassifier {
     ///
     /// Complexity: O(|V| + |E|) for adjacency build + O(|V|) for classification.
     /// Total: linear in graph size.
-    pub fn classify(
-        &self,
-        node_count: usize,
-        edges: &[(u32, u32, f64)],
-    ) -> NodeClassification {
+    pub fn classify(&self, node_count: usize, edges: &[(u32, u32, f64)]) -> NodeClassification {
         // Step 1: compute degrees in a single pass
         let mut degrees = vec![0.0f64; node_count];
         let mut deg_int = vec![0u32; node_count];
@@ -74,10 +70,13 @@ impl FastNodeClassifier {
 
         // Step 3: compute global stats
         let sum: f64 = degrees.iter().sum();
-        let mean = if node_count > 0 { sum / node_count as f64 } else { 0.0 };
-        let variance: f64 = degrees.iter()
-            .map(|&d| (d - mean).powi(2))
-            .sum::<f64>() / node_count.max(1) as f64;
+        let mean = if node_count > 0 {
+            sum / node_count as f64
+        } else {
+            0.0
+        };
+        let variance: f64 =
+            degrees.iter().map(|&d| (d - mean).powi(2)).sum::<f64>() / node_count.max(1) as f64;
         let std_dev = variance.sqrt();
         let core_min = mean + self.core_threshold * std_dev;
         let garbage_max = (mean - self.garbage_threshold * std_dev).max(0.0);
@@ -101,9 +100,7 @@ impl FastNodeClassifier {
                 // O(1) via CSR: offsets[node]..offsets[node+1] has 1 element.
                 let start = offsets[node] as usize;
                 let neighbor = adj[start];
-                if (neighbor as usize) < node_count
-                    && degrees[neighbor as usize] >= 2.0
-                {
+                if (neighbor as usize) < node_count && degrees[neighbor as usize] >= 2.0 {
                     Layer::Rare
                 } else {
                     Layer::Garbage
@@ -145,8 +142,11 @@ mod tests {
     fn fast_classifier_produces_same_layers_as_default() {
         use super::super::NodeClassifier;
         let edges = vec![
-            (0, 1, 1.0), (0, 2, 1.0), (0, 3, 1.0),
-            (1, 2, 1.0), (2, 3, 1.0),
+            (0, 1, 1.0),
+            (0, 2, 1.0),
+            (0, 3, 1.0),
+            (1, 2, 1.0),
+            (2, 3, 1.0),
             (4, 0, 1.0), // RARE candidate
         ];
         let n = 5;
@@ -156,10 +156,14 @@ mod tests {
         let fast_class = fast.classify(n, &edges);
 
         // Stats should match for same input
-        assert_eq!(std_class.stats.core_count, fast_class.stats.core_count,
-            "core count mismatch");
-        assert_eq!(std_class.stats.rare_count, fast_class.stats.rare_count,
-            "rare count mismatch");
+        assert_eq!(
+            std_class.stats.core_count, fast_class.stats.core_count,
+            "core count mismatch"
+        );
+        assert_eq!(
+            std_class.stats.rare_count, fast_class.stats.rare_count,
+            "rare count mismatch"
+        );
         // Non-deterministic fingerprint differences are expected; layers should match
     }
 
@@ -168,9 +172,7 @@ mod tests {
         use std::time::Instant;
         let fast = FastNodeClassifier::default();
         for &n in &[1000, 10000, 100000] {
-            let edges: Vec<(u32, u32, f64)> = (0..n as u32 - 1)
-                .map(|i| (i, i + 1, 1.0))
-                .collect();
+            let edges: Vec<(u32, u32, f64)> = (0..n as u32 - 1).map(|i| (i, i + 1, 1.0)).collect();
             let t0 = Instant::now();
             let _c = fast.classify(n, &edges);
             let ms = t0.elapsed().as_secs_f64() * 1000.0;

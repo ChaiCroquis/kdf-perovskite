@@ -15,11 +15,11 @@
 
 use adversarial_bench as adv;
 use cgb_kdf::{
-    ActivationScore, Layer, MasterSpecParams, MetaController, NodeClassifier,
-    SemanticImportance, TransitionController,
+    ActivationScore, Layer, MasterSpecParams, MetaController, NodeClassifier, SemanticImportance,
+    TransitionController,
 };
 use real_data_bench::Dataset;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 const N_DATASET_SEEDS: usize = 5;
 const N_STEPS: usize = 5;
@@ -33,17 +33,22 @@ fn select_with_dynamic_context(
     let class = classifier.classify(ds.n_nodes, &ds.edges);
 
     // Score by layer + activation bonus (dynamic context)
-    let mut scored: Vec<(u32, f64)> = (0..ds.n_nodes as u32).map(|id| {
-        let l = class.layers.get(&id).copied().unwrap_or(Layer::Edge);
-        let layer_score = match l {
-            Layer::Rare => 3.0, Layer::Core => 2.0, Layer::Edge => 1.0, Layer::Garbage => 0.0,
-        };
-        // Activation adds a dynamic bonus for "recently/historically active" nodes
-        // This is the KEY mechanism: even if current snapshot classifies node as
-        // Garbage, a positive activation retains selection priority.
-        let dynamic_bonus = activation.get(id);
-        (id, layer_score + dynamic_bonus * 5.0) // weight activation heavily
-    }).collect();
+    let mut scored: Vec<(u32, f64)> = (0..ds.n_nodes as u32)
+        .map(|id| {
+            let l = class.layers.get(&id).copied().unwrap_or(Layer::Edge);
+            let layer_score = match l {
+                Layer::Rare => 3.0,
+                Layer::Core => 2.0,
+                Layer::Edge => 1.0,
+                Layer::Garbage => 0.0,
+            };
+            // Activation adds a dynamic bonus for "recently/historically active" nodes
+            // This is the KEY mechanism: even if current snapshot classifies node as
+            // Garbage, a positive activation retains selection priority.
+            let dynamic_bonus = activation.get(id);
+            (id, layer_score + dynamic_bonus * 5.0) // weight activation heavily
+        })
+        .collect();
     scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
     scored.into_iter().take(keep).map(|(i, _)| i).collect()
 }
@@ -52,24 +57,42 @@ fn run_static_kdf(ds: &Dataset, keep: usize) -> HashSet<u32> {
     let mut classifier = NodeClassifier::default();
     let class = classifier.classify(ds.n_nodes, &ds.edges);
     let score = |l: Layer| -> i32 {
-        match l { Layer::Rare => 3, Layer::Core => 2, Layer::Edge => 1, Layer::Garbage => 0 }
+        match l {
+            Layer::Rare => 3,
+            Layer::Core => 2,
+            Layer::Edge => 1,
+            Layer::Garbage => 0,
+        }
     };
     let mut scored: Vec<(u32, i32)> = (0..ds.n_nodes as u32)
-        .map(|id| (id, score(class.layers.get(&id).copied().unwrap_or(Layer::Edge))))
+        .map(|id| {
+            (
+                id,
+                score(class.layers.get(&id).copied().unwrap_or(Layer::Edge)),
+            )
+        })
         .collect();
     scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
     scored.into_iter().take(keep).map(|(i, _)| i).collect()
 }
 
 fn avg_connectivity(ds: &Dataset) -> f64 {
-    if ds.n_nodes == 0 { return 0.0; }
+    if ds.n_nodes == 0 {
+        return 0.0;
+    }
     let mut deg = vec![0u32; ds.n_nodes];
     for &(u, v, _) in &ds.edges {
-        if (u as usize) < ds.n_nodes { deg[u as usize] += 1; }
-        if (v as usize) < ds.n_nodes { deg[v as usize] += 1; }
+        if (u as usize) < ds.n_nodes {
+            deg[u as usize] += 1;
+        }
+        if (v as usize) < ds.n_nodes {
+            deg[v as usize] += 1;
+        }
     }
     let non_iso: Vec<u32> = deg.into_iter().filter(|&d| d > 0).collect();
-    if non_iso.is_empty() { 0.0 } else {
+    if non_iso.is_empty() {
+        0.0
+    } else {
         non_iso.iter().sum::<u32>() as f64 / non_iso.len() as f64
     }
 }
@@ -77,9 +100,11 @@ fn avg_connectivity(ds: &Dataset) -> f64 {
 fn run_dynamic_loop(dataset_seed: u64, verbose: bool) -> Vec<(usize, f64, f64)> {
     // Returns vector of (step, recall_static, recall_dynamic)
     let snapshots = adv::temporal_snapshots(500, N_STEPS, dataset_seed);
-    let mut activation = ActivationScore::default();
-    activation.decay_rate = 0.05; // slower decay for persistence
-    activation.event_increment = 1.0;
+    let mut activation = ActivationScore {
+        decay_rate: 0.05, // slower decay for persistence
+        event_increment: 1.0,
+        ..Default::default()
+    };
 
     let mc = MetaController::default();
     let mut params = MasterSpecParams::default();
@@ -112,7 +137,9 @@ fn run_dynamic_loop(dataset_seed: u64, verbose: bool) -> Vec<(usize, f64, f64)> 
         let dynamic_sel = select_with_dynamic_context(ds, &activation, keep);
 
         let recall = |sel: &HashSet<u32>| -> f64 {
-            if ds.rare_ground_truth.is_empty() { return 0.0; }
+            if ds.rare_ground_truth.is_empty() {
+                return 0.0;
+            }
             sel.intersection(&ds.rare_ground_truth).count() as f64
                 / ds.rare_ground_truth.len() as f64
         };
@@ -137,10 +164,14 @@ fn main() {
 
     let seeds: Vec<u64> = (0..N_DATASET_SEEDS as u64).map(|i| 42 + i * 100).collect();
     let mut per_step: Vec<(f64, f64)> = vec![(0.0, 0.0); N_STEPS];
-    let mut n_runs = vec![0usize; N_STEPS];
+    let mut n_runs = [0usize; N_STEPS];
 
     for (i, &seed) in seeds.iter().enumerate() {
-        println!("## Dataset seed {} ({})", seed, if i == 0 { "verbose" } else { "summary" });
+        println!(
+            "## Dataset seed {} ({})",
+            seed,
+            if i == 0 { "verbose" } else { "summary" }
+        );
         let results = run_dynamic_loop(seed, i == 0);
         for (step, r_static, r_dynamic) in results {
             per_step[step].0 += r_static;
@@ -149,7 +180,10 @@ fn main() {
         }
     }
 
-    println!("\n## Aggregated recall across {} dataset seeds\n", N_DATASET_SEEDS);
+    println!(
+        "\n## Aggregated recall across {} dataset seeds\n",
+        N_DATASET_SEEDS
+    );
     println!("| Step | Static KDF | Dynamic KDF (TransitionController loop) | Δ |");
     println!("|---:|---:|---:|---:|");
     for step in 0..N_STEPS {
@@ -157,14 +191,23 @@ fn main() {
         let rs = per_step[step].0 / n;
         let rd = per_step[step].1 / n;
         let delta = rd - rs;
-        let marker = if delta.abs() < 0.01 { "≈" }
-                     else if delta > 0.0 { "✅" }
-                     else { "❌" };
-        println!("| t={} | {:.3} | {:.3} | {}{:+.3} |", step, rs, rd, marker, delta);
+        let marker = if delta.abs() < 0.01 {
+            "≈"
+        } else if delta > 0.0 {
+            "✅"
+        } else {
+            "❌"
+        };
+        println!(
+            "| t={} | {:.3} | {:.3} | {}{:+.3} |",
+            step, rs, rd, marker, delta
+        );
     }
 
     println!("\n## Interpretation");
     println!("- Phase 6 temporal drift failure: Static KDF gets ~0% at t=1..4");
-    println!("- If Dynamic >> Static at t=1..4, the TransitionController RESCUES Phase 6 Mode E failure");
+    println!(
+        "- If Dynamic >> Static at t=1..4, the TransitionController RESCUES Phase 6 Mode E failure"
+    );
     println!("- If Dynamic ≈ Static, full loop does not actually help");
 }

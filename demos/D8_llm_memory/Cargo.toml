@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 license-file = "../../LICENSE"
 description = "KDF Showcase D8 — LLM agent persistent-memory curation (offline synthetic)"
+default-run = "demo-d8-llm-memory"
 
 [[bin]]
 name = "demo-d8-llm-memory"
@@ -16,3 +17,6 @@ real-data-bench = { path = "../../benchmarks/real_data" }
 rand = { version = "0.8", features = ["small_rng"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+[lints]
+workspace = true

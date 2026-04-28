@@ -5,13 +5,14 @@
 //!
 //! Run: cargo run --release --example kdf_early_termination_test
 
-use kdf::{Kdf, Layer, cosine_similarity};
+use kdf::{cosine_similarity, Kdf, Layer};
 use std::time::Instant;
 
 // ============================================================================
 // Early Termination KDF with Representative Comparison
 // ============================================================================
 
+#[allow(dead_code)]
 struct EarlyTerminationResult {
     selected: Vec<usize>,
     layers: Vec<Layer>,
@@ -22,7 +23,7 @@ struct EarlyTerminationResult {
 fn process_early_termination(
     data: &[Vec<f64>],
     threshold: f64,
-    core_degree_threshold: usize,  // If degree >= this, definitely Core
+    core_degree_threshold: usize, // If degree >= this, definitely Core
 ) -> EarlyTerminationResult {
     let n = data.len();
     if n == 0 {
@@ -35,7 +36,7 @@ fn process_early_termination(
 
     let mut comparisons = 0usize;
     let mut degrees = vec![0usize; n];
-    let mut is_core = vec![false; n];  // Early determination
+    let mut is_core = vec![false; n]; // Early determination
 
     // Representatives for each cluster (first item found as representative)
     let mut representatives: Vec<usize> = Vec::new();
@@ -82,7 +83,7 @@ fn process_early_termination(
                 // Check if this item becomes Core
                 if degrees[i] >= core_degree_threshold {
                     is_core[i] = true;
-                    break;  // Don't need more comparisons
+                    break; // Don't need more comparisons
                 }
             }
         }
@@ -97,10 +98,12 @@ fn process_early_termination(
         if !is_core[i] && degrees[i] < core_degree_threshold {
             for j in 0..i {
                 if is_core[j] {
-                    continue;  // Skip items already determined as Core
+                    continue; // Skip items already determined as Core
                 }
-                if cluster_assignments[j].is_some() && cluster_assignments[j] != cluster_assignments[i] {
-                    continue;  // Different clusters, unlikely to be similar
+                if cluster_assignments[j].is_some()
+                    && cluster_assignments[j] != cluster_assignments[i]
+                {
+                    continue; // Different clusters, unlikely to be similar
                 }
 
                 comparisons += 1;
@@ -128,17 +131,19 @@ fn process_early_termination(
         0.0
     };
 
-    let layers: Vec<Layer> = degrees.iter().enumerate().map(|(i, &deg)| {
-        if is_core[i] || deg as f64 > avg_degree * 1.5 {
-            Layer::Core
-        } else if deg == 0 {
-            Layer::Rare
-        } else if (deg as f64) < avg_degree * 0.3 {
-            Layer::Rare
-        } else {
-            Layer::Edge
-        }
-    }).collect();
+    let layers: Vec<Layer> = degrees
+        .iter()
+        .enumerate()
+        .map(|(i, &deg)| {
+            if is_core[i] || deg as f64 > avg_degree * 1.5 {
+                Layer::Core
+            } else if deg == 0 || (deg as f64) < avg_degree * 0.3 {
+                Layer::Rare
+            } else {
+                Layer::Edge
+            }
+        })
+        .collect();
 
     // Phase 3: Select representatives
     let mut selected = Vec::new();
@@ -183,10 +188,12 @@ fn process_grid_early_termination(
 
     // Assign items to grid cells (only first 3 dimensions for efficiency)
     let dims_to_use = dim.min(3);
-    let mut grid: std::collections::HashMap<Vec<i32>, Vec<usize>> = std::collections::HashMap::new();
+    let mut grid: std::collections::HashMap<Vec<i32>, Vec<usize>> =
+        std::collections::HashMap::new();
 
     for (i, point) in data.iter().enumerate() {
-        let cell: Vec<i32> = point.iter()
+        let cell: Vec<i32> = point
+            .iter()
             .take(dims_to_use)
             .map(|&x| (x / grid_size).floor() as i32)
             .collect();
@@ -217,9 +224,15 @@ fn process_grid_early_termination(
                     }
 
                     let mut neighbor = cell.clone();
-                    if neighbor.len() > 0 { neighbor[0] += d0; }
-                    if neighbor.len() > 1 { neighbor[1] += d1; }
-                    if neighbor.len() > 2 { neighbor[2] += d2; }
+                    if !neighbor.is_empty() {
+                        neighbor[0] += d0;
+                    }
+                    if neighbor.len() > 1 {
+                        neighbor[1] += d1;
+                    }
+                    if neighbor.len() > 2 {
+                        neighbor[2] += d2;
+                    }
 
                     if let Some(neighbor_members) = grid.get(&neighbor) {
                         for &i in members {
@@ -241,17 +254,20 @@ fn process_grid_early_termination(
 
     // Classify
     let avg_degree = degrees.iter().sum::<usize>() as f64 / n.max(1) as f64;
-    let layers: Vec<Layer> = degrees.iter().map(|&deg| {
-        if deg == 0 {
-            Layer::Rare
-        } else if deg as f64 > avg_degree * 1.5 {
-            Layer::Core
-        } else if (deg as f64) < avg_degree * 0.3 {
-            Layer::Rare
-        } else {
-            Layer::Edge
-        }
-    }).collect();
+    let layers: Vec<Layer> = degrees
+        .iter()
+        .map(|&deg| {
+            if deg == 0 {
+                Layer::Rare
+            } else if deg as f64 > avg_degree * 1.5 {
+                Layer::Core
+            } else if (deg as f64) < avg_degree * 0.3 {
+                Layer::Rare
+            } else {
+                Layer::Edge
+            }
+        })
+        .collect();
 
     let mut selected = Vec::new();
     let mut core_count = 0;
@@ -321,7 +337,8 @@ fn generate_redundant(n: usize, dim: usize) -> Vec<Vec<f64>> {
 }
 
 fn evaluate_rare_recall(true_layers: &[Layer], predicted_layers: &[Layer]) -> f64 {
-    let true_rare: std::collections::HashSet<usize> = true_layers.iter()
+    let true_rare: std::collections::HashSet<usize> = true_layers
+        .iter()
         .enumerate()
         .filter(|(_, &l)| l == Layer::Rare)
         .map(|(i, _)| i)
@@ -331,7 +348,8 @@ fn evaluate_rare_recall(true_layers: &[Layer], predicted_layers: &[Layer]) -> f6
         return 1.0;
     }
 
-    let predicted_rare: std::collections::HashSet<usize> = predicted_layers.iter()
+    let predicted_rare: std::collections::HashSet<usize> = predicted_layers
+        .iter()
         .enumerate()
         .filter(|(_, &l)| l == Layer::Rare)
         .map(|(i, _)| i)
@@ -373,16 +391,26 @@ fn main() {
         let grid_time = start.elapsed().as_secs_f64() * 1000.0;
         let grid_recall = evaluate_rare_recall(&std_layers, &grid_result.layers);
 
-        println!("| {} | Standard | {:.1}ms | {} | - | 100% |",
-                 n, std_time, std_comp);
-        println!("| {} | EarlyTerm | {:.1}ms | {} | {:.1}% | {:.1}% |",
-                 n, et_time, et_result.comparisons,
-                 (1.0 - et_result.comparisons as f64 / full_comp as f64) * 100.0,
-                 et_recall * 100.0);
-        println!("| {} | Grid | {:.1}ms | {} | {:.1}% | {:.1}% |",
-                 n, grid_time, grid_result.comparisons,
-                 (1.0 - grid_result.comparisons as f64 / full_comp as f64) * 100.0,
-                 grid_recall * 100.0);
+        println!(
+            "| {} | Standard | {:.1}ms | {} | - | 100% |",
+            n, std_time, std_comp
+        );
+        println!(
+            "| {} | EarlyTerm | {:.1}ms | {} | {:.1}% | {:.1}% |",
+            n,
+            et_time,
+            et_result.comparisons,
+            (1.0 - et_result.comparisons as f64 / full_comp as f64) * 100.0,
+            et_recall * 100.0
+        );
+        println!(
+            "| {} | Grid | {:.1}ms | {} | {:.1}% | {:.1}% |",
+            n,
+            grid_time,
+            grid_result.comparisons,
+            (1.0 - grid_result.comparisons as f64 / full_comp as f64) * 100.0,
+            grid_recall * 100.0
+        );
     }
 
     println!("\n## 2. Core Threshold Sensitivity (n=2000)\n");
@@ -398,10 +426,13 @@ fn main() {
     for core_thresh in [3, 5, 10, 20, 50] {
         let result = process_early_termination(&data, threshold, core_thresh);
         let recall = evaluate_rare_recall(&std_layers, &result.layers);
-        println!("| {} | {} | {:.1}% | {:.1}% |",
-                 core_thresh, result.comparisons,
-                 (1.0 - result.comparisons as f64 / full_comp as f64) * 100.0,
-                 recall * 100.0);
+        println!(
+            "| {} | {} | {:.1}% | {:.1}% |",
+            core_thresh,
+            result.comparisons,
+            (1.0 - result.comparisons as f64 / full_comp as f64) * 100.0,
+            recall * 100.0
+        );
     }
 
     println!("\n## 3. Conclusion\n");

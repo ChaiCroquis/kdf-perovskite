@@ -1,5 +1,5 @@
 //! Temporal KDF demonstration - time-aware data processing
-use kdf::{TemporalKdf, TemporalParams, KdfParams, cosine_similarity};
+use kdf::{cosine_similarity, KdfParams, TemporalKdf, TemporalParams};
 
 fn main() {
     println!("=== Temporal KDF Test ===\n");
@@ -17,12 +17,12 @@ fn main() {
 
     // Timestamps: 0=oldest, 100=newest
     let timestamps = vec![
-        10.0,   // Old
-        15.0,   // Old
-        20.0,   // Old
-        90.0,   // New
-        95.0,   // New
-        5.0,    // Very old
+        10.0, // Old
+        15.0, // Old
+        20.0, // Old
+        90.0, // New
+        95.0, // New
+        5.0,  // Very old
     ];
 
     // ========================================================================
@@ -35,7 +35,10 @@ fn main() {
 
     println!("   Selected: {:?}", result.selected);
     for &i in &result.selected {
-        println!("      Item {}: timestamp={}, layer={:?}", i, timestamps[i], result.layers[i]);
+        println!(
+            "      Item {}: timestamp={}, layer={:?}",
+            i, timestamps[i], result.layers[i]
+        );
     }
 
     // ========================================================================
@@ -79,11 +82,26 @@ fn main() {
     // ========================================================================
     println!("\n## 4. Fresh / Stale アイテム分類\n");
 
-    let fresh = temporal_kdf.fresh_items(&items, &timestamps, 0.9, |a, b| cosine_similarity(a, b), 0.5);
-    let stale_rare = temporal_kdf.stale_rare_items(&items, &timestamps, 0.9, |a, b| cosine_similarity(a, b), 0.3);
+    let fresh = temporal_kdf.fresh_items(
+        &items,
+        &timestamps,
+        0.9,
+        |a, b| cosine_similarity(a, b),
+        0.5,
+    );
+    let stale_rare = temporal_kdf.stale_rare_items(
+        &items,
+        &timestamps,
+        0.9,
+        |a, b| cosine_similarity(a, b),
+        0.3,
+    );
 
     println!("   Fresh items (temporal_weight >= 0.5): {:?}", fresh);
-    println!("   Stale rare items (rare & weight < 0.3): {:?}", stale_rare);
+    println!(
+        "   Stale rare items (rare & weight < 0.3): {:?}",
+        stale_rare
+    );
 
     // ========================================================================
     // 5. Use case: Log deduplication with time priority
@@ -96,16 +114,16 @@ fn main() {
         "ERROR: Connection refused",
         "ERROR: Connection refused",
         "WARNING: Disk space low",
-        "ERROR: Out of memory",      // Rare
+        "ERROR: Out of memory", // Rare
     ];
 
     let log_timestamps = vec![
-        10.0,   // Old error
-        20.0,   // Old error (duplicate)
-        30.0,   // Old error (duplicate)
-        90.0,   // Recent error (same message but fresh)
-        85.0,   // Recent warning
-        15.0,   // Old but rare
+        10.0, // Old error
+        20.0, // Old error (duplicate)
+        30.0, // Old error (duplicate)
+        90.0, // Recent error (same message but fresh)
+        85.0, // Recent warning
+        15.0, // Old but rare
     ];
 
     let temporal_kdf = TemporalKdf::new(
@@ -117,16 +135,16 @@ fn main() {
         },
     );
 
-    let result = temporal_kdf.process(
-        &log_entries,
-        &log_timestamps,
-        0.9,
-        |a, b| kdf::levenshtein_similarity(a, b),
-    );
+    let result = temporal_kdf.process(&log_entries, &log_timestamps, 0.9, |a, b| {
+        kdf::levenshtein_similarity(a, b)
+    });
 
     println!("   Input logs: {} entries", log_entries.len());
     println!("   Selected: {} entries", result.selected.len());
-    println!("   冗長削減: {:.1}%\n", (1.0 - result.selected.len() as f64 / log_entries.len() as f64) * 100.0);
+    println!(
+        "   冗長削減: {:.1}%\n",
+        (1.0 - result.selected.len() as f64 / log_entries.len() as f64) * 100.0
+    );
 
     println!("   Selected log entries:");
     for &i in &result.selected {
@@ -134,7 +152,8 @@ fn main() {
             decay_rate: 0.03,
             reference_time: 100.0,
             min_weight: 0.1,
-        }.temporal_weight(log_timestamps[i]);
+        }
+        .temporal_weight(log_timestamps[i]);
         println!(
             "      [t={:>2}] (tw={:.2}) {:?} - {:?}",
             log_timestamps[i] as i32, tw, result.layers[i], log_entries[i]

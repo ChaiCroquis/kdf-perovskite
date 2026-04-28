@@ -6,6 +6,7 @@
 //!   - Very small dt (10^-9)
 //!   - Very small λ (β → 0)
 //!   - Boundary behavior at w → f64::MIN_POSITIVE (denormals)
+//!
 //! Also verifies bit-exact cross-platform behavior assertions.
 
 use cgb_kdf::{Layer, MasterSpecParams};
@@ -35,8 +36,10 @@ fn exp_decay_very_small_dt_preserves_weight() {
 
 #[test]
 fn exp_decay_zero_beta_means_no_decay() {
-    let mut p = MasterSpecParams::default();
-    p.beta = 0.0;
+    let p = MasterSpecParams {
+        beta: 0.0,
+        ..Default::default()
+    };
     let lam = p.lambda(10.0, Layer::Edge);
     assert_eq!(lam, 0.0);
     assert_eq!((-lam * 1.0).exp(), 1.0); // no decay
@@ -56,7 +59,10 @@ fn weight_bit_exact_reproducibility_across_runs() {
     };
     let a = run();
     let b = run();
-    assert_eq!(a, b, "identical runs must produce bit-identical f64 outputs");
+    assert_eq!(
+        a, b,
+        "identical runs must produce bit-identical f64 outputs"
+    );
 }
 
 #[test]
@@ -65,7 +71,13 @@ fn lambda_monotone_in_c_at_large_range() {
     let mut prev = p.lambda(0.0, Layer::Edge);
     for c in [1.0, 10.0, 100.0, 1_000.0, 10_000.0, 100_000.0] {
         let cur = p.lambda(c, Layer::Edge);
-        assert!(cur > prev, "λ must be monotone; C={}, prev={}, cur={}", c, prev, cur);
+        assert!(
+            cur > prev,
+            "λ must be monotone; C={}, prev={}, cur={}",
+            c,
+            prev,
+            cur
+        );
         prev = cur;
     }
 }
@@ -82,7 +94,11 @@ fn exp_decay_long_run_does_not_reach_subnormal() {
     for _ in 0..1_000_000 {
         w *= (-lam * dt).exp();
     }
-    assert!(w > f64::MIN_POSITIVE, "w should not drop to subnormal in 1M steps (got {:e})", w);
+    assert!(
+        w > f64::MIN_POSITIVE,
+        "w should not drop to subnormal in 1M steps (got {:e})",
+        w
+    );
     println!("w after 1M steps: {:e}", w);
 }
 
@@ -97,12 +113,18 @@ fn exp_decay_against_closed_form_rel_err() {
             let n_steps = 10_000;
             let mut w = 1.0_f64;
             let survival = (-lam * dt).exp();
-            for _ in 0..n_steps { w *= survival; }
+            for _ in 0..n_steps {
+                w *= survival;
+            }
             let closed = (-lam * dt * n_steps as f64).exp();
             let rel_err = ((w - closed) / closed.max(f64::MIN_POSITIVE)).abs();
-            assert!(rel_err < 1e-10,
+            assert!(
+                rel_err < 1e-10,
                 "C={}, layer={:?}: rel_err {} too large",
-                c, layer, rel_err);
+                c,
+                layer,
+                rel_err
+            );
         }
     }
 }

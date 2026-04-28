@@ -1,6 +1,6 @@
 //! Basic usage example for KDF
 
-use kdf::{Kdf, cosine_similarity};
+use kdf::{cosine_similarity, Kdf};
 
 fn main() {
     println!("=== KDF Basic Usage Example ===\n");
@@ -37,7 +37,10 @@ fn main() {
 
     println!("\nLayer classification:");
     for (i, layer) in result.layers.iter().enumerate() {
-        println!("  Item {}: {:?} (score: {:.4})", i, layer, result.selection_scores[i]);
+        println!(
+            "  Item {}: {:?} (score: {:.4})",
+            i, layer, result.selection_scores[i]
+        );
     }
 
     // Calculate metrics

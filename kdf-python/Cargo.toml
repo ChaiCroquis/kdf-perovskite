@@ -12,3 +12,6 @@ crate-type = ["cdylib"]
 [dependencies]
 pyo3 = { version = "0.22", features = ["extension-module"] }
 kdf = { path = "../kdf-lib", default-features = false }
+
+[lints]
+workspace = true

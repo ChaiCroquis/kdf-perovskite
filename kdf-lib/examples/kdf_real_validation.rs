@@ -55,7 +55,7 @@ fn validation_redundancy_reduction() {
     let (data, _) = generate_iris_data(150, 42);
 
     let kdf = Kdf::with_defaults();
-    let result = kdf.process(&data, 0.85, euclidean_similarity);
+    let result = kdf.process(&data, 0.85, |a, b| euclidean_similarity(a, b));
 
     let core_items = result.core_items();
     let edge_items = result.edge_items();
@@ -69,12 +69,15 @@ fn validation_redundancy_reduction() {
     println!("Iris風データ (n={}) の整理結果:\n", total);
     println!("  {:>10} {:>10} {:>15}", "層", "件数", "解釈");
     println!("  {}", "-".repeat(40));
-    println!("  {:>10} {:>10} {:>15}", "Core",
-             core_count, "知識飽和（冗長）");
-    println!("  {:>10} {:>10} {:>15}", "Edge",
-             edge_count, "知識に余地あり");
-    println!("  {:>10} {:>10} {:>15}", "Rare",
-             rare_count, "判断材料不足");
+    println!(
+        "  {:>10} {:>10} {:>15}",
+        "Core", core_count, "知識飽和（冗長）"
+    );
+    println!(
+        "  {:>10} {:>10} {:>15}",
+        "Edge", edge_count, "知識に余地あり"
+    );
+    println!("  {:>10} {:>10} {:>15}", "Rare", rare_count, "判断材料不足");
 
     let compression = 100.0 * (1.0 - (edge_count + rare_count) as f64 / total as f64);
     println!("\n  情報圧縮率: {:.1}%", compression);
@@ -96,7 +99,7 @@ fn validation_deferred_judgment() {
     let (data, labels) = generate_research_scenario(100, 42);
 
     let kdf = Kdf::with_defaults();
-    let result = kdf.process(&data, 0.85, euclidean_similarity);
+    let result = kdf.process(&data, 0.85, |a, b| euclidean_similarity(a, b));
 
     let rare_items = result.rare_items();
 
@@ -120,14 +123,23 @@ fn validation_deferred_judgment() {
     println!("  - 少数研究B (孤立): {} 件", total_by_label[2]);
 
     println!("\nRare層（判断保留）の内訳:");
-    println!("  {:>15} {:>10} {:>15}", "研究タイプ", "Rare件数", "保留理由");
+    println!(
+        "  {:>15} {:>10} {:>15}",
+        "研究タイプ", "Rare件数", "保留理由"
+    );
     println!("  {}", "-".repeat(45));
-    println!("  {:>15} {:>10} {:>15}", "主流 (Pb系)",
-             rare_by_label[0], "（通常Core）");
-    println!("  {:>15} {:>10} {:>15}", "少数A (Sn系)",
-             rare_by_label[1], "データ不足");
-    println!("  {:>15} {:>10} {:>15}", "少数B (孤立)",
-             rare_by_label[2], "判断材料なし");
+    println!(
+        "  {:>15} {:>10} {:>15}",
+        "主流 (Pb系)", rare_by_label[0], "（通常Core）"
+    );
+    println!(
+        "  {:>15} {:>10} {:>15}",
+        "少数A (Sn系)", rare_by_label[1], "データ不足"
+    );
+    println!(
+        "  {:>15} {:>10} {:>15}",
+        "少数B (孤立)", rare_by_label[2], "判断材料なし"
+    );
 
     println!("\n解釈:");
     println!("  - Rare層 ≠ 「宝がある場所」");
@@ -147,7 +159,7 @@ fn validation_layer_consistency() {
     // 複数回実行
     let mut results = Vec::new();
     for _ in 0..5 {
-        let result = kdf.process(&data, 0.85, euclidean_similarity);
+        let result = kdf.process(&data, 0.85, |a, b| euclidean_similarity(a, b));
         results.push(extract_layers(&result, data.len()));
     }
 
@@ -156,7 +168,14 @@ fn validation_layer_consistency() {
     let all_consistent = results.iter().all(|r| r == base);
 
     println!("再現性テスト (5回実行):");
-    println!("  結果: {}", if all_consistent { "100% 一致" } else { "不一致あり" });
+    println!(
+        "  結果: {}",
+        if all_consistent {
+            "100% 一致"
+        } else {
+            "不一致あり"
+        }
+    );
 
     // 層別の件数
     let core_count = base.iter().filter(|l| *l == "Core").count();
@@ -213,20 +232,14 @@ fn generate_research_scenario(n: usize, seed: u64) -> (Vec<Vec<f64>>, Vec<usize>
     // 主流研究 (80%): 密集クラスタ
     let n_mainstream = (n as f64 * 0.80) as usize;
     for _ in 0..n_mainstream {
-        data.push(vec![
-            rng.normal() * 0.5 + 0.0,
-            rng.normal() * 0.5 + 0.0,
-        ]);
+        data.push(vec![rng.normal() * 0.5 + 0.0, rng.normal() * 0.5 + 0.0]);
         labels.push(0);
     }
 
     // 少数研究A (15%): 別の場所に小クラスタ
     let n_minor_a = (n as f64 * 0.15) as usize;
     for _ in 0..n_minor_a {
-        data.push(vec![
-            rng.normal() * 0.3 + 3.0,
-            rng.normal() * 0.3 + 0.0,
-        ]);
+        data.push(vec![rng.normal() * 0.3 + 3.0, rng.normal() * 0.3 + 0.0]);
         labels.push(1);
     }
 
@@ -236,10 +249,7 @@ fn generate_research_scenario(n: usize, seed: u64) -> (Vec<Vec<f64>>, Vec<usize>
         // 各点を離れた位置に配置
         let angle = (i as f64 / n_minor_b.max(1) as f64) * 2.0 * std::f64::consts::PI;
         let radius = 5.0 + rng.uniform();
-        data.push(vec![
-            radius * angle.cos(),
-            radius * angle.sin(),
-        ]);
+        data.push(vec![radius * angle.cos(), radius * angle.sin()]);
         labels.push(2);
     }
 
@@ -256,12 +266,19 @@ fn extract_layers(result: &kdf::KdfResult, n: usize) -> Vec<String> {
     let edge_items = result.edge_items();
     let core_items = result.core_items();
 
-    (0..n).map(|i| {
-        if rare_items.contains(&i) { "Rare".to_string() }
-        else if edge_items.contains(&i) { "Edge".to_string() }
-        else if core_items.contains(&i) { "Core".to_string() }
-        else { "Unknown".to_string() }
-    }).collect()
+    (0..n)
+        .map(|i| {
+            if rare_items.contains(&i) {
+                "Rare".to_string()
+            } else if edge_items.contains(&i) {
+                "Edge".to_string()
+            } else if core_items.contains(&i) {
+                "Core".to_string()
+            } else {
+                "Unknown".to_string()
+            }
+        })
+        .collect()
 }
 
 /// 簡易乱数生成器
@@ -271,11 +288,16 @@ struct SimpleRng {
 
 impl SimpleRng {
     fn new(seed: u64) -> Self {
-        Self { state: seed.wrapping_add(1) }
+        Self {
+            state: seed.wrapping_add(1),
+        }
     }
 
     fn next(&mut self) -> u64 {
-        self.state = self.state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        self.state = self
+            .state
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         self.state
     }
 
@@ -291,8 +313,9 @@ impl SimpleRng {
 }
 
 /// ユークリッド類似度
-fn euclidean_similarity(a: &Vec<f64>, b: &Vec<f64>) -> f64 {
-    let dist: f64 = a.iter()
+fn euclidean_similarity(a: &[f64], b: &[f64]) -> f64 {
+    let dist: f64 = a
+        .iter()
         .zip(b.iter())
         .map(|(x, y)| (x - y).powi(2))
         .sum::<f64>()

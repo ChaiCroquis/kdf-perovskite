@@ -9,12 +9,15 @@
 //!   result = kdf.process_text(["hello", "hello", "world", "unique"], threshold=0.7)
 //!   print(result.rare_items())  # ["unique"]
 
-use pyo3::prelude::*;
 use pyo3::exceptions::PyValueError;
+use pyo3::prelude::*;
 
 // Import from kdf crate with explicit path
-use ::kdf::{Kdf as RustKdf, KdfResult as RustKdfResult, Layer as RustLayer, KdfParams};
-use ::kdf::{levenshtein_similarity as rust_levenshtein, cosine_similarity as rust_cosine, euclidean_similarity as rust_euclidean};
+use ::kdf::{
+    cosine_similarity as rust_cosine, euclidean_similarity as rust_euclidean,
+    levenshtein_similarity as rust_levenshtein,
+};
+use ::kdf::{Kdf as RustKdf, KdfParams, KdfResult as RustKdfResult, Layer as RustLayer};
 
 /// Layer classification
 #[pyclass(eq, eq_int)]
@@ -78,7 +81,8 @@ impl KdfResult {
 
     /// Get indices of Core layer items
     fn core_items(&self) -> Vec<usize> {
-        self.selected.iter()
+        self.selected
+            .iter()
             .filter(|&&i| matches!(self.layers.get(i), Some(Layer::Core)))
             .cloned()
             .collect()
@@ -86,7 +90,8 @@ impl KdfResult {
 
     /// Get indices of Edge layer items
     fn edge_items(&self) -> Vec<usize> {
-        self.selected.iter()
+        self.selected
+            .iter()
             .filter(|&&i| matches!(self.layers.get(i), Some(Layer::Edge)))
             .cloned()
             .collect()
@@ -94,7 +99,8 @@ impl KdfResult {
 
     /// Get indices of Rare layer items
     fn rare_items(&self) -> Vec<usize> {
-        self.selected.iter()
+        self.selected
+            .iter()
             .filter(|&&i| matches!(self.layers.get(i), Some(Layer::Rare)))
             .cloned()
             .collect()
@@ -115,10 +121,14 @@ impl KdfResult {
             let dict = pyo3::types::PyDict::new_bound(py);
             dict.set_item("total", self.total).unwrap();
             dict.set_item("selected", self.selected.len()).unwrap();
-            dict.set_item("compression_rate", self.compression_rate()).unwrap();
-            dict.set_item("core_count", self.core_items().len()).unwrap();
-            dict.set_item("edge_count", self.edge_items().len()).unwrap();
-            dict.set_item("rare_count", self.rare_items().len()).unwrap();
+            dict.set_item("compression_rate", self.compression_rate())
+                .unwrap();
+            dict.set_item("core_count", self.core_items().len())
+                .unwrap();
+            dict.set_item("edge_count", self.edge_items().len())
+                .unwrap();
+            dict.set_item("rare_count", self.rare_items().len())
+                .unwrap();
             dict.unbind().into_any()
         })
     }
@@ -226,9 +236,9 @@ impl Kdf {
             return Err(PyValueError::new_err("Data cannot be empty"));
         }
 
-        let result = self.inner.process(&data, threshold, |a, b| {
-            rust_levenshtein(a, b)
-        });
+        let result = self
+            .inner
+            .process(&data, threshold, |a, b| rust_levenshtein(a, b));
 
         Ok((result, data.len()).into())
     }
@@ -247,9 +257,9 @@ impl Kdf {
             return Err(PyValueError::new_err("Data cannot be empty"));
         }
 
-        let result = self.inner.process(&data, threshold, |a, b| {
-            rust_cosine(a, b)
-        });
+        let result = self
+            .inner
+            .process(&data, threshold, |a, b| rust_cosine(a, b));
 
         Ok((result, data.len()).into())
     }
@@ -268,9 +278,9 @@ impl Kdf {
             return Err(PyValueError::new_err("Data cannot be empty"));
         }
 
-        let result = self.inner.process(&data, threshold, |a, b| {
-            rust_euclidean(a, b)
-        });
+        let result = self
+            .inner
+            .process(&data, threshold, |a, b| rust_euclidean(a, b));
 
         Ok((result, data.len()).into())
     }
@@ -292,7 +302,12 @@ impl Kdf {
         let n = data.len();
         let rust_result = self.inner.process_auto(&data, |a, b| rust_cosine(a, b));
 
-        let layers: Vec<Layer> = rust_result.result.layers.iter().map(|&l| l.into()).collect();
+        let layers: Vec<Layer> = rust_result
+            .result
+            .layers
+            .iter()
+            .map(|&l| l.into())
+            .collect();
         let kdf_result = KdfResult {
             selected: rust_result.result.selected,
             layers,
@@ -323,9 +338,16 @@ impl Kdf {
         }
 
         let n = data.len();
-        let rust_result = self.inner.process_auto(&data, |a, b| rust_levenshtein(a, b));
+        let rust_result = self
+            .inner
+            .process_auto(&data, |a, b| rust_levenshtein(a, b));
 
-        let layers: Vec<Layer> = rust_result.result.layers.iter().map(|&l| l.into()).collect();
+        let layers: Vec<Layer> = rust_result
+            .result
+            .layers
+            .iter()
+            .map(|&l| l.into())
+            .collect();
         let kdf_result = KdfResult {
             selected: rust_result.result.selected,
             layers,

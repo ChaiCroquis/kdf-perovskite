@@ -2,9 +2,9 @@
 //!
 //! Provides analysis and insight generation.
 
-use super::graph::SimpleGraph;
 use super::super::framework::Layer;
 use super::super::text_processor::TextProcessor;
+use super::graph::SimpleGraph;
 
 /// KDF-based Think Engine
 ///
@@ -147,7 +147,10 @@ impl KDFThinkEngine {
 
         // Default insight
         if insights.is_empty() {
-            insights.push("システムは正常に動作しています。特筆すべきパターンは検出されませんでした。".to_string());
+            insights.push(
+                "システムは正常に動作しています。特筆すべきパターンは検出されませんでした。"
+                    .to_string(),
+            );
         }
 
         insights

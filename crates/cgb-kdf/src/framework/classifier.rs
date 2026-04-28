@@ -1,8 +1,8 @@
 //! Node Classifier - Classifies nodes into KDF layers
 
-use std::collections::{HashMap, HashSet};
 use super::{ClassificationStats, Layer, NodeClassification};
 use crate::fingerprint::{Fingerprint, NodeLabel, StructuralFingerprintEngine};
+use std::collections::{HashMap, HashSet};
 
 /// Node Classifier - Classifies nodes into KDF layers
 ///
@@ -25,8 +25,8 @@ pub struct NodeClassifier {
 impl Default for NodeClassifier {
     fn default() -> Self {
         Self {
-            core_threshold: 1.0,      // mean + 1*std
-            garbage_threshold: 0.5,   // below mean - 0.5*std with low clustering
+            core_threshold: 1.0,    // mean + 1*std
+            garbage_threshold: 0.5, // below mean - 0.5*std with low clustering
             rare_min_degree: 1,
             fp_engine: StructuralFingerprintEngine::default(),
         }
@@ -51,11 +51,7 @@ impl NodeClassifier {
     ///
     /// # Returns
     /// NodeClassification with layer assignments and RARE fingerprints
-    pub fn classify(
-        &mut self,
-        node_count: usize,
-        edges: &[(u32, u32, f64)],
-    ) -> NodeClassification {
+    pub fn classify(&mut self, node_count: usize, edges: &[(u32, u32, f64)]) -> NodeClassification {
         // Compute degree for each node
         let mut degrees: Vec<f64> = vec![0.0; node_count];
         let mut neighbors: Vec<HashSet<u32>> = vec![HashSet::new(); node_count];
@@ -71,11 +67,14 @@ impl NodeClassifier {
 
         // Compute statistics
         let sum: f64 = degrees.iter().sum();
-        let mean = if node_count > 0 { sum / node_count as f64 } else { 0.0 };
+        let mean = if node_count > 0 {
+            sum / node_count as f64
+        } else {
+            0.0
+        };
 
-        let variance: f64 = degrees.iter()
-            .map(|&d| (d - mean).powi(2))
-            .sum::<f64>() / node_count.max(1) as f64;
+        let variance: f64 =
+            degrees.iter().map(|&d| (d - mean).powi(2)).sum::<f64>() / node_count.max(1) as f64;
         let std_dev = variance.sqrt();
 
         // Thresholds
@@ -98,15 +97,19 @@ impl NodeClassifier {
             } else if neighbor_count == 0 {
                 // Isolated node -> GARBAGE
                 Layer::Garbage
-            } else if neighbor_count == 1 && degree > 0.0 {
-                // Single connection, non-zero weight -> might be RARE
-                // Check if it's a meaningful connection (not just noise)
+            } else if neighbor_count >= 1 && neighbor_count <= self.rare_min_degree && degree > 0.0
+            {
+                // Low-degree connection(s) within rare bandwidth -> might be RARE
+                // rare_min_degree=1 (default, historical) => exact singleton
+                // rare_min_degree=k => neighbor_count in [1..=k] with meaningful connection
                 if self.is_meaningful_rare(node_id, &neighbors[node], &degrees) {
                     Layer::Rare
                 } else {
                     Layer::Garbage
                 }
-            } else if degree <= garbage_max && self.looks_like_noise_fast(degree, neighbors[node].len()) {
+            } else if degree <= garbage_max
+                && self.looks_like_noise_fast(degree, neighbors[node].len())
+            {
                 // Low degree + noise pattern -> GARBAGE
                 Layer::Garbage
             } else {
@@ -168,7 +171,12 @@ impl NodeClassifier {
 
     /// Check if a node looks like noise (legacy O(E) version - kept for reference)
     #[allow(dead_code)]
-    fn looks_like_noise(&self, node: u32, neighbors: &HashSet<u32>, edges: &[(u32, u32, f64)]) -> bool {
+    fn looks_like_noise(
+        &self,
+        node: u32,
+        neighbors: &HashSet<u32>,
+        edges: &[(u32, u32, f64)],
+    ) -> bool {
         // Check if edges have very small weights (noise-like)
         let mut total_weight = 0.0;
         let mut edge_count = 0;
@@ -208,7 +216,8 @@ impl NodeClassifier {
 
     /// Get processing order (CORE first, then EDGE, skip GARBAGE)
     pub fn processing_order(&self, classification: &NodeClassification) -> Vec<u32> {
-        let mut nodes: Vec<(u32, Layer)> = classification.layers
+        let mut nodes: Vec<(u32, Layer)> = classification
+            .layers
             .iter()
             .filter(|(_, layer)| layer.should_process())
             .map(|(&id, &layer)| (id, layer))
@@ -216,7 +225,8 @@ impl NodeClassifier {
 
         // Sort by priority (CORE > EDGE > RARE), then by node ID for determinism
         nodes.sort_by(|a, b| {
-            b.1.priority().cmp(&a.1.priority())
+            b.1.priority()
+                .cmp(&a.1.priority())
                 .then_with(|| a.0.cmp(&b.0))
         });
 

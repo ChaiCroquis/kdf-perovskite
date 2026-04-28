@@ -5,3 +5,6 @@ edition = "2021"
 
 [dependencies]
 kdf = { path = "../../kdf-lib" }
+
+[lints]
+workspace = true

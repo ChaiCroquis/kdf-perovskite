@@ -51,17 +51,18 @@ fn demo_basic_privacy_risk() {
         ("一般G", vec![38.0, 47000.0, 12.0]),
         ("一般H", vec![34.0, 50500.0, 13.0]),
         // ユニークなプロファイル (特定されやすい)
-        ("特異A", vec![85.0, 200000.0, 20.0]),  // 高齢・高収入・高学歴
-        ("特異B", vec![18.0, 15000.0, 8.0]),    // 若年・低収入・低学歴
-        ("特異C", vec![50.0, 500000.0, 22.0]),  // 超高収入・博士
+        ("特異A", vec![85.0, 200000.0, 20.0]), // 高齢・高収入・高学歴
+        ("特異B", vec![18.0, 15000.0, 8.0]),   // 若年・低収入・低学歴
+        ("特異C", vec![50.0, 500000.0, 22.0]), // 超高収入・博士
     ];
 
     // 正規化
-    let features: Vec<Vec<f64>> = population_data.iter()
+    let features: Vec<Vec<f64>> = population_data
+        .iter()
         .map(|(_, f)| normalize_features(f))
         .collect();
 
-    let result = kdf.process(&features, 0.85, euclidean_similarity);
+    let result = kdf.process(&features, 0.85, |a, b| euclidean_similarity(a, b));
 
     println!("   人口統計データのプライバシーリスク評価:\n");
     println!("   {:>8} {:>8} {:>15}", "ID", "KDF層", "リスクレベル");
@@ -92,25 +93,29 @@ fn demo_anonymization_priority() {
     // 医療データ
     let medical_records = vec![
         // 一般的な症例
-        ("患者001", vec![45.0, 120.0, 80.0, 25.0]),  // 年齢, 血圧上, 血圧下, BMI
+        ("患者001", vec![45.0, 120.0, 80.0, 25.0]), // 年齢, 血圧上, 血圧下, BMI
         ("患者002", vec![46.0, 118.0, 78.0, 24.0]),
         ("患者003", vec![44.0, 122.0, 82.0, 26.0]),
         ("患者004", vec![47.0, 119.0, 79.0, 25.0]),
         ("患者005", vec![43.0, 121.0, 81.0, 24.0]),
         ("患者006", vec![48.0, 117.0, 77.0, 27.0]),
         // 特異な症例
-        ("患者007", vec![95.0, 180.0, 110.0, 18.0]),  // 超高齢・高血圧・低体重
-        ("患者008", vec![12.0, 90.0, 60.0, 35.0]),    // 小児・低血圧・肥満
+        ("患者007", vec![95.0, 180.0, 110.0, 18.0]), // 超高齢・高血圧・低体重
+        ("患者008", vec![12.0, 90.0, 60.0, 35.0]),   // 小児・低血圧・肥満
     ];
 
-    let features: Vec<Vec<f64>> = medical_records.iter()
+    let features: Vec<Vec<f64>> = medical_records
+        .iter()
         .map(|(_, f)| normalize_features(f))
         .collect();
 
-    let result = kdf.process(&features, 0.85, euclidean_similarity);
+    let result = kdf.process(&features, 0.85, |a, b| euclidean_similarity(a, b));
 
     println!("   匿名化処理の優先度:\n");
-    println!("   {:>10} {:>8} {:>12} {:>20}", "患者ID", "層", "優先度", "推奨処理");
+    println!(
+        "   {:>10} {:>8} {:>12} {:>20}",
+        "患者ID", "層", "優先度", "推奨処理"
+    );
     println!("   {}", "-".repeat(55));
 
     for (i, (id, _)) in medical_records.iter().enumerate() {
@@ -158,9 +163,12 @@ fn demo_k_anonymity_relation() {
     data.push(vec![90.0, 200000.0]);
     labels.push("ユニーク");
 
-    let result = kdf.process(&data, 0.85, euclidean_similarity);
+    let result = kdf.process(&data, 0.85, |a, b| euclidean_similarity(a, b));
 
-    println!("   {:>12} {:>10} {:>8} {:>15}", "データ", "グループ", "KDF層", "k-匿名性");
+    println!(
+        "   {:>12} {:>10} {:>8} {:>15}",
+        "データ", "グループ", "KDF層", "k-匿名性"
+    );
     println!("   {}", "-".repeat(50));
 
     for (i, label) in labels.iter().enumerate() {
@@ -172,7 +180,13 @@ fn demo_k_anonymity_relation() {
         } else {
             "✅ 満足"
         };
-        println!("   {:>12} {:>10} {:>8} {:>15}", format!("record_{}", i), label, layer, k_status);
+        println!(
+            "   {:>12} {:>10} {:>8} {:>15}",
+            format!("record_{}", i),
+            label,
+            layer,
+            k_status
+        );
     }
 
     println!("\n   【発見】");
@@ -190,18 +204,29 @@ fn demo_differential_privacy() {
 
     // センシティブなデータ
     let salary_data: Vec<Vec<f64>> = vec![
-        vec![50000.0], vec![52000.0], vec![48000.0], vec![51000.0], vec![49000.0],
-        vec![53000.0], vec![47000.0], vec![50500.0], vec![51500.0], vec![48500.0],
+        vec![50000.0],
+        vec![52000.0],
+        vec![48000.0],
+        vec![51000.0],
+        vec![49000.0],
+        vec![53000.0],
+        vec![47000.0],
+        vec![50500.0],
+        vec![51500.0],
+        vec![48500.0],
         // 外れ値 (高い感度を持つ)
-        vec![500000.0],  // CEO級の給与
-        vec![10000.0],   // 極端に低い給与
+        vec![500000.0], // CEO級の給与
+        vec![10000.0],  // 極端に低い給与
     ];
 
-    let result = kdf.process(&salary_data, 0.85, euclidean_similarity);
+    let result = kdf.process(&salary_data, 0.85, |a, b| euclidean_similarity(a, b));
 
     // 各レコードの感度を推定
     println!("   給与データの感度分析:\n");
-    println!("   {:>10} {:>12} {:>8} {:>15}", "Index", "給与", "層", "感度");
+    println!(
+        "   {:>10} {:>12} {:>8} {:>15}",
+        "Index", "給与", "層", "感度"
+    );
     println!("   {}", "-".repeat(50));
 
     for (i, s) in salary_data.iter().enumerate() {
@@ -212,7 +237,10 @@ fn demo_differential_privacy() {
             "Core" => "低 (小さなノイズで十分)",
             _ => "不明",
         };
-        println!("   {:>10} {:>12.0} {:>8} {:>15}", i, s[0], layer, sensitivity);
+        println!(
+            "   {:>10} {:>12.0} {:>8} {:>15}",
+            i, s[0], layer, sensitivity
+        );
     }
 
     // 平均値計算のシミュレーション
@@ -224,15 +252,16 @@ fn demo_differential_privacy() {
     let core_edge: Vec<_> = (0..salary_data.len())
         .filter(|&i| get_layer(&result, i) != "Rare")
         .collect();
-    let mean_without_rare: f64 = core_edge.iter()
-        .map(|&i| salary_data[i][0])
-        .sum::<f64>() / core_edge.len() as f64;
+    let mean_without_rare: f64 =
+        core_edge.iter().map(|&i| salary_data[i][0]).sum::<f64>() / core_edge.len() as f64;
 
     println!("\n   全データの平均: ${:.0}", mean_all);
     println!("   Rare除外の平均: ${:.0}", mean_without_rare);
-    println!("   差異: ${:.0} ({:.1}%)",
-             (mean_all - mean_without_rare).abs(),
-             (mean_all - mean_without_rare).abs() / mean_all * 100.0);
+    println!(
+        "   差異: ${:.0} ({:.1}%)",
+        (mean_all - mean_without_rare).abs(),
+        (mean_all - mean_without_rare).abs() / mean_all * 100.0
+    );
 
     println!("\n   → Rare層が統計値に大きな影響 = 高感度");
     println!("   → Rare層には追加のノイズ注入が必要");
@@ -258,14 +287,15 @@ fn get_layer(result: &kdf::KdfResult, index: usize) -> &'static str {
 /// 特徴量の正規化
 fn normalize_features(features: &[f64]) -> Vec<f64> {
     // Min-Max正規化の簡易版 (固定スケール)
-    features.iter()
+    features
+        .iter()
         .enumerate()
         .map(|(i, &v)| {
             match i {
-                0 => v / 100.0,       // 年齢: 0-100
-                1 => v / 500000.0,    // 収入/血圧: 適当なスケール
-                2 => v / 100.0,       // 教育年数/血圧下
-                3 => v / 50.0,        // BMI
+                0 => v / 100.0,    // 年齢: 0-100
+                1 => v / 500000.0, // 収入/血圧: 適当なスケール
+                2 => v / 100.0,    // 教育年数/血圧下
+                3 => v / 50.0,     // BMI
                 _ => v / 100.0,
             }
         })
@@ -273,8 +303,9 @@ fn normalize_features(features: &[f64]) -> Vec<f64> {
 }
 
 /// ユークリッド類似度
-fn euclidean_similarity(a: &Vec<f64>, b: &Vec<f64>) -> f64 {
-    let dist: f64 = a.iter()
+fn euclidean_similarity(a: &[f64], b: &[f64]) -> f64 {
+    let dist: f64 = a
+        .iter()
         .zip(b.iter())
         .map(|(x, y)| (x - y).powi(2))
         .sum::<f64>()

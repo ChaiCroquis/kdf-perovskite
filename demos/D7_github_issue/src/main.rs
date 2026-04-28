@@ -18,7 +18,9 @@
 //! - KDF (issue co-label + co-author graph)
 //! - KDF+Analogy (Claim 46 fingerprint bridge to open-issue cluster)
 
-use kdf_demos_common::{visualizer::emit_artifacts, Axis, Conclusion, DemoReport, Metric, MethodResult};
+use kdf_demos_common::{
+    visualizer::emit_artifacts, Axis, Conclusion, DemoReport, MethodResult, Metric,
+};
 use rand::prelude::*;
 use rand::rngs::SmallRng;
 use real_data_bench::Dataset;
@@ -34,18 +36,50 @@ fn main() {
     let seeds: Vec<u64> = (0..N_TRIALS as u64).map(|i| 9000 + i).collect();
 
     let (issues, ds, reopen_truth) = synthesize_issues(42);
-    println!("Issues: n={}, edges(co-label/co-author)={}, reopen_truth={}",
-        issues.len(), ds.edges.len(), reopen_truth.len());
+    println!(
+        "Issues: n={}, edges(co-label/co-author)={}, reopen_truth={}",
+        issues.len(),
+        ds.edges.len(),
+        reopen_truth.len()
+    );
 
     let keep = (issues.len() as f64 * SELECTION_FRAC).ceil() as usize;
 
-    let methods: Vec<(String, bool, Box<dyn Fn(&[Issue], &Dataset, u64) -> HashSet<u32>>)> = vec![
-        ("Random".into(), false, Box::new(move |issues, _ds, seed| sample_random(issues.len(), keep, seed))),
-        ("StaleBot".into(), false, Box::new(move |issues, _ds, _seed| sample_stale_young_first(issues, keep))),
-        ("LabelMatch".into(), false, Box::new(move |issues, _ds, _seed| sample_label_match(issues, keep))),
-        ("TextSim".into(), false, Box::new(move |issues, _ds, _seed| sample_text_sim(issues, keep))),
-        ("KDF".into(), false, Box::new(move |_issues, ds, _seed| sample_kdf(ds, keep))),
-        ("KDF+Analogy".into(), false, Box::new(move |issues, ds, _seed| sample_kdf_analogy(issues, ds, keep))),
+    let methods: Vec<(
+        String,
+        bool,
+        Box<dyn Fn(&[Issue], &Dataset, u64) -> HashSet<u32>>,
+    )> = vec![
+        (
+            "Random".into(),
+            false,
+            Box::new(move |issues, _ds, seed| sample_random(issues.len(), keep, seed)),
+        ),
+        (
+            "StaleBot".into(),
+            false,
+            Box::new(move |issues, _ds, _seed| sample_stale_young_first(issues, keep)),
+        ),
+        (
+            "LabelMatch".into(),
+            false,
+            Box::new(move |issues, _ds, _seed| sample_label_match(issues, keep)),
+        ),
+        (
+            "TextSim".into(),
+            false,
+            Box::new(move |issues, _ds, _seed| sample_text_sim(issues, keep)),
+        ),
+        (
+            "KDF".into(),
+            false,
+            Box::new(move |_issues, ds, _seed| sample_kdf(ds, keep)),
+        ),
+        (
+            "KDF+Analogy".into(),
+            false,
+            Box::new(move |issues, ds, _seed| sample_kdf_analogy(issues, ds, keep)),
+        ),
     ];
 
     let mut method_results: Vec<MethodResult> = Vec::new();
@@ -62,38 +96,77 @@ fn main() {
             let ms = t0.elapsed().as_secs_f64() * 1000.0;
             let hits = sel.intersection(&reopen_truth).count();
             let recall = hits as f64 / reopen_truth.len().max(1) as f64;
-            let precision = if sel.is_empty() { 0.0 } else { hits as f64 / sel.len() as f64 };
+            let precision = if sel.is_empty() {
+                0.0
+            } else {
+                hits as f64 / sel.len() as f64
+            };
             let comp = 1.0 - sel.len() as f64 / issues.len() as f64;
             reopen_recalls.push(recall);
             precisions.push(precision);
             compressions.push(comp);
             walls.push(ms);
-            raw_trials.entry(format!("{}/reopen_recall", name)).or_default().push(recall);
-            raw_trials.entry(format!("{}/precision", name)).or_default().push(precision);
+            raw_trials
+                .entry(format!("{}/reopen_recall", name))
+                .or_default()
+                .push(recall);
+            raw_trials
+                .entry(format!("{}/precision", name))
+                .or_default()
+                .push(precision);
         }
         let mean = |v: &[f64]| v.iter().sum::<f64>() / v.len() as f64;
         let r = mean(&reopen_recalls);
         let p = mean(&precisions);
         let c = mean(&compressions);
         let w = mean(&walls);
-        println!("{:14} reopen_recall={:.3}  precision={:.3}  comp={:.3}  ms={:.2}",
-            name, r, p, c, w);
+        println!(
+            "{:14} reopen_recall={:.3}  precision={:.3}  comp={:.3}  ms={:.2}",
+            name, r, p, c, w
+        );
         let mut metrics = BTreeMap::new();
         metrics.insert("reopen_recall".into(), r);
         metrics.insert("precision".into(), p);
         metrics.insert("compression".into(), c);
         metrics.insert("wall_ms".into(), w);
         method_results.push(MethodResult {
-            method: name.clone(), requires_labels: *needs_label,
-            metrics, wall_ms: w, notes: String::new(),
+            method: name.clone(),
+            requires_labels: *needs_label,
+            metrics,
+            wall_ms: w,
+            notes: String::new(),
         });
     }
 
     let metric_definitions = vec![
-        Metric { name: "reopen_recall".into(), higher_is_better: true, mean: 0.0, stderr: 0.0, axis: Axis::KdfStrength },
-        Metric { name: "precision".into(), higher_is_better: true, mean: 0.0, stderr: 0.0, axis: Axis::KdfStrength },
-        Metric { name: "compression".into(), higher_is_better: true, mean: 0.0, stderr: 0.0, axis: Axis::Tie },
-        Metric { name: "wall_ms".into(), higher_is_better: false, mean: 0.0, stderr: 0.0, axis: Axis::KdfWeakness },
+        Metric {
+            name: "reopen_recall".into(),
+            higher_is_better: true,
+            mean: 0.0,
+            stderr: 0.0,
+            axis: Axis::KdfStrength,
+        },
+        Metric {
+            name: "precision".into(),
+            higher_is_better: true,
+            mean: 0.0,
+            stderr: 0.0,
+            axis: Axis::KdfStrength,
+        },
+        Metric {
+            name: "compression".into(),
+            higher_is_better: true,
+            mean: 0.0,
+            stderr: 0.0,
+            axis: Axis::Tie,
+        },
+        Metric {
+            name: "wall_ms".into(),
+            higher_is_better: false,
+            mean: 0.0,
+            stderr: 0.0,
+            axis: Axis::KdfWeakness,
+        },
     ];
 
     let report = DemoReport {
@@ -136,9 +209,9 @@ struct Issue {
     id: u32,
     is_open: bool,
     age_days: u32,
-    labels: Vec<u32>,        // label ids (0..10)
-    author: u32,             // author id (0..50)
-    references: Vec<u32>,    // referenced other issue ids
+    labels: Vec<u32>,     // label ids (0..10)
+    author: u32,          // author id (0..50)
+    references: Vec<u32>, // referenced other issue ids
     title_shingles: HashSet<String>,
 }
 
@@ -163,21 +236,41 @@ fn synthesize_issues(seed: u64) -> (Vec<Issue>, Dataset, HashSet<u32>) {
             patterns[pattern_idx].clone()
         } else {
             // noise: random labels
-            (vec![rng.gen_range(0..10) as u32], "miscellaneous bug report")
+            (
+                vec![rng.gen_range(0..10) as u32],
+                "miscellaneous bug report",
+            )
         };
         let title = format!("{} #{}", title_stem, i);
-        let shs = title.to_lowercase().chars().collect::<Vec<_>>()
-            .windows(3).map(|w| w.iter().collect::<String>()).collect();
+        let shs = title
+            .to_lowercase()
+            .chars()
+            .collect::<Vec<_>>()
+            .windows(3)
+            .map(|w| w.iter().collect::<String>())
+            .collect();
         let is_open = i >= 450; // last 50 are currently open
-        let age_days = if is_open { rng.gen_range(1..30) } else { rng.gen_range(90..720) };
+        let age_days = if is_open {
+            rng.gen_range(1..30)
+        } else {
+            rng.gen_range(90..720)
+        };
         let author = rng.gen_range(0..50) as u32;
         let references: Vec<u32> = if rng.gen_bool(0.15) {
             let k = rng.gen_range(1..=3);
-            (0..k).map(|_| rng.gen_range(0..i.max(1)) as u32).collect()
-        } else { Vec::new() };
+            (0..k).map(|_| rng.gen_range(0..i.max(1))).collect()
+        } else {
+            Vec::new()
+        };
 
         issues.push(Issue {
-            id: i, is_open, age_days, labels, author, references, title_shingles: shs,
+            id: i,
+            is_open,
+            age_days,
+            labels,
+            author,
+            references,
+            title_shingles: shs,
         });
     }
 
@@ -185,7 +278,8 @@ fn synthesize_issues(seed: u64) -> (Vec<Issue>, Dataset, HashSet<u32>) {
     //   closed issue whose (sorted labels, author) tuple exactly matches
     //   at least one currently-open issue. This captures "same person
     //   reported the same kind of bug twice" — a genuine reopen candidate.
-    let open_sigs: HashSet<(Vec<u32>, u32)> = issues.iter()
+    let open_sigs: HashSet<(Vec<u32>, u32)> = issues
+        .iter()
         .filter(|iss| iss.is_open)
         .map(|iss| {
             let mut l = iss.labels.clone();
@@ -194,7 +288,9 @@ fn synthesize_issues(seed: u64) -> (Vec<Issue>, Dataset, HashSet<u32>) {
         })
         .collect();
     for iss in &issues {
-        if iss.is_open { continue; }
+        if iss.is_open {
+            continue;
+        }
         let mut l = iss.labels.clone();
         l.sort();
         if open_sigs.contains(&(l, iss.author)) {
@@ -210,7 +306,7 @@ fn synthesize_issues(seed: u64) -> (Vec<Issue>, Dataset, HashSet<u32>) {
             by_label.entry(l).or_default().push(iss.id);
         }
     }
-    for (_, idxs) in &by_label {
+    for idxs in by_label.values() {
         for i in 0..idxs.len() {
             for j in (i + 1)..idxs.len().min(i + 5) {
                 edges.push((idxs[i], idxs[j], 1.0));
@@ -252,30 +348,40 @@ fn sample_stale_young_first(issues: &[Issue], keep: usize) -> HashSet<u32> {
 }
 
 fn sample_label_match(issues: &[Issue], keep: usize) -> HashSet<u32> {
-    let open_labels: HashSet<u32> = issues.iter()
+    let open_labels: HashSet<u32> = issues
+        .iter()
         .filter(|i| i.is_open)
         .flat_map(|i| i.labels.iter().copied())
         .collect();
-    let matched: Vec<u32> = issues.iter()
+    let matched: Vec<u32> = issues
+        .iter()
         .filter(|i| i.labels.iter().any(|l| open_labels.contains(l)))
-        .map(|i| i.id).collect();
+        .map(|i| i.id)
+        .collect();
     matched.into_iter().take(keep).collect()
 }
 
 fn sample_text_sim(issues: &[Issue], keep: usize) -> HashSet<u32> {
     // For each closed issue, compute max Jaccard similarity to any open issue title
-    let open_sh: Vec<&HashSet<String>> = issues.iter()
+    let open_sh: Vec<&HashSet<String>> = issues
+        .iter()
         .filter(|i| i.is_open)
         .map(|i| &i.title_shingles)
         .collect();
-    let mut scored: Vec<(u32, f64)> = issues.iter().map(|iss| {
-        let s = open_sh.iter().map(|osh| {
-            let inter = iss.title_shingles.intersection(osh).count();
-            let union = iss.title_shingles.union(osh).count().max(1);
-            inter as f64 / union as f64
-        }).fold(0.0, f64::max);
-        (iss.id, s)
-    }).collect();
+    let mut scored: Vec<(u32, f64)> = issues
+        .iter()
+        .map(|iss| {
+            let s = open_sh
+                .iter()
+                .map(|osh| {
+                    let inter = iss.title_shingles.intersection(osh).count();
+                    let union = iss.title_shingles.union(osh).count().max(1);
+                    inter as f64 / union as f64
+                })
+                .fold(0.0, f64::max);
+            (iss.id, s)
+        })
+        .collect();
     scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
     scored.into_iter().take(keep).map(|(i, _)| i).collect()
 }
@@ -285,10 +391,20 @@ fn sample_kdf(ds: &Dataset, keep: usize) -> HashSet<u32> {
     let mut classifier = NodeClassifier::default();
     let class = classifier.classify(ds.n_nodes, &ds.edges);
     let score = |l: Layer| -> i32 {
-        match l { Layer::Rare => 3, Layer::Core => 2, Layer::Edge => 1, Layer::Garbage => 0 }
+        match l {
+            Layer::Rare => 3,
+            Layer::Core => 2,
+            Layer::Edge => 1,
+            Layer::Garbage => 0,
+        }
     };
     let mut scored: Vec<(u32, i32)> = (0..ds.n_nodes as u32)
-        .map(|id| (id, score(class.layers.get(&id).copied().unwrap_or(Layer::Edge))))
+        .map(|id| {
+            (
+                id,
+                score(class.layers.get(&id).copied().unwrap_or(Layer::Edge)),
+            )
+        })
         .collect();
     scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
     scored.into_iter().take(keep).map(|(id, _)| id).collect()
@@ -310,11 +426,23 @@ fn sample_kdf_analogy(issues: &[Issue], ds: &Dataset, keep: usize) -> HashSet<u3
         let mut bins = [0.0f64; 4];
         for &v in &adj[i] {
             let d = deg[v as usize];
-            let idx = if d < 3 { 0 } else if d < 7 { 1 } else if d < 15 { 2 } else { 3 };
+            let idx = if d < 3 {
+                0
+            } else if d < 7 {
+                1
+            } else if d < 15 {
+                2
+            } else {
+                3
+            };
             bins[idx] += 1.0;
         }
         let tot: f64 = bins.iter().sum();
-        if tot > 0.0 { for b in bins.iter_mut() { *b /= tot; } }
+        if tot > 0.0 {
+            for b in bins.iter_mut() {
+                *b /= tot;
+            }
+        }
         bins
     };
 
@@ -323,23 +451,41 @@ fn sample_kdf_analogy(issues: &[Issue], ds: &Dataset, keep: usize) -> HashSet<u3
     let mut avg_fp = [0.0f64; 4];
     for &id in &open_idx {
         let f = fp(id as usize);
-        for d in 0..4 { avg_fp[d] += f[d]; }
+        for d in 0..4 {
+            avg_fp[d] += f[d];
+        }
     }
     let n_open = open_idx.len().max(1) as f64;
-    for d in 0..4 { avg_fp[d] /= n_open; }
+    for d in 0..4 {
+        avg_fp[d] /= n_open;
+    }
 
     // Score closed issues by similarity to open-avg fingerprint
-    let mut scored: Vec<(u32, f64)> = issues.iter()
+    let mut scored: Vec<(u32, f64)> = issues
+        .iter()
         .filter(|i| !i.is_open)
         .map(|iss| {
             let f = fp(iss.id as usize);
-            let dist: f64 = f.iter().zip(avg_fp.iter()).map(|(a, b)| (a - b).abs()).sum();
+            let dist: f64 = f
+                .iter()
+                .zip(avg_fp.iter())
+                .map(|(a, b)| (a - b).abs())
+                .sum();
             (iss.id, -dist) // small dist → high score
         })
         .collect();
     scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-    let mut out: HashSet<u32> = scored.into_iter().take(keep - open_idx.len().min(keep)).map(|(i, _)| i).collect();
+    let mut out: HashSet<u32> = scored
+        .into_iter()
+        .take(keep - open_idx.len().min(keep))
+        .map(|(i, _)| i)
+        .collect();
     // Always include open issues
-    for id in open_idx { out.insert(id); if out.len() >= keep { break; } }
+    for id in open_idx {
+        out.insert(id);
+        if out.len() >= keep {
+            break;
+        }
+    }
     out
 }

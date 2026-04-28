@@ -1,8 +1,8 @@
 //! VNE-triggered sleep mode integration
 
-use std::collections::HashMap;
-use super::types::AnomalyResult;
 use super::monitor::VNEMonitor;
+use super::types::AnomalyResult;
+use std::collections::HashMap;
 
 /// VNE-Triggered Sleep Mode Integration
 ///
@@ -104,9 +104,7 @@ impl VNETriggeredSleepMode {
             // Build partition if not provided
             let partition: HashMap<String, u32> = match initial_partition {
                 Some(p) => p.clone(),
-                None => (0..node_count)
-                    .map(|i| (i.to_string(), i as u32))
-                    .collect(),
+                None => (0..node_count).map(|i| (i.to_string(), i as u32)).collect(),
             };
 
             // Convert edges to string-based format for optimizer
@@ -120,7 +118,7 @@ impl VNETriggeredSleepMode {
                 1.0,   // initial_temperature
                 0.001, // final_temperature
                 self.nrem_max_iterations,
-                1000,  // resync_interval
+                1000, // resync_interval
             );
 
             let nrem_result = optimizer.run_nrem_phase(&string_edges, Some(partition));
@@ -156,9 +154,7 @@ impl VNETriggeredSleepMode {
         // Build partition if not provided
         let partition: HashMap<String, u32> = match initial_partition {
             Some(p) => p.clone(),
-            None => (0..node_count)
-                .map(|i| (i.to_string(), i as u32))
-                .collect(),
+            None => (0..node_count).map(|i| (i.to_string(), i as u32)).collect(),
         };
 
         // Convert edges to string-based format
@@ -168,12 +164,7 @@ impl VNETriggeredSleepMode {
             .collect();
 
         // Run NREM optimization
-        let mut optimizer = SleepModeOptimizer::new(
-            1.0,
-            0.001,
-            self.nrem_max_iterations,
-            1000,
-        );
+        let mut optimizer = SleepModeOptimizer::new(1.0, 0.001, self.nrem_max_iterations, 1000);
 
         let nrem_result = optimizer.run_nrem_phase(&string_edges, Some(partition));
 

@@ -16,7 +16,11 @@ use std::time::Instant;
 
 /// Euclidean distance
 fn euclidean_distance(a: &[f64], b: &[f64]) -> f64 {
-    a.iter().zip(b).map(|(x, y)| (x - y).powi(2)).sum::<f64>().sqrt()
+    a.iter()
+        .zip(b)
+        .map(|(x, y)| (x - y).powi(2))
+        .sum::<f64>()
+        .sqrt()
 }
 
 /// Euclidean similarity
@@ -31,11 +35,7 @@ fn euclidean_similarity(a: &[f64], b: &[f64]) -> f64 {
 /// Hierarchical KDF: Two-stage processing
 /// Stage 1: Sample and run KDF on sample → identify structure
 /// Stage 2: Use structure to guide full processing
-fn hierarchical_kdf(
-    data: &[Vec<f64>],
-    sample_ratio: f64,
-    sim_threshold: f64,
-) -> (Vec<usize>, f64) {
+fn hierarchical_kdf(data: &[Vec<f64>], sample_ratio: f64, sim_threshold: f64) -> (Vec<usize>, f64) {
     let start = Instant::now();
     let n = data.len();
 
@@ -43,23 +43,28 @@ fn hierarchical_kdf(
         // For small data, use standard KDF
         let kdf = Kdf::with_defaults();
         let result = kdf.process(data, sim_threshold, |a, b| euclidean_similarity(a, b));
-        return (result.selected.clone(), start.elapsed().as_secs_f64() * 1000.0);
+        return (
+            result.selected.clone(),
+            start.elapsed().as_secs_f64() * 1000.0,
+        );
     }
 
     // Stage 1: Sample and analyze structure
     let sample_size = ((n as f64 * sample_ratio) as usize).max(50).min(n);
     let step = n / sample_size;
     let sample_indices: Vec<usize> = (0..sample_size).map(|i| i * step).collect();
-    let sample_data: Vec<Vec<f64>> = sample_indices.iter()
-        .map(|&i| data[i].clone())
-        .collect();
+    let sample_data: Vec<Vec<f64>> = sample_indices.iter().map(|&i| data[i].clone()).collect();
 
     // Run KDF on sample to get structure
     let kdf = Kdf::with_defaults();
-    let sample_result = kdf.process(&sample_data, sim_threshold, |a, b| euclidean_similarity(a, b));
+    let sample_result = kdf.process(&sample_data, sim_threshold, |a, b| {
+        euclidean_similarity(a, b)
+    });
 
     // Identify cluster centers from sample
-    let centers: Vec<Vec<f64>> = sample_result.selected.iter()
+    let centers: Vec<Vec<f64>> = sample_result
+        .selected
+        .iter()
         .map(|&i| sample_data[i].clone())
         .collect();
 
@@ -69,7 +74,8 @@ fn hierarchical_kdf(
 
     for (i, point) in data.iter().enumerate() {
         // Find nearest center
-        let (nearest, _) = centers.iter()
+        let (nearest, _) = centers
+            .iter()
             .enumerate()
             .map(|(j, c)| (j, euclidean_distance(point, c)))
             .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
@@ -81,17 +87,17 @@ fn hierarchical_kdf(
     // Stage 3: Within each cluster, identify rare items
     let mut selected = Vec::new();
 
-    for (_center_idx, members) in &cluster_members {
+    for members in cluster_members.values() {
         if members.len() <= 3 {
             // Small cluster: keep all
             selected.extend(members.iter().cloned());
         } else {
             // Run mini-KDF on cluster
-            let cluster_data: Vec<Vec<f64>> = members.iter()
-                .map(|&i| data[i].clone())
-                .collect();
+            let cluster_data: Vec<Vec<f64>> = members.iter().map(|&i| data[i].clone()).collect();
 
-            let cluster_result = kdf.process(&cluster_data, sim_threshold, |a, b| euclidean_similarity(a, b));
+            let cluster_result = kdf.process(&cluster_data, sim_threshold, |a, b| {
+                euclidean_similarity(a, b)
+            });
 
             // Map back to original indices
             for &local_idx in &cluster_result.selected {
@@ -109,11 +115,7 @@ fn hierarchical_kdf(
 // ============================================================================
 
 /// Grid-based KDF: Use spatial hashing for O(n) grouping
-fn grid_kdf(
-    data: &[Vec<f64>],
-    grid_size: f64,
-    sim_threshold: f64,
-) -> (Vec<usize>, f64) {
+fn grid_kdf(data: &[Vec<f64>], grid_size: f64, sim_threshold: f64) -> (Vec<usize>, f64) {
     let start = Instant::now();
     let n = data.len();
 
@@ -127,7 +129,8 @@ fn grid_kdf(
     let mut cells: HashMap<Vec<i64>, Vec<usize>> = HashMap::new();
 
     for (i, point) in data.iter().enumerate() {
-        let cell_key: Vec<i64> = point.iter()
+        let cell_key: Vec<i64> = point
+            .iter()
             .map(|&x| (x / grid_size).floor() as i64)
             .collect();
         cells.entry(cell_key).or_default().push(i);
@@ -137,24 +140,20 @@ fn grid_kdf(
     let mut selected = Vec::new();
 
     // Process each cell
-    for (_cell_key, members) in &cells {
+    for members in cells.values() {
         if members.len() == 1 {
             // Single point in cell: likely rare
             selected.push(members[0]);
         } else if members.len() <= 5 {
             // Small cell: run KDF
-            let cell_data: Vec<Vec<f64>> = members.iter()
-                .map(|&i| data[i].clone())
-                .collect();
+            let cell_data: Vec<Vec<f64>> = members.iter().map(|&i| data[i].clone()).collect();
             let result = kdf.process(&cell_data, sim_threshold, |a, b| euclidean_similarity(a, b));
             for &local_idx in &result.selected {
                 selected.push(members[local_idx]);
             }
         } else {
             // Large cell: run KDF
-            let cell_data: Vec<Vec<f64>> = members.iter()
-                .map(|&i| data[i].clone())
-                .collect();
+            let cell_data: Vec<Vec<f64>> = members.iter().map(|&i| data[i].clone()).collect();
             let result = kdf.process(&cell_data, sim_threshold, |a, b| euclidean_similarity(a, b));
             for &local_idx in &result.selected {
                 selected.push(members[local_idx]);
@@ -196,34 +195,33 @@ fn grid_kdf(
 // ============================================================================
 
 /// Mini-batch KDF: Process in batches and merge
-fn minibatch_kdf(
-    data: &[Vec<f64>],
-    batch_size: usize,
-    sim_threshold: f64,
-) -> (Vec<usize>, f64) {
+fn minibatch_kdf(data: &[Vec<f64>], batch_size: usize, sim_threshold: f64) -> (Vec<usize>, f64) {
     let start = Instant::now();
     let n = data.len();
 
     if n <= batch_size {
         let kdf = Kdf::with_defaults();
         let result = kdf.process(data, sim_threshold, |a, b| euclidean_similarity(a, b));
-        return (result.selected.clone(), start.elapsed().as_secs_f64() * 1000.0);
+        return (
+            result.selected.clone(),
+            start.elapsed().as_secs_f64() * 1000.0,
+        );
     }
 
     let kdf = Kdf::with_defaults();
     let mut candidates: Vec<usize> = Vec::new();
 
     // Stage 1: Process batches independently
-    let n_batches = (n + batch_size - 1) / batch_size;
+    let n_batches = n.div_ceil(batch_size);
     for batch_idx in 0..n_batches {
         let batch_start = batch_idx * batch_size;
         let batch_end = (batch_start + batch_size).min(n);
         let batch_indices: Vec<usize> = (batch_start..batch_end).collect();
-        let batch_data: Vec<Vec<f64>> = batch_indices.iter()
-            .map(|&i| data[i].clone())
-            .collect();
+        let batch_data: Vec<Vec<f64>> = batch_indices.iter().map(|&i| data[i].clone()).collect();
 
-        let result = kdf.process(&batch_data, sim_threshold, |a, b| euclidean_similarity(a, b));
+        let result = kdf.process(&batch_data, sim_threshold, |a, b| {
+            euclidean_similarity(a, b)
+        });
 
         // Map back to global indices
         for &local_idx in &result.selected {
@@ -233,13 +231,15 @@ fn minibatch_kdf(
 
     // Stage 2: Merge candidates with final KDF pass
     if candidates.len() > batch_size {
-        let candidate_data: Vec<Vec<f64>> = candidates.iter()
-            .map(|&i| data[i].clone())
-            .collect();
+        let candidate_data: Vec<Vec<f64>> = candidates.iter().map(|&i| data[i].clone()).collect();
 
-        let final_result = kdf.process(&candidate_data, sim_threshold, |a, b| euclidean_similarity(a, b));
+        let final_result = kdf.process(&candidate_data, sim_threshold, |a, b| {
+            euclidean_similarity(a, b)
+        });
 
-        let selected: Vec<usize> = final_result.selected.iter()
+        let selected: Vec<usize> = final_result
+            .selected
+            .iter()
             .map(|&local_idx| candidates[local_idx])
             .collect();
 
@@ -317,7 +317,8 @@ fn check_rare_preservation(
         .filter(|&i| full_result.layers.get(i) == Some(&Layer::Rare))
         .collect();
 
-    let rare_selected = rare_items.iter()
+    let rare_selected = rare_items
+        .iter()
         .filter(|&&i| selected.contains(&i))
         .count();
 
@@ -369,13 +370,20 @@ fn main() {
         let (_batch_selected, batch_time) = minibatch_kdf(&data, batch_size.max(50), sim_threshold);
 
         let fastest = std_time.min(hier_time).min(grid_time).min(batch_time);
-        let fastest_name = if fastest == std_time { "Std" }
-            else if fastest == hier_time { "Hier" }
-            else if fastest == grid_time { "Grid" }
-            else { "Batch" };
+        let fastest_name = if fastest == std_time {
+            "Std"
+        } else if fastest == hier_time {
+            "Hier"
+        } else if fastest == grid_time {
+            "Grid"
+        } else {
+            "Batch"
+        };
 
-        println!("   | {:>4} | {:>7.1}ms | {:>11.1}ms | {:>4.1}ms | {:>8.1}ms | {:>4} |",
-                 n, std_time, hier_time, grid_time, batch_time, fastest_name);
+        println!(
+            "   | {:>4} | {:>7.1}ms | {:>11.1}ms | {:>4.1}ms | {:>8.1}ms | {:>4} |",
+            n, std_time, hier_time, grid_time, batch_time, fastest_name
+        );
     }
 
     // Detailed analysis for n=2000
@@ -392,17 +400,33 @@ fn main() {
 
     println!("   | 手法 | 時間 | 選択数 | 圧縮率 | 高速化 |");
     println!("   |------|------|--------|--------|--------|");
-    println!("   | Standard | {:>5.1}ms | {:>6} | {:>5.1}x | 1.0x |",
-             std_time, std_selected.len(), n as f64 / std_selected.len() as f64);
-    println!("   | Hierarchical | {:>5.1}ms | {:>6} | {:>5.1}x | {:>4.1}x |",
-             hier_time, hier_selected.len(), n as f64 / hier_selected.len() as f64,
-             std_time / hier_time);
-    println!("   | Grid | {:>5.1}ms | {:>6} | {:>5.1}x | {:>4.1}x |",
-             grid_time, grid_selected.len(), n as f64 / grid_selected.len() as f64,
-             std_time / grid_time);
-    println!("   | MiniBatch | {:>5.1}ms | {:>6} | {:>5.1}x | {:>4.1}x |",
-             batch_time, batch_selected.len(), n as f64 / batch_selected.len() as f64,
-             std_time / batch_time);
+    println!(
+        "   | Standard | {:>5.1}ms | {:>6} | {:>5.1}x | 1.0x |",
+        std_time,
+        std_selected.len(),
+        n as f64 / std_selected.len() as f64
+    );
+    println!(
+        "   | Hierarchical | {:>5.1}ms | {:>6} | {:>5.1}x | {:>4.1}x |",
+        hier_time,
+        hier_selected.len(),
+        n as f64 / hier_selected.len() as f64,
+        std_time / hier_time
+    );
+    println!(
+        "   | Grid | {:>5.1}ms | {:>6} | {:>5.1}x | {:>4.1}x |",
+        grid_time,
+        grid_selected.len(),
+        n as f64 / grid_selected.len() as f64,
+        std_time / grid_time
+    );
+    println!(
+        "   | MiniBatch | {:>5.1}ms | {:>6} | {:>5.1}x | {:>4.1}x |",
+        batch_time,
+        batch_selected.len(),
+        n as f64 / batch_selected.len() as f64,
+        std_time / batch_time
+    );
 
     // Quality check
     println!("\n## 5. 希少データ保持品質\n");
@@ -415,10 +439,26 @@ fn main() {
     println!("   希少データ総数: {}\n", rare_total);
     println!("   | 手法 | 保持数 | 保持率 |");
     println!("   |------|--------|--------|");
-    println!("   | Standard | {:>6} | {:>5.0}% |", std_rare, std_rate * 100.0);
-    println!("   | Hierarchical | {:>6} | {:>5.0}% |", hier_rare, hier_rate * 100.0);
-    println!("   | Grid | {:>6} | {:>5.0}% |", grid_rare, grid_rate * 100.0);
-    println!("   | MiniBatch | {:>6} | {:>5.0}% |", batch_rare, batch_rate * 100.0);
+    println!(
+        "   | Standard | {:>6} | {:>5.0}% |",
+        std_rare,
+        std_rate * 100.0
+    );
+    println!(
+        "   | Hierarchical | {:>6} | {:>5.0}% |",
+        hier_rare,
+        hier_rate * 100.0
+    );
+    println!(
+        "   | Grid | {:>6} | {:>5.0}% |",
+        grid_rare,
+        grid_rate * 100.0
+    );
+    println!(
+        "   | MiniBatch | {:>6} | {:>5.0}% |",
+        batch_rare,
+        batch_rate * 100.0
+    );
 
     // Scalability test
     println!("\n## 6. スケーラビリティ (Grid-KDF)\n");
@@ -433,14 +473,16 @@ fn main() {
         let (_, std_time) = if n <= 4000 {
             standard_kdf(&data, sim_threshold)
         } else {
-            (vec![], grid_time * 4.0)  // Estimate for large n
+            (vec![], grid_time * 4.0) // Estimate for large n
         };
 
         let speedup = std_time / grid_time;
         let o_n_factor = grid_time / n as f64;
 
-        println!("   | {:>5} | {:>7.1}ms | {:>11.1}ms | {:>5.1}x | {:>7.4}ms |",
-                 n, grid_time, std_time, speedup, o_n_factor);
+        println!(
+            "   | {:>5} | {:>7.1}ms | {:>11.1}ms | {:>5.1}x | {:>7.4}ms |",
+            n, grid_time, std_time, speedup, o_n_factor
+        );
     }
 
     println!("\n## 7. 計算量分析\n");

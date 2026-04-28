@@ -23,7 +23,7 @@ struct Experience {
     reward: f64,
     next_state: Vec<f64>,
     done: bool,
-    td_error: f64,  // For prioritized replay
+    td_error: f64, // For prioritized replay
 }
 
 impl Experience {
@@ -34,7 +34,7 @@ impl Experience {
             reward,
             next_state,
             done,
-            td_error: 1.0,  // Default priority
+            td_error: 1.0, // Default priority
         }
     }
 
@@ -65,7 +65,7 @@ impl FIFOBuffer {
 
     fn add(&mut self, exp: Experience) {
         if self.buffer.len() >= self.capacity {
-            self.buffer.remove(0);  // FIFO: remove oldest
+            self.buffer.remove(0); // FIFO: remove oldest
         }
         self.buffer.push(exp);
     }
@@ -83,7 +83,7 @@ impl FIFOBuffer {
 struct PERBuffer {
     buffer: Vec<Experience>,
     capacity: usize,
-    alpha: f64,  // Priority exponent
+    alpha: f64, // Priority exponent
 }
 
 impl PERBuffer {
@@ -97,13 +97,17 @@ impl PERBuffer {
 
     fn add(&mut self, mut exp: Experience) {
         // New experiences get max priority
-        exp.td_error = self.buffer.iter()
+        exp.td_error = self
+            .buffer
+            .iter()
             .map(|e| e.td_error)
             .fold(1.0f64, f64::max);
 
         if self.buffer.len() >= self.capacity {
             // Remove lowest priority
-            let min_idx = self.buffer.iter()
+            let min_idx = self
+                .buffer
+                .iter()
                 .enumerate()
                 .min_by(|(_, a), (_, b)| a.td_error.partial_cmp(&b.td_error).unwrap())
                 .map(|(i, _)| i)
@@ -115,7 +119,9 @@ impl PERBuffer {
 
     fn sample(&self, batch_size: usize) -> Vec<&Experience> {
         // Priority-based sampling
-        let total: f64 = self.buffer.iter()
+        let total: f64 = self
+            .buffer
+            .iter()
             .map(|e| e.td_error.abs().powf(self.alpha))
             .sum();
 
@@ -155,9 +161,7 @@ impl KDFBuffer {
         Self {
             buffer: Vec::with_capacity(capacity),
             capacity,
-            kdf: Kdf::new(KdfParams::builder()
-                .selection_sim_threshold(0.6)
-                .build()),
+            kdf: Kdf::new(KdfParams::builder().selection_sim_threshold(0.6).build()),
         }
     }
 
@@ -171,17 +175,22 @@ impl KDFBuffer {
     }
 
     fn compress(&mut self) {
-        let features: Vec<Vec<f64>> = self.buffer.iter()
-            .map(|e| e.to_feature_vec())
-            .collect();
+        let features: Vec<Vec<f64>> = self.buffer.iter().map(|e| e.to_feature_vec()).collect();
 
         let result = self.kdf.process(&features, 0.85, |a, b| {
-            let dist: f64 = a.iter().zip(b).map(|(x, y)| (x - y).powi(2)).sum::<f64>().sqrt();
+            let dist: f64 = a
+                .iter()
+                .zip(b)
+                .map(|(x, y)| (x - y).powi(2))
+                .sum::<f64>()
+                .sqrt();
             1.0 / (1.0 + dist)
         });
 
         // Keep selected diverse experiences
-        let mut new_buffer: Vec<Experience> = result.selected.iter()
+        let mut new_buffer: Vec<Experience> = result
+            .selected
+            .iter()
             .map(|&i| self.buffer[i].clone())
             .collect();
 
@@ -202,12 +211,15 @@ impl KDFBuffer {
 
     fn sample(&self, batch_size: usize) -> Vec<&Experience> {
         // Use KDF layer information for stratified sampling
-        let features: Vec<Vec<f64>> = self.buffer.iter()
-            .map(|e| e.to_feature_vec())
-            .collect();
+        let features: Vec<Vec<f64>> = self.buffer.iter().map(|e| e.to_feature_vec()).collect();
 
         let result = self.kdf.process(&features, 0.9, |a, b| {
-            let dist: f64 = a.iter().zip(b).map(|(x, y)| (x - y).powi(2)).sum::<f64>().sqrt();
+            let dist: f64 = a
+                .iter()
+                .zip(b)
+                .map(|(x, y)| (x - y).powi(2))
+                .sum::<f64>()
+                .sqrt();
             1.0 / (1.0 + dist)
         });
 
@@ -249,13 +261,9 @@ fn simulate_environment(steps: usize) -> Vec<Experience> {
     for step in 0..steps {
         // Common transitions (90%)
         if step % 10 != 0 {
-            let state = vec![
-                (step as f64 * 0.01).sin(),
-                (step as f64 * 0.01).cos(),
-                0.0,
-            ];
+            let state = vec![(step as f64 * 0.01).sin(), (step as f64 * 0.01).cos(), 0.0];
             let action = step % 4;
-            let reward = -0.01;  // Small penalty per step
+            let reward = -0.01; // Small penalty per step
             let next_state = vec![
                 ((step + 1) as f64 * 0.01).sin(),
                 ((step + 1) as f64 * 0.01).cos(),
@@ -272,9 +280,9 @@ fn simulate_environment(steps: usize) -> Vec<Experience> {
                     experiences.push(Experience::new(
                         vec![1.0, 0.0, 1.0],
                         0,
-                        10.0,  // High reward
+                        10.0, // High reward
                         vec![0.0, 0.0, 0.0],
-                        true,  // Episode done
+                        true, // Episode done
                     ));
                 }
                 1 => {
@@ -282,7 +290,7 @@ fn simulate_environment(steps: usize) -> Vec<Experience> {
                     experiences.push(Experience::new(
                         vec![-1.0, 0.0, -1.0],
                         1,
-                        -5.0,  // Negative reward
+                        -5.0, // Negative reward
                         vec![0.0, 0.0, 0.0],
                         true,
                     ));
@@ -319,8 +327,8 @@ fn analyze_buffer(experiences: &[Experience]) -> (usize, usize, usize, f64) {
     let goal_count = experiences.iter().filter(|e| e.reward > 5.0).count();
     let failure_count = experiences.iter().filter(|e| e.reward < -1.0).count();
     let done_count = experiences.iter().filter(|e| e.done).count();
-    let avg_reward: f64 = experiences.iter().map(|e| e.reward).sum::<f64>()
-        / experiences.len() as f64;
+    let avg_reward: f64 =
+        experiences.iter().map(|e| e.reward).sum::<f64>() / experiences.len() as f64;
 
     (goal_count, failure_count, done_count, avg_reward)
 }
@@ -343,7 +351,10 @@ fn main() {
 
     let experiences = simulate_environment(total_experiences);
     let (orig_goals, orig_fails, orig_done, _) = analyze_buffer(&experiences);
-    println!("   元データ: goals={}, failures={}, episodes={}", orig_goals, orig_fails, orig_done);
+    println!(
+        "   元データ: goals={}, failures={}, episodes={}",
+        orig_goals, orig_fails, orig_done
+    );
 
     // ========================================================================
     // FIFO Buffer
@@ -357,16 +368,27 @@ fn main() {
 
     let (goals, fails, _done, avg_r) = analyze_buffer(&fifo.buffer);
     println!("   バッファ内容:");
-    println!("   - Goals: {}/{} ({:.1}%保持)", goals, orig_goals,
-             (goals as f64 / orig_goals as f64) * 100.0);
-    println!("   - Failures: {}/{} ({:.1}%保持)", fails, orig_fails,
-             (fails as f64 / orig_fails as f64) * 100.0);
+    println!(
+        "   - Goals: {}/{} ({:.1}%保持)",
+        goals,
+        orig_goals,
+        (goals as f64 / orig_goals as f64) * 100.0
+    );
+    println!(
+        "   - Failures: {}/{} ({:.1}%保持)",
+        fails,
+        orig_fails,
+        (fails as f64 / orig_fails as f64) * 100.0
+    );
     println!("   - 平均報酬: {:.4}", avg_r);
 
     let sample = fifo.sample(batch_size);
     let sample_goals = sample.iter().filter(|e| e.reward > 5.0).count();
     let sample_fails = sample.iter().filter(|e| e.reward < -1.0).count();
-    println!("   サンプル({})中: goals={}, failures={}", batch_size, sample_goals, sample_fails);
+    println!(
+        "   サンプル({})中: goals={}, failures={}",
+        batch_size, sample_goals, sample_fails
+    );
 
     // ========================================================================
     // PER Buffer
@@ -374,7 +396,7 @@ fn main() {
     println!("\n## 3. Prioritized Experience Replay (PER)\n");
 
     let mut per = PERBuffer::new(buffer_capacity);
-    for (_i, exp) in experiences.iter().enumerate() {
+    for exp in experiences.iter() {
         let mut e = exp.clone();
         // Simulate TD-error based on reward magnitude
         e.td_error = exp.reward.abs() + 0.1;
@@ -383,16 +405,27 @@ fn main() {
 
     let (goals, fails, _done, avg_r) = analyze_buffer(&per.buffer);
     println!("   バッファ内容:");
-    println!("   - Goals: {}/{} ({:.1}%保持)", goals, orig_goals,
-             (goals as f64 / orig_goals as f64) * 100.0);
-    println!("   - Failures: {}/{} ({:.1}%保持)", fails, orig_fails,
-             (fails as f64 / orig_fails as f64) * 100.0);
+    println!(
+        "   - Goals: {}/{} ({:.1}%保持)",
+        goals,
+        orig_goals,
+        (goals as f64 / orig_goals as f64) * 100.0
+    );
+    println!(
+        "   - Failures: {}/{} ({:.1}%保持)",
+        fails,
+        orig_fails,
+        (fails as f64 / orig_fails as f64) * 100.0
+    );
     println!("   - 平均報酬: {:.4}", avg_r);
 
     let sample = per.sample(batch_size);
     let sample_goals = sample.iter().filter(|e| e.reward > 5.0).count();
     let sample_fails = sample.iter().filter(|e| e.reward < -1.0).count();
-    println!("   サンプル({})中: goals={}, failures={}", batch_size, sample_goals, sample_fails);
+    println!(
+        "   サンプル({})中: goals={}, failures={}",
+        batch_size, sample_goals, sample_fails
+    );
 
     // ========================================================================
     // KDF Buffer
@@ -406,16 +439,27 @@ fn main() {
 
     let (goals, fails, _done, avg_r) = analyze_buffer(&kdf_buf.buffer);
     println!("   バッファ内容:");
-    println!("   - Goals: {}/{} ({:.1}%保持)", goals, orig_goals,
-             (goals as f64 / orig_goals as f64) * 100.0);
-    println!("   - Failures: {}/{} ({:.1}%保持)", fails, orig_fails,
-             (fails as f64 / orig_fails as f64) * 100.0);
+    println!(
+        "   - Goals: {}/{} ({:.1}%保持)",
+        goals,
+        orig_goals,
+        (goals as f64 / orig_goals as f64) * 100.0
+    );
+    println!(
+        "   - Failures: {}/{} ({:.1}%保持)",
+        fails,
+        orig_fails,
+        (fails as f64 / orig_fails as f64) * 100.0
+    );
     println!("   - 平均報酬: {:.4}", avg_r);
 
     let sample = kdf_buf.sample(batch_size);
     let sample_goals = sample.iter().filter(|e| e.reward > 5.0).count();
     let sample_fails = sample.iter().filter(|e| e.reward < -1.0).count();
-    println!("   サンプル({})中: goals={}, failures={}", batch_size, sample_goals, sample_fails);
+    println!(
+        "   サンプル({})中: goals={}, failures={}",
+        batch_size, sample_goals, sample_fails
+    );
 
     // ========================================================================
     // Comparison Summary
@@ -428,12 +472,18 @@ fn main() {
 
     println!("   | 手法 | Goals保持 | Fail保持 | 平均報酬 | 多様性 |");
     println!("   |------|-----------|----------|----------|--------|");
-    println!("   | FIFO | {:>5}/{} | {:>4}/{} | {:>8.4} | 低 |",
-             fifo_stats.0, orig_goals, fifo_stats.1, orig_fails, fifo_stats.3);
-    println!("   | PER  | {:>5}/{} | {:>4}/{} | {:>8.4} | 中 |",
-             per_stats.0, orig_goals, per_stats.1, orig_fails, per_stats.3);
-    println!("   | KDF  | {:>5}/{} | {:>4}/{} | {:>8.4} | 高 |",
-             kdf_stats.0, orig_goals, kdf_stats.1, orig_fails, kdf_stats.3);
+    println!(
+        "   | FIFO | {:>5}/{} | {:>4}/{} | {:>8.4} | 低 |",
+        fifo_stats.0, orig_goals, fifo_stats.1, orig_fails, fifo_stats.3
+    );
+    println!(
+        "   | PER  | {:>5}/{} | {:>4}/{} | {:>8.4} | 中 |",
+        per_stats.0, orig_goals, per_stats.1, orig_fails, per_stats.3
+    );
+    println!(
+        "   | KDF  | {:>5}/{} | {:>4}/{} | {:>8.4} | 高 |",
+        kdf_stats.0, orig_goals, kdf_stats.1, orig_fails, kdf_stats.3
+    );
 
     // ========================================================================
     // Key Findings

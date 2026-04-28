@@ -1,9 +1,9 @@
 //! KDF Rev.12 Implementation - Analogy Discovery Mechanism
 
-use std::collections::HashMap;
 use super::{ClassificationStats, DecayManager, Layer, NodeClassifier};
 use crate::analogy::{AnalogyDiscoveryEngine, NodeFeatures};
 use crate::fingerprint::{Fingerprint, NodeLabel};
+use std::collections::HashMap;
 
 /// Review phase for RARE nodes in Rev.12
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -160,13 +160,25 @@ impl std::fmt::Display for Rev12Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::TwaitOutOfRange { value } => {
-                write!(f, "Claim 39 violation: t_wait={} outside [{}, {}]", value, T_WAIT_MIN, T_WAIT_MAX)
+                write!(
+                    f,
+                    "Claim 39 violation: t_wait={} outside [{}, {}]",
+                    value, T_WAIT_MIN, T_WAIT_MAX
+                )
             }
             Self::ThetaLowerOutOfRange { value } => {
-                write!(f, "Claim 46 violation: theta_L={} outside [0.70, 0.80]", value)
+                write!(
+                    f,
+                    "Claim 46 violation: theta_L={} outside [0.70, 0.80]",
+                    value
+                )
             }
             Self::ThetaUpperNotAbove { theta_l, theta_u } => {
-                write!(f, "Claim 47 violation: theta_U={} must be > theta_L={}", theta_u, theta_l)
+                write!(
+                    f,
+                    "Claim 47 violation: theta_U={} must be > theta_L={}",
+                    theta_u, theta_l
+                )
             }
         }
     }
@@ -180,7 +192,12 @@ impl KdfProcessorRev12 {
     /// Returns `Err` if `t_wait1` / `t_wait2` violate Claim 39 (30–70) or
     /// `discovery_threshold` violates Claim 46 ([0.70, 0.80]).
     pub fn new(t_wait1: u64, t_wait2: u64, discovery_threshold: f64) -> Result<Self, Rev12Error> {
-        Self::with_upper_threshold(t_wait1, t_wait2, discovery_threshold, DISCOVERY_THRESHOLD_UPPER_DEFAULT)
+        Self::with_upper_threshold(
+            t_wait1,
+            t_wait2,
+            discovery_threshold,
+            DISCOVERY_THRESHOLD_UPPER_DEFAULT,
+        )
     }
 
     /// Create a processor bypassing Claim-range validation (**internal test only**).
@@ -188,18 +205,21 @@ impl KdfProcessorRev12 {
     /// Useful for fast unit tests where a full 30-cycle review would be noise.
     /// Never use in production paths: produced instances are not Claim-compliant.
     #[doc(hidden)]
-    pub fn new_unchecked_for_tests(
-        t_wait1: u64,
-        t_wait2: u64,
-        discovery_threshold: f64,
-    ) -> Self {
+    pub fn new_unchecked_for_tests(t_wait1: u64, t_wait2: u64, discovery_threshold: f64) -> Self {
         Self {
             t_wait1,
             t_wait2,
             discovery_threshold,
-            discovery_threshold_upper: DISCOVERY_THRESHOLD_UPPER_DEFAULT.max(discovery_threshold + 1e-6),
+            discovery_threshold_upper: DISCOVERY_THRESHOLD_UPPER_DEFAULT
+                .max(discovery_threshold + 1e-6),
             analogy_engine: AnalogyDiscoveryEngine::new(
-                0.1, 0.2, 0.7, discovery_threshold, 32, true, 0.05,
+                0.1,
+                0.2,
+                0.7,
+                discovery_threshold,
+                32,
+                true,
+                0.05,
             ),
             ..Default::default()
         }
@@ -230,13 +250,12 @@ impl KdfProcessorRev12 {
             discovery_threshold: theta_l,
             discovery_threshold_upper: theta_u,
             analogy_engine: AnalogyDiscoveryEngine::new(
-                0.1,   // attribute_weight  (Claim 44: 7:2:1)
-                0.2,   // relational_weight
-                0.7,   // systematic_weight
-                theta_l,
-                32,    // fingerprint_dim
-                true,  // screening_enabled (Claim 46)
-                0.05,  // top_k_percent
+                0.1, // attribute_weight  (Claim 44: 7:2:1)
+                0.2, // relational_weight
+                0.7, // systematic_weight
+                theta_l, 32,   // fingerprint_dim
+                true, // screening_enabled (Claim 46)
+                0.05, // top_k_percent
             ),
             ..Default::default()
         })
@@ -259,7 +278,8 @@ impl KdfProcessorRev12 {
         for (&node, &layer) in &classification.layers {
             if layer == Layer::Rare {
                 if let Some(fp) = classification.rare_fingerprints.get(&node) {
-                    self.rare_states.insert(node, RareNodeState::new(node, fp.clone()));
+                    self.rare_states
+                        .insert(node, RareNodeState::new(node, fp.clone()));
                 }
             }
         }
@@ -268,7 +288,11 @@ impl KdfProcessorRev12 {
         // GARBAGE nodes are skipped as they don't participate in analogy discovery
         for node in 0..node_count {
             let node_id = node as u32;
-            let layer = classification.layers.get(&node_id).copied().unwrap_or(Layer::Edge);
+            let layer = classification
+                .layers
+                .get(&node_id)
+                .copied()
+                .unwrap_or(Layer::Edge);
 
             // Skip GARBAGE nodes - they don't participate in analogy discovery
             if layer == Layer::Garbage {
@@ -285,7 +309,8 @@ impl KdfProcessorRev12 {
             let mut features = NodeFeatures::new(node_id.to_string());
             features.degree = degree;
 
-            self.analogy_engine.register_node(&node_id.to_string(), features, &label);
+            self.analogy_engine
+                .register_node(&node_id.to_string(), features, &label);
         }
 
         self.decay_manager.initialize(classification);
@@ -303,10 +328,13 @@ impl KdfProcessorRev12 {
         };
 
         // Get candidate nodes (CORE and EDGE nodes)
-        let candidates: Vec<String> = self.decay_manager.classification
+        let candidates: Vec<String> = self
+            .decay_manager
+            .classification
             .as_ref()
             .map(|c| {
-                c.layers.iter()
+                c.layers
+                    .iter()
                     .filter(|(_, &layer)| layer == Layer::Core || layer == Layer::Edge)
                     .map(|(&id, _)| id.to_string())
                     .collect()
@@ -319,7 +347,9 @@ impl KdfProcessorRev12 {
         }
 
         // Attempt analogy discovery
-        let result = self.analogy_engine.find_analogy(&rare_node.to_string(), &candidates);
+        let result = self
+            .analogy_engine
+            .find_analogy(&rare_node.to_string(), &candidates);
 
         if let Some(mapping) = result {
             // Claim 47-48: sandwich acceptance band  θ_L ≤ S ≤ θ_U
@@ -422,10 +452,13 @@ impl KdfProcessorRev12 {
 
     /// Get all RARE nodes with spoke_up=true and their analogy targets
     pub fn get_spoke_up_nodes(&self) -> Vec<(u32, u32, f64)> {
-        self.rare_states.iter()
+        self.rare_states
+            .iter()
             .filter(|(_, state)| state.spoke_up)
             .filter_map(|(&node, state)| {
-                state.analogy_target.map(|target| (node, target, state.analogy_score))
+                state
+                    .analogy_target
+                    .map(|target| (node, target, state.analogy_score))
             })
             .collect()
     }
@@ -456,8 +489,12 @@ impl KdfProcessorRev12 {
 
     /// Get the layer of a node (current, after any promotions/demotions)
     pub fn get_layer(&self, node: u32) -> Option<Layer> {
-        self.decay_manager.classification.as_ref()?
-            .layers.get(&node).copied()
+        self.decay_manager
+            .classification
+            .as_ref()?
+            .layers
+            .get(&node)
+            .copied()
     }
 
     /// Get classification statistics

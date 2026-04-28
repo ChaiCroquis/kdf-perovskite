@@ -17,37 +17,23 @@ use std::collections::HashMap;
 // Module declarations
 mod graph;
 mod meaning;
-mod think;
 mod sleep;
+mod think;
 
 #[cfg(test)]
 mod tests;
 
 // Re-exports
 pub use meaning::{
-    KDFMeaningEngine,
-    Project,
-    TopicRelearnResult,
-    QuickAnalysisResult,
-    ClusterInsight,
+    ClusterInsight, KDFMeaningEngine, Project, QuickAnalysisResult, TopicRelearnResult,
 };
 
 pub use think::{
-    KDFThinkEngine,
+    ClusterSummary, KDFThinkEngine, LayerHealth, RelatedConcept, ThinkAnalysisResult,
     ThinkEngineStats,
-    ThinkAnalysisResult,
-    ClusterSummary,
-    LayerHealth,
-    RelatedConcept,
 };
 
-pub use sleep::{
-    KDFSleepEngine,
-    HeavyTask,
-    TaskResult,
-    NREMOptimizationResult,
-    SleepEngineStats,
-};
+pub use sleep::{HeavyTask, KDFSleepEngine, NREMOptimizationResult, SleepEngineStats, TaskResult};
 
 // ============================================================================
 // Common Types

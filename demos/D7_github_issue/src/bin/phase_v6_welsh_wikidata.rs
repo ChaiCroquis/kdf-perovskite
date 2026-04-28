@@ -57,7 +57,9 @@ fn http_get(url: &str) -> Result<String, String> {
         .timeout(Duration::from_secs(20))
         .user_agent("KDF-research-pilot/0.1")
         .build();
-    agent.get(url).call()
+    agent
+        .get(url)
+        .call()
         .map_err(|e| format!("HTTP error: {}", e))?
         .into_string()
         .map_err(|e| format!("read error: {}", e))
@@ -68,23 +70,25 @@ fn get_welsh_random_titles(n: usize) -> Result<Vec<String>, String> {
         "https://cy.wikipedia.org/w/api.php?action=query&list=random&rnnamespace=0&rnlimit={}&format=json",
         n.min(50));
     let body = http_get(&url)?;
-    let resp: RandomList = serde_json::from_str(&body)
-        .map_err(|e| format!("JSON parse: {}", e))?;
+    let resp: RandomList = serde_json::from_str(&body).map_err(|e| format!("JSON parse: {}", e))?;
     Ok(resp.query.random.into_iter().map(|p| p.title).collect())
 }
 
 fn get_wikidata_qids_for_welsh(titles: &[String]) -> Result<HashMap<String, String>, String> {
     let mut map = HashMap::new();
     for chunk in titles.chunks(20) {
-        let titles_param = chunk.iter().map(|t| t.replace(' ', "_"))
-            .collect::<Vec<_>>().join("|");
+        let titles_param = chunk
+            .iter()
+            .map(|t| t.replace(' ', "_"))
+            .collect::<Vec<_>>()
+            .join("|");
         let url_encoded = urlencoding::encode(&titles_param).into_owned();
         let url = format!(
             "https://cy.wikipedia.org/w/api.php?action=query&titles={}&prop=pageprops&ppprop=wikibase_item&format=json",
             url_encoded);
         let body = http_get(&url)?;
-        let resp: PagePropsResp = serde_json::from_str(&body)
-            .map_err(|e| format!("JSON parse: {}", e))?;
+        let resp: PagePropsResp =
+            serde_json::from_str(&body).map_err(|e| format!("JSON parse: {}", e))?;
         for (_, details) in resp.query.pages {
             if let (Some(title), Some(props)) = (details.title, details.pageprops) {
                 if let Some(qid) = props.wikibase_item {
@@ -116,8 +120,8 @@ fn check_enwiki_sitelinks(qids: &[String]) -> Result<HashMap<String, bool>, Stri
             "https://www.wikidata.org/w/api.php?action=wbgetentities&ids={}&props=sitelinks&sitefilter=enwiki&format=json",
             ids_param);
         let body = http_get(&url)?;
-        let resp: WikidataResp = serde_json::from_str(&body)
-            .map_err(|e| format!("wd JSON: {}", e))?;
+        let resp: WikidataResp =
+            serde_json::from_str(&body).map_err(|e| format!("wd JSON: {}", e))?;
         for (qid, entity) in resp.entities {
             let has_en = entity.sitelinks.contains_key("enwiki");
             result.insert(qid, has_en);
@@ -150,7 +154,11 @@ fn main() {
             std::process::exit(1);
         }
     };
-    println!("  {} / {} articles に QID あり", qid_map.len(), titles.len());
+    println!(
+        "  {} / {} articles に QID あり",
+        qid_map.len(),
+        titles.len()
+    );
 
     let qids: Vec<String> = qid_map.values().cloned().collect();
 
@@ -163,37 +171,55 @@ fn main() {
         }
     };
 
-    let welsh_only: Vec<&String> = enwiki_map.iter()
+    let welsh_only: Vec<&String> = enwiki_map
+        .iter()
         .filter(|(_, &has_en)| !has_en)
-        .map(|(qid, _)| qid).collect();
-    let cross_lang: Vec<&String> = enwiki_map.iter()
+        .map(|(qid, _)| qid)
+        .collect();
+    let cross_lang: Vec<&String> = enwiki_map
+        .iter()
         .filter(|(_, &has_en)| has_en)
-        .map(|(qid, _)| qid).collect();
+        .map(|(qid, _)| qid)
+        .collect();
 
     println!("\n## 結果\n");
     println!("| カテゴリ | 件数 | 比率 |");
     println!("|---|---:|---:|");
     println!("| 全 articles (titles 取得) | {} | 100% |", titles.len());
-    println!("| QID 取得成功 | {} | {:.1}% |",
-        qid_map.len(), 100.0 * qid_map.len() as f64 / titles.len() as f64);
-    println!("| **Welsh-only (minority ground truth)** | **{}** | **{:.1}%** |",
+    println!(
+        "| QID 取得成功 | {} | {:.1}% |",
+        qid_map.len(),
+        100.0 * qid_map.len() as f64 / titles.len() as f64
+    );
+    println!(
+        "| **Welsh-only (minority ground truth)** | **{}** | **{:.1}%** |",
         welsh_only.len(),
-        100.0 * welsh_only.len() as f64 / enwiki_map.len().max(1) as f64);
-    println!("| enwiki 等との cross-lingual | {} | {:.1}% |",
+        100.0 * welsh_only.len() as f64 / enwiki_map.len().max(1) as f64
+    );
+    println!(
+        "| enwiki 等との cross-lingual | {} | {:.1}% |",
         cross_lang.len(),
-        100.0 * cross_lang.len() as f64 / enwiki_map.len().max(1) as f64);
+        100.0 * cross_lang.len() as f64 / enwiki_map.len().max(1) as f64
+    );
 
     println!("\n## 解釈\n");
     if welsh_only.len() >= 5 {
-        println!("✅ **Pilot 成功**: Welsh-only article を {} 件特定可能。これにより、",
-            welsh_only.len());
+        println!(
+            "✅ **Pilot 成功**: Welsh-only article を {} 件特定可能。これにより、",
+            welsh_only.len()
+        );
         println!("  - Minority ground truth の**データ取得は実現可能**");
         println!("  - 次 step: category graph の構築 + KDF による rare preservation 測定");
         println!("  - 推定 P4 完全検証所要時間: 追加 1-2 時間の Rust 実装");
-    } else if welsh_only.len() >= 1 {
-        println!("⚠️ **Pilot 部分成功**: Welsh-only article が {} 件のみ。", welsh_only.len());
+    } else if !welsh_only.is_empty() {
+        println!(
+            "⚠️ **Pilot 部分成功**: Welsh-only article が {} 件のみ。",
+            welsh_only.len()
+        );
         println!("  - Sample size を 200+ に拡大すれば意味ある比率になる可能性");
-        println!("  - あるいは Welsh 特有の cultural/geographic concept を狙って sample する方が効率的");
+        println!(
+            "  - あるいは Welsh 特有の cultural/geographic concept を狙って sample する方が効率的"
+        );
     } else {
         println!("❌ **Pilot 結果がゼロ**: 今回の random 50 は全て cross-lingual だった。");
         println!("  - Welsh-only は確率的には 5-15% と推定されるため、50 の sample では不安定");

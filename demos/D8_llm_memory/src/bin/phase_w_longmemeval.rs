@@ -16,6 +16,7 @@ use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct Turn {
     role: String,
     content: String,
@@ -23,11 +24,11 @@ struct Turn {
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct Question {
     question_id: String,
     question: String,
     // answer may be string or int (depends on question type); we don't use it
-    #[allow(dead_code)]
     #[serde(default)]
     answer: serde_json::Value,
     haystack_session_ids: Vec<String>,
@@ -37,12 +38,22 @@ struct Question {
 
 fn shingles(s: &str, k: usize) -> HashSet<String> {
     let chars: Vec<char> = s.to_lowercase().chars().collect();
-    if chars.len() < k { return HashSet::new(); }
-    (0..=chars.len() - k).map(|i| chars[i..i + k].iter().collect::<String>()).collect()
+    if chars.len() < k {
+        return HashSet::new();
+    }
+    (0..=chars.len() - k)
+        .map(|i| chars[i..i + k].iter().collect::<String>())
+        .collect()
 }
 
 /// Build a flat turn list + graph: nodes = turns, edges = same-session co-occurrence
-fn build_graph(q: &Question) -> (Vec<(String, String, usize)>, Vec<(u32, u32, f64)>, HashSet<u32>) {
+fn build_graph(
+    q: &Question,
+) -> (
+    Vec<(String, String, usize)>,
+    Vec<(u32, u32, f64)>,
+    HashSet<u32>,
+) {
     // (session_id, content, turn_global_idx)
     let mut flat: Vec<(String, String, usize)> = Vec::new();
     let mut answer_turn_ids: HashSet<u32> = HashSet::new();
@@ -71,13 +82,23 @@ fn text_rareness_scores(flat: &[(String, String, usize)]) -> Vec<f64> {
     let all_sh: Vec<HashSet<String>> = flat.iter().map(|(_, c, _)| shingles(c, 5)).collect();
     let mut freq: HashMap<String, u32> = HashMap::new();
     for shs in &all_sh {
-        for sh in shs { *freq.entry(sh.clone()).or_insert(0) += 1; }
+        for sh in shs {
+            *freq.entry(sh.clone()).or_insert(0) += 1;
+        }
     }
-    all_sh.iter().map(|shs| {
-        if shs.is_empty() { return 0.0; }
-        let inv: f64 = shs.iter().map(|sh| 1.0 / *freq.get(sh).unwrap_or(&1) as f64).sum();
-        (inv / shs.len() as f64).min(1.0)
-    }).collect()
+    all_sh
+        .iter()
+        .map(|shs| {
+            if shs.is_empty() {
+                return 0.0;
+            }
+            let inv: f64 = shs
+                .iter()
+                .map(|sh| 1.0 / *freq.get(sh).unwrap_or(&1) as f64)
+                .sum();
+            (inv / shs.len() as f64).min(1.0)
+        })
+        .collect()
 }
 
 fn kdf_select(n: usize, edges: &[(u32, u32, f64)], keep: usize) -> HashSet<u32> {
@@ -85,23 +106,44 @@ fn kdf_select(n: usize, edges: &[(u32, u32, f64)], keep: usize) -> HashSet<u32> 
     let mut c = NodeClassifier::default();
     let class = c.classify(n, edges);
     let score = |l: Layer| -> i32 {
-        match l { Layer::Rare => 3, Layer::Core => 2, Layer::Edge => 1, Layer::Garbage => 0 }
+        match l {
+            Layer::Rare => 3,
+            Layer::Core => 2,
+            Layer::Edge => 1,
+            Layer::Garbage => 0,
+        }
     };
     let mut scored: Vec<(u32, i32)> = (0..n as u32)
-        .map(|id| (id, score(class.layers.get(&id).copied().unwrap_or(Layer::Edge))))
+        .map(|id| {
+            (
+                id,
+                score(class.layers.get(&id).copied().unwrap_or(Layer::Edge)),
+            )
+        })
         .collect();
     scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
     scored.into_iter().take(keep).map(|(i, _)| i).collect()
 }
 
-fn kdf_textsim_select(n: usize, edges: &[(u32, u32, f64)], text_rare: &[f64], keep: usize) -> HashSet<u32> {
+fn kdf_textsim_select(
+    n: usize,
+    edges: &[(u32, u32, f64)],
+    text_rare: &[f64],
+    keep: usize,
+) -> HashSet<u32> {
     use cgb_kdf::framework::multimodal::{select_top_k_multi_modal, MultiModalWeights};
     use cgb_kdf::{Layer, NodeClassifier};
     let mut c = NodeClassifier::default();
     let class = c.classify(n, edges);
     let layer_of: HashMap<u32, Layer> = class.layers;
-    select_top_k_multi_modal(n, &layer_of, Some(text_rare), None, keep,
-        &MultiModalWeights::balanced())
+    select_top_k_multi_modal(
+        n,
+        &layer_of,
+        Some(text_rare),
+        None,
+        keep,
+        &MultiModalWeights::balanced(),
+    )
 }
 
 fn ttl_select(n: usize, keep: usize) -> HashSet<u32> {
@@ -123,7 +165,10 @@ fn main() {
 
     let data = std::fs::read_to_string(path).expect("Load LongMemEval oracle");
     let questions: Vec<Question> = serde_json::from_str(&data).expect("Parse JSON");
-    println!("Loaded {} questions from LongMemEval oracle subset\n", questions.len());
+    println!(
+        "Loaded {} questions from LongMemEval oracle subset\n",
+        questions.len()
+    );
 
     // Sample to bound runtime. By default sample the first 100, but allow
     // --random-sample flag to pick a random subset (checks cherry-pick bias).
@@ -135,13 +180,26 @@ fn main() {
         let mut rng = SmallRng::seed_from_u64(12345);
         let mut idxs: Vec<usize> = (0..questions.len()).collect();
         idxs.shuffle(&mut rng);
-        idxs.into_iter().take(sample_size).map(|i| &questions[i]).collect()
+        idxs.into_iter()
+            .take(sample_size)
+            .map(|i| &questions[i])
+            .collect()
     } else {
         questions.iter().take(sample_size).collect()
     };
-    println!("Sampling strategy: {}", if use_random { "random" } else { "first 100 (deterministic)" });
+    println!(
+        "Sampling strategy: {}",
+        if use_random {
+            "random"
+        } else {
+            "first 100 (deterministic)"
+        }
+    );
 
-    println!("Evaluating {} questions, selection rate = 30%\n", sample_size);
+    println!(
+        "Evaluating {} questions, selection rate = 30%\n",
+        sample_size
+    );
     println!("| Method | answer_turn_recall | compression | wall_ms/q |");
     println!("|---|---:|---:|---:|");
 
@@ -151,7 +209,7 @@ fn main() {
         let mut compressions = Vec::new();
         let mut walls = Vec::new();
         for (i, q) in sample.iter().enumerate() {
-            let (flat, edges, answer_turns) = build_graph(*q);
+            let (flat, edges, answer_turns) = build_graph(q);
             let n = flat.len();
             let keep = (n as f64 * 0.30).ceil() as usize;
             let text_rare = text_rareness_scores(&flat);
@@ -167,7 +225,9 @@ fn main() {
             let ms = t0.elapsed().as_secs_f64() * 1000.0;
 
             let hit = sel.intersection(&answer_turns).count() as f64;
-            let recall = if answer_turns.is_empty() { 1.0 } else {
+            let recall = if answer_turns.is_empty() {
+                1.0
+            } else {
                 hit / answer_turns.len() as f64
             };
             let comp = 1.0 - sel.len() as f64 / n.max(1) as f64;

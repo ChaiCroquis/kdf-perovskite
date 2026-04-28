@@ -21,16 +21,22 @@ pub struct WilcoxonResult {
 /// Compute Wilcoxon signed-rank test for paired samples x vs y.
 pub fn wilcoxon_signed_rank(x: &[f64], y: &[f64]) -> Option<WilcoxonResult> {
     assert_eq!(x.len(), y.len(), "paired samples must have equal length");
-    if x.is_empty() { return None; }
+    if x.is_empty() {
+        return None;
+    }
 
     // Compute differences, drop zeros (tied with zero → excluded)
-    let mut diffs: Vec<(f64, f64)> = x.iter().zip(y.iter())
+    let mut diffs: Vec<(f64, f64)> = x
+        .iter()
+        .zip(y.iter())
         .map(|(a, b)| a - b)
         .filter(|d| d.abs() > 1e-12)
         .map(|d| (d.abs(), d.signum()))
         .collect();
     let n = diffs.len();
-    if n == 0 { return None; }
+    if n == 0 {
+        return None;
+    }
 
     // Rank by |diff|, averaging ties
     diffs.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
@@ -38,23 +44,30 @@ pub fn wilcoxon_signed_rank(x: &[f64], y: &[f64]) -> Option<WilcoxonResult> {
     let mut i = 0;
     while i < n {
         let mut j = i;
-        while j + 1 < n && (diffs[j + 1].0 - diffs[i].0).abs() < 1e-12 { j += 1; }
+        while j + 1 < n && (diffs[j + 1].0 - diffs[i].0).abs() < 1e-12 {
+            j += 1;
+        }
         let avg_rank = (i + 1 + j + 1) as f64 / 2.0;
-        for r in ranks.iter_mut().take(j + 1).skip(i) { *r = avg_rank; }
+        for r in ranks.iter_mut().take(j + 1).skip(i) {
+            *r = avg_rank;
+        }
         i = j + 1;
     }
 
     let mut w_plus = 0.0;
     let mut w_minus = 0.0;
     for (rank, (_, sign)) in ranks.iter().zip(diffs.iter()) {
-        if *sign > 0.0 { w_plus += rank; }
-        else           { w_minus += rank; }
+        if *sign > 0.0 {
+            w_plus += rank;
+        } else {
+            w_minus += rank;
+        }
     }
 
     // Normal approximation with continuity correction
     let n_f = n as f64;
     let mean_w = n_f * (n_f + 1.0) / 4.0;
-    let var_w  = n_f * (n_f + 1.0) * (2.0 * n_f + 1.0) / 24.0;
+    let var_w = n_f * (n_f + 1.0) * (2.0 * n_f + 1.0) / 24.0;
     let z = (w_plus - mean_w - 0.5 * (w_plus - mean_w).signum()) / var_w.sqrt();
 
     // Two-sided p = 2 * (1 - Φ(|z|))
@@ -106,7 +119,11 @@ mod tests {
         let kdf = vec![1.0; 30];
         let random: Vec<f64> = (0..30).map(|i| 0.25 + (i as f64) * 0.002).collect();
         let r = wilcoxon_signed_rank(&kdf, &random).unwrap();
-        assert!(r.significant_at_01, "clear difference must be significant; p={}", r.p_value_two_sided);
+        assert!(
+            r.significant_at_01,
+            "clear difference must be significant; p={}",
+            r.p_value_two_sided
+        );
         assert!(r.median_diff > 0.6);
     }
 
@@ -121,10 +138,18 @@ mod tests {
     #[test]
     fn noisy_equal_means_not_significant() {
         // Same mean, different noise — should not be significant
-        let a: Vec<f64> = (0..30).map(|i| 0.5 + ((i % 3) as f64 - 1.0) * 0.01).collect();
-        let b: Vec<f64> = (0..30).map(|i| 0.5 + ((i % 4) as f64 - 1.5) * 0.01).collect();
+        let a: Vec<f64> = (0..30)
+            .map(|i| 0.5 + ((i % 3) as f64 - 1.0) * 0.01)
+            .collect();
+        let b: Vec<f64> = (0..30)
+            .map(|i| 0.5 + ((i % 4) as f64 - 1.5) * 0.01)
+            .collect();
         let r = wilcoxon_signed_rank(&a, &b).unwrap();
-        assert!(r.p_value_two_sided > 0.01, "similar samples must not be significant at 0.01, p={}", r.p_value_two_sided);
+        assert!(
+            r.p_value_two_sided > 0.01,
+            "similar samples must not be significant at 0.01, p={}",
+            r.p_value_two_sided
+        );
     }
 
     #[test]

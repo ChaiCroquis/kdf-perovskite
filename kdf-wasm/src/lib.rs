@@ -2,9 +2,9 @@
 //!
 //! Enables running KDF directly in the browser
 
+use kdf::{cosine_similarity, euclidean_similarity, levenshtein_similarity, Kdf};
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
-use kdf::{Kdf, levenshtein_similarity, cosine_similarity, euclidean_similarity};
-use serde::{Serialize, Deserialize};
 
 /// Layer classification
 #[wasm_bindgen]
@@ -70,9 +70,9 @@ impl KdfWasm {
         }
 
         let total = data.len();
-        let result = self.inner.process(&data, threshold, |a, b| {
-            levenshtein_similarity(a, b)
-        });
+        let result = self
+            .inner
+            .process(&data, threshold, |a, b| levenshtein_similarity(a, b));
 
         let kdf_result = self.to_result(result, total);
         serde_wasm_bindgen::to_value(&kdf_result)
@@ -90,9 +90,9 @@ impl KdfWasm {
         }
 
         let total = data.len();
-        let result = self.inner.process(&data, threshold, |a, b| {
-            cosine_similarity(a, b)
-        });
+        let result = self
+            .inner
+            .process(&data, threshold, |a, b| cosine_similarity(a, b));
 
         let kdf_result = self.to_result(result, total);
         serde_wasm_bindgen::to_value(&kdf_result)
@@ -110,9 +110,9 @@ impl KdfWasm {
         }
 
         let total = data.len();
-        let result = self.inner.process(&data, threshold, |a, b| {
-            euclidean_similarity(a, b)
-        });
+        let result = self
+            .inner
+            .process(&data, threshold, |a, b| euclidean_similarity(a, b));
 
         let kdf_result = self.to_result(result, total);
         serde_wasm_bindgen::to_value(&kdf_result)
@@ -120,24 +120,38 @@ impl KdfWasm {
     }
 
     fn to_result(&self, result: kdf::KdfResult, total: usize) -> KdfResult {
-        let layers: Vec<String> = result.layers.iter().map(|l| {
-            match l {
+        let layers: Vec<String> = result
+            .layers
+            .iter()
+            .map(|l| match l {
                 kdf::Layer::Core => "Core".to_string(),
                 kdf::Layer::Edge => "Edge".to_string(),
                 kdf::Layer::Rare => "Rare".to_string(),
-            }
-        }).collect();
+            })
+            .collect();
 
-        let core_count = result.layers.iter().filter(|l| matches!(l, kdf::Layer::Core)).count();
-        let edge_count = result.layers.iter().filter(|l| matches!(l, kdf::Layer::Edge)).count();
-        let rare_count = result.layers.iter().filter(|l| matches!(l, kdf::Layer::Rare)).count();
+        let core_count = result
+            .layers
+            .iter()
+            .filter(|l| matches!(l, kdf::Layer::Core))
+            .count();
+        let edge_count = result
+            .layers
+            .iter()
+            .filter(|l| matches!(l, kdf::Layer::Edge))
+            .count();
+        let rare_count = result
+            .layers
+            .iter()
+            .filter(|l| matches!(l, kdf::Layer::Rare))
+            .count();
         let selected_len = result.selected.len();
 
         KdfResult {
             selected: result.selected,
             layers,
             selection_scores: result.selection_scores.clone(),
-            weights: result.selection_scores,  // Backward compatibility
+            weights: result.selection_scores, // Backward compatibility
             total,
             core_count,
             edge_count,

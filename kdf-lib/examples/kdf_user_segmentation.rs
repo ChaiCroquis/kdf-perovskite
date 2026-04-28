@@ -50,7 +50,8 @@ fn segment_users(users: &[UserProfile], threshold: f64) -> Vec<UserSegment> {
     }
 
     // Further segment Rare users by revenue
-    let (vip_users, at_risk_users): (Vec<_>, Vec<_>) = rare_users.iter()
+    let (vip_users, at_risk_users): (Vec<_>, Vec<_>) = rare_users
+        .iter()
         .map(|id| {
             let user = users.iter().find(|u| &u.id == id).unwrap();
             (id.clone(), user.total_revenue)
@@ -115,7 +116,6 @@ fn main() {
             total_revenue: 520.0,
             account_age_days: 350,
         },
-
         // Growth potential (Edge)
         UserProfile {
             id: "user_005".into(),
@@ -129,7 +129,6 @@ fn main() {
             total_revenue: 700.0,
             account_age_days: 90,
         },
-
         // VIP (Rare - high value)
         UserProfile {
             id: "user_007".into(),
@@ -143,7 +142,6 @@ fn main() {
             total_revenue: 4500.0,
             account_age_days: 600,
         },
-
         // At-risk (Rare - churning)
         UserProfile {
             id: "user_009".into(),
@@ -173,8 +171,10 @@ fn main() {
 
     for (i, user) in users.iter().enumerate() {
         let layer = result.layers[i];
-        println!("[{:?}] {} - Revenue: ${:.0}, Age: {}d",
-            layer, user.id, user.total_revenue, user.account_age_days);
+        println!(
+            "[{:?}] {} - Revenue: ${:.0}, Age: {}d",
+            layer, user.id, user.total_revenue, user.account_age_days
+        );
     }
     println!();
 
@@ -201,10 +201,10 @@ fn main() {
 
     for segment in &segments {
         let allocation = match segment.priority {
-            1 => 0.35,  // VIP: 35%
-            2 => 0.30,  // At-Risk: 30%
-            3 => 0.25,  // Growth: 25%
-            _ => 0.10,  // Mainstream: 10%
+            1 => 0.35, // VIP: 35%
+            2 => 0.30, // At-Risk: 30%
+            3 => 0.25, // Growth: 25%
+            _ => 0.10, // Mainstream: 10%
         };
         let budget = total_budget * allocation;
         let per_user = if segment.users.is_empty() {
@@ -213,8 +213,10 @@ fn main() {
             budget / segment.users.len() as f64
         };
 
-        println!("{}: ${:.0} total (${:.0}/user)",
-            segment.name, budget, per_user);
+        println!(
+            "{}: ${:.0} total (${:.0}/user)",
+            segment.name, budget, per_user
+        );
     }
     println!();
 
@@ -228,10 +230,12 @@ fn main() {
         println!("⚠️  At-Risk Users Detected: {}", segment.users.len());
         for user_id in &segment.users {
             let user = users.iter().find(|u| &u.id == user_id).unwrap();
-            println!("   {} - Last active: {}+ days ago, {} support tickets",
+            println!(
+                "   {} - Last active: {}+ days ago, {} support tickets",
                 user_id,
                 (user.features[2] * 100.0) as u32,
-                (user.features[4] * 10.0) as u32);
+                (user.features[4] * 10.0) as u32
+            );
         }
         println!("\n   Recommended: Immediate outreach with win-back offer");
     }

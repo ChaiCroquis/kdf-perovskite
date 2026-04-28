@@ -12,12 +12,17 @@ use std::collections::HashMap;
 use std::time::Instant;
 
 fn euclidean_distance(a: &[f64], b: &[f64]) -> f64 {
-    a.iter().zip(b).map(|(x, y)| (x - y).powi(2)).sum::<f64>().sqrt()
+    a.iter()
+        .zip(b)
+        .map(|(x, y)| (x - y).powi(2))
+        .sum::<f64>()
+        .sqrt()
 }
 
 /// Weighted k-NN with distance weighting
 fn weighted_knn_predict(data: &[Vec<f64>], labels: &[usize], query: &[f64], k: usize) -> usize {
-    let mut distances: Vec<(usize, f64)> = data.iter()
+    let mut distances: Vec<(usize, f64)> = data
+        .iter()
         .enumerate()
         .map(|(i, point)| (i, euclidean_distance(query, point)))
         .collect();
@@ -30,12 +35,20 @@ fn weighted_knn_predict(data: &[Vec<f64>], labels: &[usize], query: &[f64], k: u
         *votes.entry(labels[*idx]).or_insert(0.0) += weight;
     }
 
-    *votes.iter().max_by(|a, b| a.1.partial_cmp(b.1).unwrap()).unwrap().0
+    *votes
+        .iter()
+        .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
+        .unwrap()
+        .0
 }
 
-fn evaluate(data: &[Vec<f64>], labels: &[usize], test_data: &[Vec<f64>], test_labels: &[usize], k: usize)
-    -> (f64, Vec<f64>)
-{
+fn evaluate(
+    data: &[Vec<f64>],
+    labels: &[usize],
+    test_data: &[Vec<f64>],
+    test_labels: &[usize],
+    k: usize,
+) -> (f64, Vec<f64>) {
     let n_classes = *test_labels.iter().max().unwrap() + 1;
     let mut class_correct = vec![0usize; n_classes];
     let mut class_total = vec![0usize; n_classes];
@@ -52,7 +65,8 @@ fn evaluate(data: &[Vec<f64>], labels: &[usize], test_data: &[Vec<f64>], test_la
     let total: usize = class_total.iter().sum();
     let overall_acc = total_correct as f64 / total as f64;
 
-    let class_acc: Vec<f64> = class_correct.iter()
+    let class_acc: Vec<f64> = class_correct
+        .iter()
         .zip(&class_total)
         .map(|(&c, &t)| if t > 0 { c as f64 / t as f64 } else { 0.0 })
         .collect();
@@ -112,10 +126,22 @@ fn main() {
     let mut test_data: Vec<Vec<f64>> = Vec::new();
     let mut test_labels: Vec<usize> = Vec::new();
 
-    for _ in 0..20 { test_data.push(vec![0.55, 0.52, 0.0]); test_labels.push(0); }
-    for _ in 0..20 { test_data.push(vec![-0.45, 0.85, 0.1]); test_labels.push(1); }
-    for _ in 0..20 { test_data.push(vec![0.92, -0.88, 0.5]); test_labels.push(2); }
-    for _ in 0..20 { test_data.push(vec![-0.93, -0.93, 0.9]); test_labels.push(3); }
+    for _ in 0..20 {
+        test_data.push(vec![0.55, 0.52, 0.0]);
+        test_labels.push(0);
+    }
+    for _ in 0..20 {
+        test_data.push(vec![-0.45, 0.85, 0.1]);
+        test_labels.push(1);
+    }
+    for _ in 0..20 {
+        test_data.push(vec![0.92, -0.88, 0.5]);
+        test_labels.push(2);
+    }
+    for _ in 0..20 {
+        test_data.push(vec![-0.93, -0.93, 0.9]);
+        test_labels.push(3);
+    }
 
     println!("   Test: 80 samples (20 per class, balanced)\n");
 
@@ -150,16 +176,24 @@ fn main() {
         class_acc: class_acc.clone(),
         rare_preserved: 5,
     });
-    println!("   [1] Standard: 精度={:.1}%, 希少クラス={:.1}%", overall * 100.0, class_acc[3] * 100.0);
+    println!(
+        "   [1] Standard: 精度={:.1}%, 希少クラス={:.1}%",
+        overall * 100.0,
+        class_acc[3] * 100.0
+    );
 
     // --- Method 2: Random Sampling (10%) ---
     let sample_indices: Vec<usize> = (0..total).step_by(10).collect();
-    let sampled_data: Vec<Vec<f64>> = sample_indices.iter().map(|&i| train_data[i].clone()).collect();
+    let sampled_data: Vec<Vec<f64>> = sample_indices
+        .iter()
+        .map(|&i| train_data[i].clone())
+        .collect();
     let sampled_labels: Vec<usize> = sample_indices.iter().map(|&i| train_labels[i]).collect();
     let rare_count = sampled_labels.iter().filter(|&&l| l == 3).count();
 
     let start = Instant::now();
-    let (overall, class_acc) = evaluate(&sampled_data, &sampled_labels, &test_data, &test_labels, 5);
+    let (overall, class_acc) =
+        evaluate(&sampled_data, &sampled_labels, &test_data, &test_labels, 5);
     let time = start.elapsed().as_secs_f64() * 1000.0;
 
     results.push(Result {
@@ -170,15 +204,20 @@ fn main() {
         class_acc: class_acc.clone(),
         rare_preserved: rare_count,
     });
-    println!("   [2] Random 10%: 精度={:.1}%, 希少クラス={:.1}% (保持={}/5)",
-             overall * 100.0, class_acc[3] * 100.0, rare_count);
+    println!(
+        "   [2] Random 10%: 精度={:.1}%, 希少クラス={:.1}% (保持={}/5)",
+        overall * 100.0,
+        class_acc[3] * 100.0,
+        rare_count
+    );
 
     // --- Method 3: Stratified Sampling (10% per class) ---
     let mut strat_data: Vec<Vec<f64>> = Vec::new();
     let mut strat_labels: Vec<usize> = Vec::new();
 
     for class in 0..4 {
-        let class_indices: Vec<usize> = train_labels.iter()
+        let class_indices: Vec<usize> = train_labels
+            .iter()
             .enumerate()
             .filter(|(_, &l)| l == class)
             .map(|(i, _)| i)
@@ -205,20 +244,26 @@ fn main() {
         class_acc: class_acc.clone(),
         rare_preserved: rare_strat,
     });
-    println!("   [3] Stratified 10%: 精度={:.1}%, 希少クラス={:.1}% (保持={}/5)",
-             overall * 100.0, class_acc[3] * 100.0, rare_strat);
+    println!(
+        "   [3] Stratified 10%: 精度={:.1}%, 希少クラス={:.1}% (保持={}/5)",
+        overall * 100.0,
+        class_acc[3] * 100.0,
+        rare_strat
+    );
 
     // --- Method 4: KDF ---
     let start = Instant::now();
-    let kdf = Kdf::new(KdfParams::builder()
-        .selection_sim_threshold(0.8)
-        .build());
+    let kdf = Kdf::new(KdfParams::builder().selection_sim_threshold(0.8).build());
     let result = kdf.process(&train_data, 0.95, |a, b| {
         1.0 / (1.0 + euclidean_distance(a, b))
     });
     let kdf_time = start.elapsed().as_secs_f64() * 1000.0;
 
-    let kdf_data: Vec<Vec<f64>> = result.selected.iter().map(|&i| train_data[i].clone()).collect();
+    let kdf_data: Vec<Vec<f64>> = result
+        .selected
+        .iter()
+        .map(|&i| train_data[i].clone())
+        .collect();
     let kdf_labels: Vec<usize> = result.selected.iter().map(|&i| train_labels[i]).collect();
     let rare_kdf = kdf_labels.iter().filter(|&&l| l == 3).count();
 
@@ -234,8 +279,12 @@ fn main() {
         class_acc: class_acc.clone(),
         rare_preserved: rare_kdf,
     });
-    println!("   [4] KDF: 精度={:.1}%, 希少クラス={:.1}% (保持={}/5)",
-             overall * 100.0, class_acc[3] * 100.0, rare_kdf);
+    println!(
+        "   [4] KDF: 精度={:.1}%, 希少クラス={:.1}% (保持={}/5)",
+        overall * 100.0,
+        class_acc[3] * 100.0,
+        rare_kdf
+    );
 
     // ========================================================================
     // Summary Table
@@ -247,12 +296,16 @@ fn main() {
 
     for r in &results {
         let compression = total as f64 / r.size as f64;
-        println!("   | {:16} | {:>4} | {:>5.1}x | {:>6.1}% | {:>5.1}% | {:>7.1}% | {}/5 |",
-                 r.name, r.size, compression,
-                 r.overall_acc * 100.0,
-                 r.class_acc[2] * 100.0,
-                 r.class_acc[3] * 100.0,
-                 r.rare_preserved);
+        println!(
+            "   | {:16} | {:>4} | {:>5.1}x | {:>6.1}% | {:>5.1}% | {:>7.1}% | {}/5 |",
+            r.name,
+            r.size,
+            compression,
+            r.overall_acc * 100.0,
+            r.class_acc[2] * 100.0,
+            r.class_acc[3] * 100.0,
+            r.rare_preserved
+        );
     }
 
     // ========================================================================
@@ -265,12 +318,21 @@ fn main() {
     let stratified_result = &results[2];
 
     println!("   【希少クラス保持】");
-    println!("   - Random:     {}/5 → 極希少クラス精度 {:.0}%",
-             random_result.rare_preserved, random_result.class_acc[3] * 100.0);
-    println!("   - Stratified: {}/5 → 極希少クラス精度 {:.0}%",
-             stratified_result.rare_preserved, stratified_result.class_acc[3] * 100.0);
-    println!("   - KDF:        {}/5 → 極希少クラス精度 {:.0}%",
-             kdf_result.rare_preserved, kdf_result.class_acc[3] * 100.0);
+    println!(
+        "   - Random:     {}/5 → 極希少クラス精度 {:.0}%",
+        random_result.rare_preserved,
+        random_result.class_acc[3] * 100.0
+    );
+    println!(
+        "   - Stratified: {}/5 → 極希少クラス精度 {:.0}%",
+        stratified_result.rare_preserved,
+        stratified_result.class_acc[3] * 100.0
+    );
+    println!(
+        "   - KDF:        {}/5 → 極希少クラス精度 {:.0}%",
+        kdf_result.rare_preserved,
+        kdf_result.class_acc[3] * 100.0
+    );
 
     println!("\n   【KDFの優位性】");
 

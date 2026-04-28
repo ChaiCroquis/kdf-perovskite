@@ -11,7 +11,9 @@
 //! `demos/D5_fb15k237/data/fb15k-237/{train,valid,test}.txt`. If missing,
 //! a synthetic Freebase-shaped KG is generated.
 
-use kdf_demos_common::{visualizer::emit_artifacts, Axis, Conclusion, DemoReport, Metric, MethodResult};
+use kdf_demos_common::{
+    visualizer::emit_artifacts, Axis, Conclusion, DemoReport, MethodResult, Metric,
+};
 use rand::prelude::*;
 use rand::rngs::SmallRng;
 use real_data_bench::{public_datasets, Dataset};
@@ -28,16 +30,24 @@ fn main() {
     // in the bottom ~10% tail (empirical min ≈45, max ≈16000).
     let (ds, synthetic) = match public_datasets::load_fb15k_237(200) {
         Some(d) => {
-            println!("Loaded real FB15K-237: n={} entities, {} edges, rare={}",
-                d.n_nodes, d.edges.len(), d.rare_ground_truth.len());
+            println!(
+                "Loaded real FB15K-237: n={} entities, {} edges, rare={}",
+                d.n_nodes,
+                d.edges.len(),
+                d.rare_ground_truth.len()
+            );
             (d, false)
         }
         None => {
             println!("Real FB15K-237 not found. Using synthetic KG (Freebase-shaped).");
             println!("To use real data: place train/valid/test.txt under demos/D5_fb15k237/data/fb15k-237/");
             let d = synthesize_kg(5_000, 50, 42);
-            println!("  synthetic KG: n={}, edges={}, rare_truth={}",
-                d.n_nodes, d.edges.len(), d.rare_ground_truth.len());
+            println!(
+                "  synthetic KG: n={}, edges={}, rare_truth={}",
+                d.n_nodes,
+                d.edges.len(),
+                d.rare_ground_truth.len()
+            );
             (d, true)
         }
     };
@@ -46,13 +56,37 @@ fn main() {
     let keep = (ds.n_nodes as f64 * SELECTION_FRAC).ceil() as usize;
 
     let methods: Vec<(&str, bool, Box<dyn Fn(&Dataset, u64) -> HashSet<u32>>)> = vec![
-        ("Random", false, Box::new(|ds, seed| sample_random(ds, SELECTION_FRAC, seed))),
-        ("FreqCutoff", false, Box::new(move |ds, _s| sample_freq_cutoff(ds, keep))),
-        ("DegreeTopK", false, Box::new(move |ds, _s| sample_degree_top_k(ds, keep))),
-        ("TransE-like", false, Box::new(move |ds, seed| sample_transe_like(ds, keep, seed))),
+        (
+            "Random",
+            false,
+            Box::new(|ds, seed| sample_random(ds, SELECTION_FRAC, seed)),
+        ),
+        (
+            "FreqCutoff",
+            false,
+            Box::new(move |ds, _s| sample_freq_cutoff(ds, keep)),
+        ),
+        (
+            "DegreeTopK",
+            false,
+            Box::new(move |ds, _s| sample_degree_top_k(ds, keep)),
+        ),
+        (
+            "TransE-like",
+            false,
+            Box::new(move |ds, seed| sample_transe_like(ds, keep, seed)),
+        ),
         ("KDF", false, Box::new(|ds, _s| sample_kdf(ds))),
-        ("KDF+RelDensity", false, Box::new(|ds, _s| sample_kdf_reldensity(ds))),
-        ("KDF+Analogy", false, Box::new(|ds, _s| sample_kdf_with_analogy(ds))),
+        (
+            "KDF+RelDensity",
+            false,
+            Box::new(|ds, _s| sample_kdf_reldensity(ds)),
+        ),
+        (
+            "KDF+Analogy",
+            false,
+            Box::new(|ds, _s| sample_kdf_with_analogy(ds)),
+        ),
     ];
 
     let mut method_results: Vec<MethodResult> = Vec::new();
@@ -76,15 +110,24 @@ fn main() {
             compressions.push(comp);
             analogy_counts.push(analogy as f64);
             walls.push(ms);
-            raw_trials.entry(format!("{}/rare_recall", name)).or_default().push(recall);
-            raw_trials.entry(format!("{}/analogy_pairs", name)).or_default().push(analogy as f64);
+            raw_trials
+                .entry(format!("{}/rare_recall", name))
+                .or_default()
+                .push(recall);
+            raw_trials
+                .entry(format!("{}/analogy_pairs", name))
+                .or_default()
+                .push(analogy as f64);
         }
         let mean = |v: &[f64]| v.iter().sum::<f64>() / v.len() as f64;
         let r = mean(&recalls);
         let a = mean(&analogy_counts);
         let c = mean(&compressions);
         let w = mean(&walls);
-        println!("{:18} recall={:.3}  comp={:.3}  analogy={:.0}  ms={:.2}", name, r, c, a, w);
+        println!(
+            "{:18} recall={:.3}  comp={:.3}  analogy={:.0}  ms={:.2}",
+            name, r, c, a, w
+        );
         let mut m = BTreeMap::new();
         m.insert("rare_recall".into(), r);
         m.insert("analogy_pairs".into(), a);
@@ -93,15 +136,41 @@ fn main() {
         method_results.push(MethodResult {
             method: name.to_string(),
             requires_labels: *needs_label,
-            metrics: m, wall_ms: w, notes: String::new(),
+            metrics: m,
+            wall_ms: w,
+            notes: String::new(),
         });
     }
 
     let metric_definitions = vec![
-        Metric { name: "rare_recall".into(), higher_is_better: true, mean: 0.0, stderr: 0.0, axis: Axis::KdfStrength },
-        Metric { name: "analogy_pairs".into(), higher_is_better: true, mean: 0.0, stderr: 0.0, axis: Axis::KdfStrength },
-        Metric { name: "compression".into(), higher_is_better: true, mean: 0.0, stderr: 0.0, axis: Axis::Tie },
-        Metric { name: "wall_ms".into(), higher_is_better: false, mean: 0.0, stderr: 0.0, axis: Axis::KdfWeakness },
+        Metric {
+            name: "rare_recall".into(),
+            higher_is_better: true,
+            mean: 0.0,
+            stderr: 0.0,
+            axis: Axis::KdfStrength,
+        },
+        Metric {
+            name: "analogy_pairs".into(),
+            higher_is_better: true,
+            mean: 0.0,
+            stderr: 0.0,
+            axis: Axis::KdfStrength,
+        },
+        Metric {
+            name: "compression".into(),
+            higher_is_better: true,
+            mean: 0.0,
+            stderr: 0.0,
+            axis: Axis::Tie,
+        },
+        Metric {
+            name: "wall_ms".into(),
+            higher_is_better: false,
+            mean: 0.0,
+            stderr: 0.0,
+            axis: Axis::KdfWeakness,
+        },
     ];
 
     let mut limits = vec![
@@ -163,14 +232,19 @@ fn synthesize_kg(n_entities: usize, n_relations: usize, seed: u64) -> Dataset {
     for _ in 0..n_main_edges {
         let h = rng.gen_range(0..n_entities) as u32;
         let t = rng.gen_range(0..n_entities) as u32;
-        if h == t { continue; }
+        if h == t {
+            continue;
+        }
         let r_idx = {
             let u = rng.gen::<f64>() * mw_sum;
             let mut acc = 0.0;
             let mut idx = 0;
             for (i, w) in main_weights.iter().enumerate() {
                 acc += w;
-                if acc >= u { idx = i; break; }
+                if acc >= u {
+                    idx = i;
+                    break;
+                }
             }
             idx
         };
@@ -185,7 +259,9 @@ fn synthesize_kg(n_entities: usize, n_relations: usize, seed: u64) -> Dataset {
         for _ in 0..3 {
             let h = rng.gen_range(0..n_entities) as u32;
             let t = rng.gen_range(0..n_entities) as u32;
-            if h == t { continue; }
+            if h == t {
+                continue;
+            }
             *relation_counts.entry(r_idx).or_insert(0) += 1;
             edges.push((h, t, 1.0));
             edge_rels.push(r_idx);
@@ -230,10 +306,16 @@ fn sample_freq_cutoff(ds: &Dataset, keep: usize) -> HashSet<u32> {
     // Keep entities with lowest degree (prioritize rare-looking).
     let mut deg = vec![0u32; ds.n_nodes];
     for &(u, v, _) in &ds.edges {
-        if (u as usize) < ds.n_nodes { deg[u as usize] += 1; }
-        if (v as usize) < ds.n_nodes { deg[v as usize] += 1; }
+        if (u as usize) < ds.n_nodes {
+            deg[u as usize] += 1;
+        }
+        if (v as usize) < ds.n_nodes {
+            deg[v as usize] += 1;
+        }
     }
-    let mut order: Vec<u32> = (0..ds.n_nodes as u32).filter(|&i| deg[i as usize] > 0).collect();
+    let mut order: Vec<u32> = (0..ds.n_nodes as u32)
+        .filter(|&i| deg[i as usize] > 0)
+        .collect();
     order.sort_by_key(|&i| deg[i as usize]);
     order.into_iter().take(keep).collect()
 }
@@ -242,8 +324,12 @@ fn sample_degree_top_k(ds: &Dataset, keep: usize) -> HashSet<u32> {
     // Keep highest-degree entities (conventional KG pruning).
     let mut deg = vec![0u32; ds.n_nodes];
     for &(u, v, _) in &ds.edges {
-        if (u as usize) < ds.n_nodes { deg[u as usize] += 1; }
-        if (v as usize) < ds.n_nodes { deg[v as usize] += 1; }
+        if (u as usize) < ds.n_nodes {
+            deg[u as usize] += 1;
+        }
+        if (v as usize) < ds.n_nodes {
+            deg[v as usize] += 1;
+        }
     }
     let mut order: Vec<u32> = (0..ds.n_nodes as u32).collect();
     order.sort_by_key(|&i| std::cmp::Reverse(deg[i as usize]));
@@ -273,10 +359,20 @@ fn sample_kdf(ds: &Dataset) -> HashSet<u32> {
     let budget = (ds.n_nodes as f64 * SELECTION_FRAC).ceil() as usize;
 
     let score = |l: Layer| -> i32 {
-        match l { Layer::Rare => 3, Layer::Core => 2, Layer::Edge => 1, Layer::Garbage => 0 }
+        match l {
+            Layer::Rare => 3,
+            Layer::Core => 2,
+            Layer::Edge => 1,
+            Layer::Garbage => 0,
+        }
     };
     let mut scored: Vec<(u32, i32)> = (0..ds.n_nodes as u32)
-        .map(|id| (id, score(class.layers.get(&id).copied().unwrap_or(Layer::Edge))))
+        .map(|id| {
+            (
+                id,
+                score(class.layers.get(&id).copied().unwrap_or(Layer::Edge)),
+            )
+        })
         .collect();
     scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
     scored.into_iter().take(budget).map(|(id, _)| id).collect()
@@ -298,14 +394,21 @@ fn sample_kdf_reldensity(ds: &Dataset) -> HashSet<u32> {
             adj[v as usize].push(u);
         }
     }
-    let mut scored: Vec<(u32, f64)> = (0..n as u32).map(|id| {
-        let neighbors = &adj[id as usize];
-        if neighbors.is_empty() { return (id, -1.0); }
-        let local_avg: f64 = neighbors.iter().map(|&v| deg[v as usize] as f64).sum::<f64>()
-            / neighbors.len() as f64;
-        let ratio = deg[id as usize] as f64 / local_avg.max(1.0);
-        (id, 1.0 - ratio)
-    }).collect();
+    let mut scored: Vec<(u32, f64)> = (0..n as u32)
+        .map(|id| {
+            let neighbors = &adj[id as usize];
+            if neighbors.is_empty() {
+                return (id, -1.0);
+            }
+            let local_avg: f64 = neighbors
+                .iter()
+                .map(|&v| deg[v as usize] as f64)
+                .sum::<f64>()
+                / neighbors.len() as f64;
+            let ratio = deg[id as usize] as f64 / local_avg.max(1.0);
+            (id, 1.0 - ratio)
+        })
+        .collect();
     scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
     scored.into_iter().take(budget).map(|(i, _)| i).collect()
 }
@@ -321,13 +424,27 @@ fn sample_kdf_with_analogy(ds: &Dataset) -> HashSet<u32> {
     let layer_budget = budget - analogy_budget;
 
     let score_layer = |l: Layer| -> i32 {
-        match l { Layer::Rare => 3, Layer::Core => 2, Layer::Edge => 1, Layer::Garbage => 0 }
+        match l {
+            Layer::Rare => 3,
+            Layer::Core => 2,
+            Layer::Edge => 1,
+            Layer::Garbage => 0,
+        }
     };
     let mut scored: Vec<(u32, i32)> = (0..ds.n_nodes as u32)
-        .map(|id| (id, score_layer(class.layers.get(&id).copied().unwrap_or(Layer::Edge))))
+        .map(|id| {
+            (
+                id,
+                score_layer(class.layers.get(&id).copied().unwrap_or(Layer::Edge)),
+            )
+        })
         .collect();
     scored.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
-    let mut out: HashSet<u32> = scored.into_iter().take(layer_budget).map(|(id, _)| id).collect();
+    let mut out: HashSet<u32> = scored
+        .into_iter()
+        .take(layer_budget)
+        .map(|(id, _)| id)
+        .collect();
 
     // Analogy bonus: pick fingerprint-isolated nodes not yet selected
     let fps = compute_degree_histograms(ds);
@@ -355,17 +472,31 @@ fn compute_degree_histograms(ds: &Dataset) -> Vec<[f64; 4]> {
             adj[v as usize].push(u);
         }
     }
-    (0..n).map(|i| {
-        let mut bins = [0.0f64; 4];
-        for &v in &adj[i] {
-            let d = deg[v as usize];
-            let idx = if d < 2 { 0 } else if d < 5 { 1 } else if d < 20 { 2 } else { 3 };
-            bins[idx] += 1.0;
-        }
-        let tot: f64 = bins.iter().sum();
-        if tot > 0.0 { for b in bins.iter_mut() { *b /= tot; } }
-        bins
-    }).collect()
+    (0..n)
+        .map(|i| {
+            let mut bins = [0.0f64; 4];
+            for &v in &adj[i] {
+                let d = deg[v as usize];
+                let idx = if d < 2 {
+                    0
+                } else if d < 5 {
+                    1
+                } else if d < 20 {
+                    2
+                } else {
+                    3
+                };
+                bins[idx] += 1.0;
+            }
+            let tot: f64 = bins.iter().sum();
+            if tot > 0.0 {
+                for b in bins.iter_mut() {
+                    *b /= tot;
+                }
+            }
+            bins
+        })
+        .collect()
 }
 
 fn median_histogram(fps: &[[f64; 4]]) -> [f64; 4] {
@@ -388,7 +519,9 @@ fn l1_dist(a: &[f64; 4], b: &[f64; 4]) -> f64 {
 // ============================================================================
 
 fn count_cross_cluster_pairs(ds: &Dataset, selected: &HashSet<u32>) -> usize {
-    let adj_set: HashSet<(u32, u32)> = ds.edges.iter()
+    let adj_set: HashSet<(u32, u32)> = ds
+        .edges
+        .iter()
         .map(|&(u, v, _)| if u < v { (u, v) } else { (v, u) })
         .collect();
     let fps = compute_degree_histograms(ds);
@@ -402,7 +535,9 @@ fn count_cross_cluster_pairs(ds: &Dataset, selected: &HashSet<u32>) -> usize {
         for j in (i + 1)..cap {
             let (a, b) = (selected_vec[i], selected_vec[j]);
             let key = if a < b { (a, b) } else { (b, a) };
-            if adj_set.contains(&key) { continue; }
+            if adj_set.contains(&key) {
+                continue;
+            }
             let dist = l1_dist(&fps[a as usize], &fps[b as usize]);
             if dist < 0.1 && fps[a as usize].iter().sum::<f64>() > 0.0 {
                 count += 1;

@@ -1,7 +1,7 @@
 //! Simple graph structure for internal use by engines
 
-use std::collections::{HashMap, HashSet};
 use super::super::framework::Layer;
+use std::collections::{HashMap, HashSet};
 
 /// Simple graph structure for engine use
 #[derive(Clone, Debug, Default)]

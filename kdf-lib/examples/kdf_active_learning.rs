@@ -36,7 +36,12 @@ fn reset_seed(seed: u64) {
 
 /// Euclidean similarity
 fn euclidean_similarity(a: &[f64], b: &[f64]) -> f64 {
-    let dist: f64 = a.iter().zip(b).map(|(x, y)| (x - y).powi(2)).sum::<f64>().sqrt();
+    let dist: f64 = a
+        .iter()
+        .zip(b)
+        .map(|(x, y)| (x - y).powi(2))
+        .sum::<f64>()
+        .sqrt();
     1.0 / (1.0 + dist)
 }
 
@@ -102,7 +107,7 @@ impl SimpleClassifier {
 
     fn predict_proba(&self, features: &[f64]) -> Vec<f64> {
         if self.train_data.is_empty() {
-            return vec![0.25; 4];  // Uniform uncertainty
+            return vec![0.25; 4]; // Uniform uncertainty
         }
 
         // Find distances to all training samples
@@ -128,7 +133,8 @@ impl SimpleClassifier {
 
     fn predict(&self, features: &[f64]) -> usize {
         let proba = self.predict_proba(features);
-        proba.iter()
+        proba
+            .iter()
             .enumerate()
             .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
             .map(|(i, _)| i)
@@ -138,7 +144,8 @@ impl SimpleClassifier {
     fn uncertainty(&self, features: &[f64]) -> f64 {
         let proba = self.predict_proba(features);
         // Entropy as uncertainty measure
-        -proba.iter()
+        -proba
+            .iter()
             .filter(|&&p| p > 0.0)
             .map(|&p| p * p.ln())
             .sum::<f64>()
@@ -148,7 +155,8 @@ impl SimpleClassifier {
         if self.train_data.is_empty() {
             return 0.0;
         }
-        let correct = test_data.iter()
+        let correct = test_data
+            .iter()
             .zip(test_labels)
             .filter(|(features, &label)| self.predict(features) == label)
             .count();
@@ -156,7 +164,7 @@ impl SimpleClassifier {
     }
 
     fn class_accuracy(&self, test_data: &[Vec<f64>], test_labels: &[usize]) -> Vec<f64> {
-        let mut class_correct = vec![0; 4];
+        let mut class_correct = [0; 4];
         let mut class_total = vec![0; 4];
 
         for (features, &label) in test_data.iter().zip(test_labels) {
@@ -166,7 +174,8 @@ impl SimpleClassifier {
             }
         }
 
-        class_correct.iter()
+        class_correct
+            .iter()
             .zip(&class_total)
             .map(|(&c, &t)| if t > 0 { c as f64 / t as f64 } else { 0.0 })
             .collect()
@@ -184,7 +193,8 @@ fn random_sampling(
     if step == 0 {
         return unlabeled_indices.to_vec();
     }
-    unlabeled_indices.iter()
+    unlabeled_indices
+        .iter()
         .step_by(step.max(1))
         .take(batch_size)
         .copied()
@@ -198,16 +208,14 @@ fn uncertainty_sampling(
     classifier: &SimpleClassifier,
     batch_size: usize,
 ) -> Vec<usize> {
-    let mut scored: Vec<(usize, f64)> = unlabeled_indices.iter()
+    let mut scored: Vec<(usize, f64)> = unlabeled_indices
+        .iter()
         .map(|&i| (i, classifier.uncertainty(&data[i])))
         .collect();
 
     scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
 
-    scored.iter()
-        .take(batch_size)
-        .map(|(i, _)| *i)
-        .collect()
+    scored.iter().take(batch_size).map(|(i, _)| *i).collect()
 }
 
 /// KDF-enhanced Sampling strategy
@@ -222,20 +230,19 @@ fn kdf_sampling(
     }
 
     // Get unlabeled data
-    let unlabeled_data: Vec<Vec<f64>> = unlabeled_indices.iter()
-        .map(|&i| data[i].clone())
-        .collect();
+    let unlabeled_data: Vec<Vec<f64>> =
+        unlabeled_indices.iter().map(|&i| data[i].clone()).collect();
 
-    let kdf = Kdf::new(KdfParams::builder()
-        .selection_sim_threshold(0.5)
-        .build());
+    let kdf = Kdf::new(KdfParams::builder().selection_sim_threshold(0.5).build());
 
     let result = kdf.process(&unlabeled_data, 0.8, |a, b| euclidean_similarity(a, b));
 
     // Balanced selection: prioritize Rare but include representation from all layers
     let rare = result.rare_items();
     let edge = result.edge_items();
-    let core_selected: Vec<usize> = result.selected.iter()
+    let core_selected: Vec<usize> = result
+        .selected
+        .iter()
         .filter(|&&i| result.layers[i] == Layer::Core)
         .copied()
         .collect();
@@ -307,7 +314,8 @@ fn simulate_active_learning(
         // Label selected samples
         for &idx in &to_label {
             classifier.add_sample(data[idx].clone(), labels[idx]);
-            if labels[idx] == 3 {  // Rare class
+            if labels[idx] == 3 {
+                // Rare class
                 rare_labeled += 1;
             }
             unlabeled.retain(|&i| i != idx);
@@ -340,18 +348,30 @@ fn main() {
         .collect();
 
     println!("   訓練データ: {} 件", data.len());
-    println!("   - Class 0 (多数派): {} 件 ({:.1}%)", class_counts[0],
-             class_counts[0] as f64 / data.len() as f64 * 100.0);
-    println!("   - Class 1 (中間): {} 件 ({:.1}%)", class_counts[1],
-             class_counts[1] as f64 / data.len() as f64 * 100.0);
-    println!("   - Class 2 (希少): {} 件 ({:.1}%)", class_counts[2],
-             class_counts[2] as f64 / data.len() as f64 * 100.0);
-    println!("   - Class 3 (極希少): {} 件 ({:.1}%)", class_counts[3],
-             class_counts[3] as f64 / data.len() as f64 * 100.0);
+    println!(
+        "   - Class 0 (多数派): {} 件 ({:.1}%)",
+        class_counts[0],
+        class_counts[0] as f64 / data.len() as f64 * 100.0
+    );
+    println!(
+        "   - Class 1 (中間): {} 件 ({:.1}%)",
+        class_counts[1],
+        class_counts[1] as f64 / data.len() as f64 * 100.0
+    );
+    println!(
+        "   - Class 2 (希少): {} 件 ({:.1}%)",
+        class_counts[2],
+        class_counts[2] as f64 / data.len() as f64 * 100.0
+    );
+    println!(
+        "   - Class 3 (極希少): {} 件 ({:.1}%)",
+        class_counts[3],
+        class_counts[3] as f64 / data.len() as f64 * 100.0
+    );
     println!("   テストデータ: {} 件", test_data.len());
 
-    let total_budget = 100;  // Total samples to label
-    let batch_size = 10;     // Samples per iteration
+    let total_budget = 100; // Total samples to label
+    let batch_size = 10; // Samples per iteration
 
     println!("\n   ラベリング予算: {} 件", total_budget);
     println!("   バッチサイズ: {} 件", batch_size);
@@ -364,22 +384,37 @@ fn main() {
     // Random Sampling
     reset_seed(42);
     let (random_acc, random_class, random_rare) = simulate_active_learning(
-        &data, &labels, &test_data, &test_labels,
-        random_sampling, total_budget, batch_size,
+        &data,
+        &labels,
+        &test_data,
+        &test_labels,
+        random_sampling,
+        total_budget,
+        batch_size,
     );
 
     // Uncertainty Sampling
     reset_seed(42);
     let (uncertainty_acc, uncertainty_class, uncertainty_rare) = simulate_active_learning(
-        &data, &labels, &test_data, &test_labels,
-        uncertainty_sampling, total_budget, batch_size,
+        &data,
+        &labels,
+        &test_data,
+        &test_labels,
+        uncertainty_sampling,
+        total_budget,
+        batch_size,
     );
 
     // KDF Sampling
     reset_seed(42);
     let (kdf_acc, kdf_class, kdf_rare) = simulate_active_learning(
-        &data, &labels, &test_data, &test_labels,
-        kdf_sampling, total_budget, batch_size,
+        &data,
+        &labels,
+        &test_data,
+        &test_labels,
+        kdf_sampling,
+        total_budget,
+        batch_size,
     );
 
     // ========================================================================
@@ -389,9 +424,20 @@ fn main() {
 
     println!("   | サンプル数 | Random | Uncertainty | KDF |");
     println!("   |------------|--------|-------------|-----|");
-    for (i, ((r, u), k)) in random_acc.iter().zip(&uncertainty_acc).zip(&kdf_acc).enumerate() {
+    for (i, ((r, u), k)) in random_acc
+        .iter()
+        .zip(&uncertainty_acc)
+        .zip(&kdf_acc)
+        .enumerate()
+    {
         let n = (i + 1) * batch_size;
-        println!("   | {:>10} | {:>5.1}% | {:>10.1}% | {:>3.1}% |", n, r * 100.0, u * 100.0, k * 100.0);
+        println!(
+            "   | {:>10} | {:>5.1}% | {:>10.1}% | {:>3.1}% |",
+            n,
+            r * 100.0,
+            u * 100.0,
+            k * 100.0
+        );
     }
 
     // ========================================================================
@@ -409,12 +455,24 @@ fn main() {
 
     println!("   | 手法 | 全体精度 | Class2(希少) | Class3(極希少) |");
     println!("   |------|----------|--------------|----------------|");
-    println!("   | Random      | {:>6.1}% | {:>10.1}% | {:>12.1}% |",
-             final_random * 100.0, final_random_class[2] * 100.0, final_random_class[3] * 100.0);
-    println!("   | Uncertainty | {:>6.1}% | {:>10.1}% | {:>12.1}% |",
-             final_uncertainty * 100.0, final_uncertainty_class[2] * 100.0, final_uncertainty_class[3] * 100.0);
-    println!("   | KDF         | {:>6.1}% | {:>10.1}% | {:>12.1}% |",
-             final_kdf * 100.0, final_kdf_class[2] * 100.0, final_kdf_class[3] * 100.0);
+    println!(
+        "   | Random      | {:>6.1}% | {:>10.1}% | {:>12.1}% |",
+        final_random * 100.0,
+        final_random_class[2] * 100.0,
+        final_random_class[3] * 100.0
+    );
+    println!(
+        "   | Uncertainty | {:>6.1}% | {:>10.1}% | {:>12.1}% |",
+        final_uncertainty * 100.0,
+        final_uncertainty_class[2] * 100.0,
+        final_uncertainty_class[3] * 100.0
+    );
+    println!(
+        "   | KDF         | {:>6.1}% | {:>10.1}% | {:>12.1}% |",
+        final_kdf * 100.0,
+        final_kdf_class[2] * 100.0,
+        final_kdf_class[3] * 100.0
+    );
 
     // ========================================================================
     // Rare Class Coverage
@@ -422,12 +480,24 @@ fn main() {
     println!("\n## 5. 希少クラスのカバレッジ\n");
 
     println!("   極希少クラス(Class 3)のラベリング数:");
-    println!("   - Random:      {} / {} ({:.1}%)",
-             random_rare[0], class_counts[3], random_rare[0] as f64 / class_counts[3] as f64 * 100.0);
-    println!("   - Uncertainty: {} / {} ({:.1}%)",
-             uncertainty_rare[0], class_counts[3], uncertainty_rare[0] as f64 / class_counts[3] as f64 * 100.0);
-    println!("   - KDF:         {} / {} ({:.1}%)",
-             kdf_rare[0], class_counts[3], kdf_rare[0] as f64 / class_counts[3] as f64 * 100.0);
+    println!(
+        "   - Random:      {} / {} ({:.1}%)",
+        random_rare[0],
+        class_counts[3],
+        random_rare[0] as f64 / class_counts[3] as f64 * 100.0
+    );
+    println!(
+        "   - Uncertainty: {} / {} ({:.1}%)",
+        uncertainty_rare[0],
+        class_counts[3],
+        uncertainty_rare[0] as f64 / class_counts[3] as f64 * 100.0
+    );
+    println!(
+        "   - KDF:         {} / {} ({:.1}%)",
+        kdf_rare[0],
+        class_counts[3],
+        kdf_rare[0] as f64 / class_counts[3] as f64 * 100.0
+    );
 
     // ========================================================================
     // Analysis
@@ -445,13 +515,18 @@ fn main() {
     println!("\n   【KDFの優位性】");
 
     if final_kdf_class[3] > final_random_class[3] {
-        println!("   ✓ 極希少クラス精度: {:.1}% vs Random {:.1}%",
-                 final_kdf_class[3] * 100.0, final_random_class[3] * 100.0);
+        println!(
+            "   ✓ 極希少クラス精度: {:.1}% vs Random {:.1}%",
+            final_kdf_class[3] * 100.0,
+            final_random_class[3] * 100.0
+        );
     }
 
     if kdf_rare[0] > random_rare[0] {
-        println!("   ✓ 希少クラスの早期発見: {} vs Random {}",
-                 kdf_rare[0], random_rare[0]);
+        println!(
+            "   ✓ 希少クラスの早期発見: {} vs Random {}",
+            kdf_rare[0], random_rare[0]
+        );
     }
 
     println!("   ✓ モデル不要: 初期段階から効果的な選択");

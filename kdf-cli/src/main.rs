@@ -6,7 +6,7 @@
 //!   kdf stats <input>             # Show statistics only
 
 use clap::{Parser, Subcommand};
-use kdf::{Kdf, cosine_similarity, levenshtein_similarity};
+use kdf::{cosine_similarity, levenshtein_similarity, Kdf};
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
@@ -136,7 +136,14 @@ fn main() {
             similarity,
             column,
         } => {
-            run_dedupe(&input, output.as_ref(), &format, threshold, &similarity, column);
+            run_dedupe(
+                &input,
+                output.as_ref(),
+                &format,
+                threshold,
+                &similarity,
+                column,
+            );
         }
         Commands::Stats {
             input,
@@ -164,7 +171,7 @@ fn load_text(path: &PathBuf) -> Vec<String> {
     let reader = BufReader::new(file);
     reader
         .lines()
-        .filter_map(|line| line.ok())
+        .map_while(Result::ok)
         .filter(|line| !line.trim().is_empty())
         .collect()
 }
@@ -392,7 +399,10 @@ fn text_to_vector(text: &str) -> Vec<f64> {
     let words: Vec<&str> = text.split_whitespace().collect();
     let mut vector = vec![0.0; 256];
     for word in words {
-        let hash = word.bytes().fold(0usize, |acc, b| acc.wrapping_add(b as usize)) % 256;
+        let hash = word
+            .bytes()
+            .fold(0usize, |acc, b| acc.wrapping_add(b as usize))
+            % 256;
         vector[hash] += 1.0;
     }
     // Normalize

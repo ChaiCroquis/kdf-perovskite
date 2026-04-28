@@ -31,8 +31,8 @@ impl Graph {
     }
 
     fn add_edge(&mut self, u: usize, v: usize) {
-        self.edges.entry(u).or_insert_with(HashSet::new).insert(v);
-        self.edges.entry(v).or_insert_with(HashSet::new).insert(u);
+        self.edges.entry(u).or_default().insert(v);
+        self.edges.entry(v).or_default().insert(u);
     }
 
     fn set_node_feature(&mut self, node: usize, features: Vec<f64>) {
@@ -51,7 +51,8 @@ impl Graph {
         let mut edges = Vec::new();
         for (&u, neighbors) in &self.edges {
             for &v in neighbors {
-                if u < v {  // Avoid duplicates for undirected graph
+                if u < v {
+                    // Avoid duplicates for undirected graph
                     edges.push((u, v));
                 }
             }
@@ -81,7 +82,11 @@ fn cosine_node_similarity(features_a: &[f64], features_b: &[f64]) -> f64 {
         return 0.0;
     }
 
-    let dot: f64 = features_a.iter().zip(features_b.iter()).map(|(a, b)| a * b).sum();
+    let dot: f64 = features_a
+        .iter()
+        .zip(features_b.iter())
+        .map(|(a, b)| a * b)
+        .sum();
     let norm_a: f64 = features_a.iter().map(|x| x * x).sum::<f64>().sqrt();
     let norm_b: f64 = features_b.iter().map(|x| x * x).sum::<f64>().sqrt();
 
@@ -161,14 +166,14 @@ fn main() {
 
     // Community 1: Dense cluster (nodes 0-4)
     for i in 0..5 {
-        for j in i+1..5 {
+        for j in i + 1..5 {
             graph.add_edge(i, j);
         }
     }
 
     // Community 2: Another dense cluster (nodes 5-8)
     for i in 5..9 {
-        for j in i+1..9 {
+        for j in i + 1..9 {
             graph.add_edge(i, j);
         }
     }
@@ -177,7 +182,7 @@ fn main() {
     graph.add_edge(4, 5);
 
     // Peripheral nodes
-    graph.add_edge(0, 9);  // Node 9: connected to only one node in community 1
+    graph.add_edge(0, 9); // Node 9: connected to only one node in community 1
     graph.add_edge(10, 7); // Node 10: peripheral to community 2
 
     // Isolated node (11) - no edges
@@ -193,9 +198,18 @@ fn main() {
     graph.set_node_feature(10, vec![0.0, 1.0, 0.5]); // Similar to community 2
     graph.set_node_feature(11, vec![0.3, 0.3, 0.9]); // Unique features
 
-    println!("Graph: {} nodes, {} edges", graph.n_nodes, graph.get_all_edges().len());
+    println!(
+        "Graph: {} nodes, {} edges",
+        graph.n_nodes,
+        graph.get_all_edges().len()
+    );
     for i in 0..graph.n_nodes {
-        println!("  Node {}: degree={}, features={:?}", i, graph.degree(i), graph.node_features[i]);
+        println!(
+            "  Node {}: degree={}, features={:?}",
+            i,
+            graph.degree(i),
+            graph.node_features[i]
+        );
     }
     println!();
 
@@ -218,7 +232,11 @@ fn main() {
 
     // Explain rare nodes
     for &idx in result_nodes_struct.rare_items().iter() {
-        println!("  Node {} is Rare: degree={}, structurally isolated", idx, graph.degree(idx));
+        println!(
+            "  Node {} is Rare: degree={}, structurally isolated",
+            idx,
+            graph.degree(idx)
+        );
     }
     println!();
 
@@ -243,21 +261,22 @@ fn main() {
     println!("--- Edge-Level KDF ---\n");
 
     let edges = graph.get_all_edges();
-    let edge_data: Vec<EdgeData> = edges.iter()
+    let edge_data: Vec<EdgeData> = edges
+        .iter()
         .map(|&(u, v)| EdgeData::new(&graph, u, v))
         .collect();
 
     println!("Total edges: {}", edges.len());
     for (i, (u, v)) in edges.iter().enumerate() {
         let ed = &edge_data[i];
-        println!("  Edge {}: ({}-{}) deg=({},{}) common={}",
-            i, u, v, ed.u_degree, ed.v_degree, ed.common_neighbors);
+        println!(
+            "  Edge {}: ({}-{}) deg=({},{}) common={}",
+            i, u, v, ed.u_degree, ed.v_degree, ed.common_neighbors
+        );
     }
     println!();
 
-    let result_edges = kdf.process(&edge_data, 0.9, |e1, e2| {
-        edge_cosine_similarity(e1, e2)
-    });
+    let result_edges = kdf.process(&edge_data, 0.9, edge_cosine_similarity);
 
     println!("Edge KDF results:");
     println!("  Selected edges: {:?}", result_edges.selected);
@@ -287,7 +306,8 @@ fn main() {
     println!();
 
     println!("2. Graph Simplification:");
-    println!("   Keep {} of {} edges ({:.0}% reduction)",
+    println!(
+        "   Keep {} of {} edges ({:.0}% reduction)",
         result_edges.selected.len(),
         edges.len(),
         (1.0 - result_edges.selected.len() as f64 / edges.len() as f64) * 100.0
