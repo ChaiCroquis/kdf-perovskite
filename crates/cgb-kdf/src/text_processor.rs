@@ -303,7 +303,9 @@ impl TextProcessor {
         .collect()
     }
 
-    /// Check if a character is Japanese (Hiragana, Katakana, or Kanji)
+    /// Check if a character is Japanese (Hiragana, Katakana, or Kanji).
+    /// Reserved: superset of `is_kanji`, kept for future multi-script
+    /// tokenization. Current path uses `is_kanji` only.
     #[allow(dead_code)]
     fn is_japanese(c: char) -> bool {
         matches!(c,

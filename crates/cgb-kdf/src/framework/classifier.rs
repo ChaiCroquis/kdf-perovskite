@@ -169,7 +169,10 @@ impl NodeClassifier {
         avg_weight < 0.1 && neighbor_count <= 2
     }
 
-    /// Check if a node looks like noise (legacy O(E) version - kept for reference)
+    /// Check if a node looks like noise (legacy O(E) version - kept for reference).
+    /// Reserved: superseded by `classify_garbage` (degree==0 fast path),
+    /// retained for documentation of the original heuristic + potential
+    /// future restoration if degree-0 rule proves insufficient.
     #[allow(dead_code)]
     fn looks_like_noise(
         &self,

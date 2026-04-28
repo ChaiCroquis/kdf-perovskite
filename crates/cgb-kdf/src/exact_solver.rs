@@ -47,7 +47,9 @@ struct BBNode {
     assignment: Vec<Option<u32>>,
     /// Current level (number of assigned nodes)
     level: usize,
-    /// Lower bound on entropy for this partial assignment
+    /// Lower bound on entropy for this partial assignment.
+    /// Reserved: future branch-and-bound pruning will compare against
+    /// upper-bound to skip subtrees. Currently solver uses upper-bound only.
     #[allow(dead_code)]
     lower_bound: f64,
 }

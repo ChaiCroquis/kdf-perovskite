@@ -17,6 +17,9 @@ pub struct KDFMeaningEngine {
     /// Text processor
     processor: TextProcessor,
     /// Domain classifier (reserved for future use)
+    /// Reserved: domain classification is computed eagerly but currently
+    /// unused by external callers. Retained for future RARE-fingerprinting
+    /// extension (Claim 23 semantic axis).
     #[allow(dead_code)]
     domain_classifier: DomainClassifier,
     /// Stored documents

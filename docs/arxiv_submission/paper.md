@@ -625,6 +625,14 @@ For honesty, we make the following explicit:
 
 With these caveats maintained, we position **KDF as a strong candidate for the computational realization of structural-holes detection**.
 
+### 8.6 Position vs Modern Alternatives
+
+Two recent currents threaten to absorb the conceptual space KDF occupies. We identify each and clarify why KDF is not subsumed.
+
+**vs Graph-Attention-Network brokerage detection.** A 2024–2025 line of work applies GAT-style architectures to community detection and brokerage identification — for example GATFELPA [@gatfelpa2024], unsupervised GAT autoencoders [@gat-autoencoder2025], and three-view multi-attention community detection [@tkdd-3672081]. These approaches achieve strong modularity scores, but in the process they introduce three properties KDF deliberately avoids: **non-determinism** (attention weights are sampled / SGD-trained, not analytically derived), **retraining dependence** (parameters must be re-fitted for each new graph), and **unauditability** (the Core/Rare boundary is implicit in learned weights rather than a computed predicate). Burt's [@burt1992holes] original constraint measure was prized precisely because it was analytically tractable and therefore reportable in a sociology paper without re-execution. KDF preserves that property — its layer assignments are reproducible bit-exactly across runs (Claim 15) and can be re-derived by an auditor without access to training data — while extending the framework with temporal decay (Claim 14) that classical structural-holes theory does not address. Thus KDF should be read as a **deterministic, audit-grade complement** to GAT methods, not a competitor on raw modularity.
+
+**vs long-context LLMs that obviate memory.** Anthropic Claude with 1M-token context and Gemini 3 Pro with 10M tokens have prompted claims that explicit memory layers are obsolete. Empirically this is not borne out: the Chroma "Context Rot" study [@chromacontextrot2025] documents systematic reasoning degradation past roughly 100K tokens regardless of model class, and Anthropic's own context-length analysis confirms the trend. KDF's role in this landscape is specific: **deterministic selection of N items into a window where the LLM still reasons reliably**. Embedding-based retrieval stacks (Mem0, Letta, Zep) cannot offer this guarantee — their selection is non-deterministic and varies with the underlying model. KDF's value is therefore not as a memory replacement (a thesis the F-053 LongMemEval comparison disposed of) but as an **audit-grade pre-filter** that operates upstream of retrieval. The F-060 Ext-1 router result (Mem0 + KDF strictly > Mem0 alone on date/time literal recall) is the empirical anchor for this position.
+
 ---
 
 ## Acknowledgments

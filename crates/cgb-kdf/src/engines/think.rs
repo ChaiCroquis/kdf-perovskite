@@ -39,7 +39,9 @@ impl KDFThinkEngine {
         }
     }
 
-    /// Create with existing graph (internal use)
+    /// Create with existing graph (internal use).
+    /// Reserved: constructor variant for tests / fixtures that pre-build a
+    /// graph. Public API uses `new()`.
     #[allow(dead_code)]
     pub(crate) fn with_graph(graph: SimpleGraph) -> Self {
         Self {
@@ -182,7 +184,9 @@ impl KDFThinkEngine {
         self.stats.clone()
     }
 
-    /// Get graph reference (internal use)
+    /// Get graph reference (internal use).
+    /// Reserved: crate-internal accessor for assertions / inspection.
+    /// External API exposes only classified results.
     #[allow(dead_code)]
     pub(crate) fn get_graph(&self) -> &SimpleGraph {
         &self.graph
