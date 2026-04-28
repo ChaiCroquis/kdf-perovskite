@@ -177,10 +177,15 @@ impl<'a> PreScreeningOptimizer<'a> {
 pub struct OwnedPreScreeningOptimizer {
     /// Fingerprint engine (owned)
     fp_engine: StructuralFingerprintEngine,
-    /// Top-K% of candidates to keep
+    /// Top-K% of candidates to keep (used when `top_k_absolute` is None)
     pub top_k_percent: f64,
     /// Minimum candidates to keep
     pub min_candidates: usize,
+    /// When `Some(K)`, retain at most K candidates regardless of pool size.
+    /// Used by Rev.12 attempt_discovery to bound work per RARE node at
+    /// O(K) instead of O(n_pool * top_k_percent). When `None`, the
+    /// percentage-based legacy behaviour is preserved (Claim 46 default).
+    pub top_k_absolute: Option<usize>,
     /// Statistics
     stats: ScreeningStats,
 }
@@ -196,6 +201,7 @@ impl OwnedPreScreeningOptimizer {
             fp_engine,
             top_k_percent,
             min_candidates,
+            top_k_absolute: None,
             stats: ScreeningStats::default(),
         }
     }
@@ -208,6 +214,11 @@ impl OwnedPreScreeningOptimizer {
     /// Get mutable reference to fingerprint engine
     pub fn fp_engine_mut(&mut self) -> &mut StructuralFingerprintEngine {
         &mut self.fp_engine
+    }
+
+    /// Configure absolute top-K cap. Set to `None` to fall back to percentage.
+    pub fn set_top_k_absolute(&mut self, top_k: Option<usize>) {
+        self.top_k_absolute = top_k;
     }
 
     /// Screen candidates (mutable: updates internal stats counters).
@@ -248,9 +259,12 @@ impl OwnedPreScreeningOptimizer {
 
         distances.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
 
-        let top_k = self
-            .min_candidates
-            .max((distances.len() as f64 * self.top_k_percent) as usize);
+        let top_k = match self.top_k_absolute {
+            Some(k_abs) => self.min_candidates.max(k_abs),
+            None => self
+                .min_candidates
+                .max((distances.len() as f64 * self.top_k_percent) as usize),
+        };
         let top_k = top_k.min(distances.len());
 
         distances.into_iter().take(top_k).map(|(c, _)| c).collect()
@@ -407,5 +421,58 @@ mod tests {
 
         let stats = optimizer.get_stats();
         assert_eq!(stats.candidates_before, 50);
+    }
+
+    #[test]
+    fn test_owned_optimizer_top_k_absolute_caps_pool() {
+        // top_k_absolute = Some(K) must cap the screened pool at K regardless
+        // of pool size — required for Rev.12 O(n*K) attempt_discovery.
+        let fp_engine = StructuralFingerprintEngine::default();
+        let mut optimizer = OwnedPreScreeningOptimizer::new(fp_engine, 0.5, 1);
+        optimizer.set_top_k_absolute(Some(5));
+
+        let candidates = create_test_candidates(1000);
+        let source_fp = vec![0.5; 32];
+
+        let filtered = optimizer.screen_candidates(&source_fp, candidates);
+        assert_eq!(
+            filtered.len(),
+            5,
+            "absolute top-K must cap pool independently of percentage"
+        );
+    }
+
+    #[test]
+    fn test_owned_optimizer_top_k_absolute_respects_min_candidates() {
+        // min_candidates floor must still apply when top_k_absolute is below it.
+        let fp_engine = StructuralFingerprintEngine::default();
+        let mut optimizer = OwnedPreScreeningOptimizer::new(fp_engine, 0.01, 10);
+        optimizer.set_top_k_absolute(Some(2));
+
+        let candidates = create_test_candidates(100);
+        let source_fp = vec![0.5; 32];
+
+        let filtered = optimizer.screen_candidates(&source_fp, candidates);
+        assert!(
+            filtered.len() >= 10,
+            "min_candidates floor must apply: got {}",
+            filtered.len()
+        );
+    }
+
+    #[test]
+    fn test_owned_optimizer_top_k_absolute_none_preserves_percent_behavior() {
+        // top_k_absolute = None must preserve the existing percentage-based
+        // screening (Claim 46 backwards compatibility).
+        let fp_engine = StructuralFingerprintEngine::default();
+        let mut optimizer = OwnedPreScreeningOptimizer::new(fp_engine, 0.05, 1);
+        assert!(optimizer.top_k_absolute.is_none());
+
+        let candidates = create_test_candidates(1000);
+        let source_fp = vec![0.5; 32];
+
+        let filtered = optimizer.screen_candidates(&source_fp, candidates);
+        // 5% of 1000 = 50
+        assert_eq!(filtered.len(), 50);
     }
 }

@@ -248,6 +248,24 @@ impl AnalogyDiscoveryEngine {
         self.screening_optimizer.fp_engine_mut()
     }
 
+    /// Configure absolute top-K shortlist for pre-screening.
+    ///
+    /// When set to `Some(K)`, find_analogy retains at most K candidates by
+    /// fingerprint quick-distance, bounding full-similarity work at O(K) per
+    /// query regardless of pool size. When `None`, the legacy percentage
+    /// screening (top_k_percent, default 5%) is used.
+    ///
+    /// Used by Rev.12 KdfProcessorRev12 to make attempt_discovery scale at
+    /// O(n_rare · K) rather than O(n_rare · n_pool · top_k_percent).
+    pub fn set_shortlist_top_k(&mut self, top_k: Option<usize>) {
+        self.screening_optimizer.set_top_k_absolute(top_k);
+    }
+
+    /// Current shortlist top-K cap (None = percentage mode).
+    pub fn shortlist_top_k(&self) -> Option<usize> {
+        self.screening_optimizer.top_k_absolute
+    }
+
     /// Register a node with its features
     pub fn register_node(&mut self, node_id: &str, mut features: NodeFeatures, label: &NodeLabel) {
         // Compute fingerprint

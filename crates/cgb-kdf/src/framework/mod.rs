@@ -47,7 +47,8 @@ pub use processor::KdfProcessor;
 pub use region::{HierarchicalRegionManager, RegionConfig, RegionKind};
 pub use rev12::{
     DISCOVERY_THRESHOLD_DEFAULT, DISCOVERY_THRESHOLD_UPPER_DEFAULT, KdfProcessorRev12,
-    RareNodeState, Rev12Error, Rev12Stats, ReviewPhase, T_WAIT_DEFAULT, T_WAIT_MAX, T_WAIT_MIN,
+    RareNodeState, Rev12Error, Rev12Stats, ReviewPhase, SHORTLIST_TOP_K_DEFAULT, T_WAIT_DEFAULT,
+    T_WAIT_MAX, T_WAIT_MIN,
 };
 pub use transition::{ActivationScore, SemanticImportance, TransitionController, TransitionScore};
 

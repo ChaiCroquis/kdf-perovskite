@@ -147,6 +147,11 @@ pub struct KdfProcessorRev12 {
     pub discovery_threshold: f64,
     /// Discovery upper threshold θ_U (Claim 47-48: > θ_L, canonical =0.80)
     pub discovery_threshold_upper: f64,
+    /// Maximum number of structure-mapping candidates kept per RARE node.
+    /// Bounds attempt_discovery cost at O(K) full-similarity calls regardless
+    /// of pool size. Setting to a very large value (e.g. usize::MAX) reverts
+    /// to the legacy percentage-based screening (Claim 46 default 5%).
+    pub shortlist_top_k: usize,
     /// Rev.12 statistics
     stats: Rev12Stats,
     /// Neighbors map for quick lookup
@@ -163,13 +168,29 @@ pub const T_WAIT_DEFAULT: u64 = 50;
 pub const DISCOVERY_THRESHOLD_DEFAULT: f64 = 0.75;
 /// Canonical upper-bound discovery threshold (Claim 48: θ_U = 0.80)
 pub const DISCOVERY_THRESHOLD_UPPER_DEFAULT: f64 = 0.80;
+/// Default shortlist size for attempt_discovery (structural-similarity top-K).
+///
+/// Rationale: F-068 analogy benchmark (n≤10) shows recall@1 plateau at K≈10;
+/// internal benchmarks at n_pool ∈ {1_000, 10_000} (see
+/// `examples/rev12_shortlist_benchmark.rs`) confirm recall@1 = 100% at K=100
+/// versus full screening (K=usize::MAX), with measured ~2.5× wall-time
+/// speedup at n_pool = 10_000. K=100 sits within the fingerprint top-K
+/// convergence band documented in F-068.
+///
+/// This is an internal optimisation only: Claim 36-41 / 47-48 input-output
+/// behaviour (T_wait, spoke_up, sandwich band θ_L ≤ S ≤ θ_U) is unchanged.
+/// Claim 46 already mandates simple-distance pre-screening; this constant
+/// only switches its cap from a percentage to an absolute size.
+pub const SHORTLIST_TOP_K_DEFAULT: usize = 100;
 
 impl Default for KdfProcessorRev12 {
     fn default() -> Self {
+        let mut analogy_engine = AnalogyDiscoveryEngine::default();
+        analogy_engine.set_shortlist_top_k(Some(SHORTLIST_TOP_K_DEFAULT));
         Self {
             classifier: NodeClassifier::default(),
             decay_manager: DecayManager::default(),
-            analogy_engine: AnalogyDiscoveryEngine::default(),
+            analogy_engine,
             rare_states: HashMap::new(),
             // Claim 39: multi-stage review periods must satisfy 30 ≤ t_wait ≤ 70.
             // Claim 45 further requires t_wait1 == t_wait2 in the canonical form.
@@ -177,6 +198,7 @@ impl Default for KdfProcessorRev12 {
             t_wait2: T_WAIT_DEFAULT,
             discovery_threshold: DISCOVERY_THRESHOLD_DEFAULT,
             discovery_threshold_upper: DISCOVERY_THRESHOLD_UPPER_DEFAULT,
+            shortlist_top_k: SHORTLIST_TOP_K_DEFAULT,
             stats: Rev12Stats::default(),
             neighbors: HashMap::new(),
         }
@@ -244,21 +266,16 @@ impl KdfProcessorRev12 {
     /// Never use in production paths: produced instances are not Claim-compliant.
     #[doc(hidden)]
     pub fn new_unchecked_for_tests(t_wait1: u64, t_wait2: u64, discovery_threshold: f64) -> Self {
+        let mut analogy_engine =
+            AnalogyDiscoveryEngine::new(0.1, 0.2, 0.7, discovery_threshold, 32, true, 0.05);
+        analogy_engine.set_shortlist_top_k(Some(SHORTLIST_TOP_K_DEFAULT));
         Self {
             t_wait1,
             t_wait2,
             discovery_threshold,
             discovery_threshold_upper: DISCOVERY_THRESHOLD_UPPER_DEFAULT
                 .max(discovery_threshold + 1e-6),
-            analogy_engine: AnalogyDiscoveryEngine::new(
-                0.1,
-                0.2,
-                0.7,
-                discovery_threshold,
-                32,
-                true,
-                0.05,
-            ),
+            analogy_engine,
             ..Default::default()
         }
     }
@@ -282,21 +299,35 @@ impl KdfProcessorRev12 {
         if theta_u <= theta_l {
             return Err(Rev12Error::ThetaUpperNotAbove { theta_l, theta_u });
         }
+        let mut analogy_engine = AnalogyDiscoveryEngine::new(
+            0.1, // attribute_weight  (Claim 44: 7:2:1)
+            0.2, // relational_weight
+            0.7, // systematic_weight
+            theta_l, 32,   // fingerprint_dim
+            true, // screening_enabled (Claim 46)
+            0.05, // top_k_percent (legacy, overridden by shortlist below)
+        );
+        analogy_engine.set_shortlist_top_k(Some(SHORTLIST_TOP_K_DEFAULT));
         Ok(Self {
             t_wait1,
             t_wait2,
             discovery_threshold: theta_l,
             discovery_threshold_upper: theta_u,
-            analogy_engine: AnalogyDiscoveryEngine::new(
-                0.1, // attribute_weight  (Claim 44: 7:2:1)
-                0.2, // relational_weight
-                0.7, // systematic_weight
-                theta_l, 32,   // fingerprint_dim
-                true, // screening_enabled (Claim 46)
-                0.05, // top_k_percent
-            ),
+            analogy_engine,
             ..Default::default()
         })
+    }
+
+    /// Configure structure-mapping shortlist size (default: 100).
+    ///
+    /// Bounds attempt_discovery cost at O(K) full-similarity calls per RARE
+    /// node. Claim 36-41 / 47-48 input-output behaviour is preserved — only
+    /// the simple-distance pre-screening cap (Claim 46) changes from
+    /// percentage to absolute. Set to a very large value (e.g. usize::MAX)
+    /// to revert to legacy percentage screening.
+    pub fn set_shortlist_top_k(&mut self, top_k: usize) {
+        self.shortlist_top_k = top_k;
+        self.analogy_engine.set_shortlist_top_k(Some(top_k));
     }
 
     /// Initialize processor with graph data
