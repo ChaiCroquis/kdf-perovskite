@@ -77,10 +77,10 @@ impl CausalEngine {
     ) -> Option<CausalLink> {
         // Check cache
         let cache_key = (source_id.to_string(), target_id.to_string());
-        if self.cache_enabled {
-            if let Some(cached) = self.cache.get(&cache_key) {
-                return Some(cached.clone());
-            }
+        if self.cache_enabled
+            && let Some(cached) = self.cache.get(&cache_key)
+        {
+            return Some(cached.clone());
         }
 
         // Compute based on strategy

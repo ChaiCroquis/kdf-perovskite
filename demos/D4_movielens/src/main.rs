@@ -19,7 +19,7 @@
 //! - KDF+Analogy (fingerprint bridge)
 
 use kdf_demos_common::{
-    visualizer::emit_artifacts, Axis, Conclusion, DemoReport, MethodResult, Metric,
+    Axis, Conclusion, DemoReport, MethodResult, Metric, visualizer::emit_artifacts,
 };
 use rand::prelude::*;
 use rand::rngs::SmallRng;
@@ -225,7 +225,7 @@ fn synthesize_movielens(seed: u64) -> (Vec<Rating>, Dataset, HashSet<u32>) {
 
     for _ in 0..target_ratings {
         let user = rng.gen_range(0..N_USERS) as u32;
-        let u = rng.gen::<f64>() * iw_sum;
+        let u = rng.r#gen::<f64>() * iw_sum;
         let mut acc = 0.0;
         let mut item_idx = N_ITEMS - 1;
         for (i, w) in item_weights.iter().enumerate() {
@@ -249,7 +249,7 @@ fn synthesize_movielens(seed: u64) -> (Vec<Rating>, Dataset, HashSet<u32>) {
     let mean_deg = item_deg.values().sum::<u32>() as f64 / item_deg.len().max(1) as f64;
     let long_tail: HashSet<u32> = item_deg
         .iter()
-        .filter(|(_, &d)| (d as f64) < mean_deg)
+        .filter(|&(_, &d)| (d as f64) < mean_deg)
         .map(|(&i, _)| i)
         .collect();
 

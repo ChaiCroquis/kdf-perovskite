@@ -21,11 +21,7 @@ fn p_decay(params: &MasterSpecParams, c: f64, layer: Layer) -> f64 {
 fn discrimination_ratio(params: &MasterSpecParams, layer: Layer) -> f64 {
     let pl = p_decay(params, 2.0, layer);
     let ph = p_decay(params, 20.0, layer);
-    if pl > 0.0 {
-        ph / pl
-    } else {
-        f64::INFINITY
-    }
+    if pl > 0.0 { ph / pl } else { f64::INFINITY }
 }
 
 #[test]
@@ -200,8 +196,10 @@ fn parameter_robustness_summary() {
     let r_g_low = discrimination_ratio(&c_g_low, layer);
     let r_g_high = discrimination_ratio(&c_g_high, layer);
     let _g_retention = (r_g_low / canon_r).min(1.0 / (r_g_high / canon_r).max(1.0));
-    println!("| γ_core | 0.008 | γ=0.004 → {:.2}×, γ=0.012 → {:.2}× | γ scales linearly in ratio, by design |",
-        r_g_low, r_g_high);
+    println!(
+        "| γ_core | 0.008 | γ=0.004 → {:.2}×, γ=0.012 → {:.2}× | γ scales linearly in ratio, by design |",
+        r_g_low, r_g_high
+    );
 
     // θ_U: not parameterized into decay, so doesn't affect discrimination
     println!("| θ_U | 0.80 | decay とは独立（analogy 採用域のみに影響） | orthogonal ✓ |");

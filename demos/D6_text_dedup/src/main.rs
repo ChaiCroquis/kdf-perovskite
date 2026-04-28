@@ -25,7 +25,7 @@
 //! - KDF+TextSim (structural + content hybrid)
 
 use kdf_demos_common::{
-    visualizer::emit_artifacts, Axis, Conclusion, DemoReport, MethodResult, Metric,
+    Axis, Conclusion, DemoReport, MethodResult, Metric, visualizer::emit_artifacts,
 };
 use rand::prelude::*;
 use rand::rngs::SmallRng;

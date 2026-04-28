@@ -50,7 +50,7 @@
 //! `answer_turn_recall` @ 30% keep_rate, averaged over 321 questions. Also
 //! reports per-condition standard error and wall-clock time.
 
-use cgb_kdf::framework::multimodal::{select_top_k_multi_modal, MultiModalWeights};
+use cgb_kdf::framework::multimodal::{MultiModalWeights, select_top_k_multi_modal};
 use cgb_kdf::{DecayManager, Layer, NodeClassifier};
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
@@ -434,9 +434,13 @@ fn main() {
 
     println!();
     println!("## Interpretation notes");
-    println!("- LoCoMo temporal answers often sit in **early sessions** → TTL_oldest expected > TTL_recent.");
+    println!(
+        "- LoCoMo temporal answers often sit in **early sessions** → TTL_oldest expected > TTL_recent."
+    );
     println!("- Naive decay (C14) penalises old turns → expected to HURT on this task.");
     println!("- Staleness (C5) boosts old turns → expected to HELP on this task.");
     println!("- Combined eval (C5+C14) trades off: C14 decay × (1 + κ·C5 staleness).");
-    println!("- Any condition beating KDF_static with p<0.05 (sign test) validates the time component for this realistic scenario.");
+    println!(
+        "- Any condition beating KDF_static with p<0.05 (sign test) validates the time component for this realistic scenario."
+    );
 }

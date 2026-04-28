@@ -7,7 +7,7 @@
 //!
 //! Run: cargo run --example kdf_recommend
 
-use kdf::{cosine_similarity, Kdf, Layer};
+use kdf::{Kdf, Layer, cosine_similarity};
 use std::collections::HashSet;
 
 /// A recommendable item (e.g., movie, product, article)

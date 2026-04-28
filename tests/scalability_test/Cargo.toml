@@ -1,7 +1,7 @@
 [package]
 name = "kdf-scalability-test"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 description = "Scalability test for KDF with large data volumes"
 
 [workspace]

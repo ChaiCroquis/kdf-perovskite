@@ -208,9 +208,9 @@ fn main() {
     let seeds: Vec<u64> = (0..N_SEEDS as u64).map(|i| 42 + i * 100).collect();
     let mut table: BTreeMap<(String, String), Vec<f64>> = BTreeMap::new();
 
-    for (cond_name, gen) in &conditions {
+    for (cond_name, r#gen) in &conditions {
         for &seed in &seeds {
-            let ds = gen(seed);
+            let ds = r#gen(seed);
             for (abl, name) in &ablations {
                 let sel = select(&ds, *abl);
                 let r = eval_recall(&ds, &sel);

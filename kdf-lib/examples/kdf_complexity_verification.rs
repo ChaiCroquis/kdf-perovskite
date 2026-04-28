@@ -6,7 +6,7 @@
 //!
 //! Run: cargo run --release --example kdf_complexity_verification
 
-use kdf::{cosine_similarity, Kdf, Layer};
+use kdf::{Kdf, Layer, cosine_similarity};
 use std::time::Instant;
 
 /// Count similarity comparisons (instrumented version)

@@ -5,7 +5,7 @@
 //!
 //! Run: cargo run --release --example kdf_lsh_integration_test
 
-use kdf::{cosine_similarity, Kdf, Layer};
+use kdf::{Kdf, Layer, cosine_similarity};
 use std::collections::HashMap;
 use std::time::Instant;
 
@@ -254,7 +254,7 @@ fn evaluate_rare_recall(true_layers: &[Layer], predicted_layers: &[Layer]) -> f6
     let true_rare: std::collections::HashSet<usize> = true_layers
         .iter()
         .enumerate()
-        .filter(|(_, &l)| l == Layer::Rare)
+        .filter(|&(_, &l)| l == Layer::Rare)
         .map(|(i, _)| i)
         .collect();
 
@@ -265,7 +265,7 @@ fn evaluate_rare_recall(true_layers: &[Layer], predicted_layers: &[Layer]) -> f6
     let predicted_rare: std::collections::HashSet<usize> = predicted_layers
         .iter()
         .enumerate()
-        .filter(|(_, &l)| l == Layer::Rare)
+        .filter(|&(_, &l)| l == Layer::Rare)
         .map(|(i, _)| i)
         .collect();
 
@@ -280,8 +280,12 @@ fn main() {
     let dim = 20;
 
     println!("## 1. Benchmark: Standard vs LSH-accelerated\n");
-    println!("| n | Data | Standard Time | LSH Time | Speedup | Std Comp | LSH Comp | Comp Reduction | Rare Recall |");
-    println!("|---|------|---------------|----------|---------|----------|----------|----------------|-------------|");
+    println!(
+        "| n | Data | Standard Time | LSH Time | Speedup | Std Comp | LSH Comp | Comp Reduction | Rare Recall |"
+    );
+    println!(
+        "|---|------|---------------|----------|---------|----------|----------|----------------|-------------|"
+    );
 
     let sizes = [500, 1000, 2000, 5000];
     let data_types = ["redundant", "diverse"];

@@ -7,7 +7,7 @@
 //!
 //! Run: cargo run --example kdf_differential_privacy
 
-use kdf::{cosine_similarity, Kdf, Layer};
+use kdf::{Kdf, Layer, cosine_similarity};
 
 /// Add Laplace noise for differential privacy
 fn laplace_noise(scale: f64) -> f64 {

@@ -87,7 +87,7 @@ fn anomaly_detection_demo() {
     let threshold_detected: Vec<usize> = distances
         .iter()
         .enumerate()
-        .filter(|(_, &d)| d > threshold)
+        .filter(|&(_, &d)| d > threshold)
         .map(|(i, _)| i)
         .collect();
 

@@ -6,7 +6,7 @@
 //!   kdf stats <input>             # Show statistics only
 
 use clap::{Parser, Subcommand};
-use kdf::{cosine_similarity, levenshtein_similarity, Kdf};
+use kdf::{Kdf, cosine_similarity, levenshtein_similarity};
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;

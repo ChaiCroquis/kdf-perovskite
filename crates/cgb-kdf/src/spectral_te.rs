@@ -470,15 +470,15 @@ impl SpectralTEPrioritizer {
                 None => continue,
             };
 
-            if let Some(result) = estimator.compute(source_data, target_data) {
-                if result.te > 0.01 {
-                    causal_links.push(CausalLink::new(
-                        pair.source.clone(),
-                        pair.target.clone(),
-                        result.te,
-                        TeStrategy::Screening,
-                    ));
-                }
+            if let Some(result) = estimator.compute(source_data, target_data)
+                && result.te > 0.01
+            {
+                causal_links.push(CausalLink::new(
+                    pair.source.clone(),
+                    pair.target.clone(),
+                    result.te,
+                    TeStrategy::Screening,
+                ));
             }
 
             computed += 1;

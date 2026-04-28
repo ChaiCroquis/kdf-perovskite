@@ -22,11 +22,11 @@
 //! - **KDF** (treats log as bipartite IP×resource graph, no labels needed)
 
 use kdf_demos_common::{
-    visualizer::emit_artifacts, Axis, Conclusion, DemoReport, MethodResult, Metric,
+    Axis, Conclusion, DemoReport, MethodResult, Metric, visualizer::emit_artifacts,
 };
 use rand::prelude::*;
 use rand::rngs::SmallRng;
-use real_data_bench::{public_datasets, Dataset};
+use real_data_bench::{Dataset, public_datasets};
 use std::collections::{BTreeMap, HashSet};
 use std::time::Instant;
 
@@ -301,8 +301,8 @@ fn synthesize_log(n: usize, seed: u64) -> Vec<LogRecord> {
     let error_resources: HashSet<u32> = (250..265).collect();
 
     for _ in 0..n {
-        let cid = weighted_pick(&client_weights, cw_sum, rng.gen::<f64>());
-        let rid = weighted_pick(&resource_weights, rw_sum, rng.gen::<f64>());
+        let cid = weighted_pick(&client_weights, cw_sum, rng.r#gen::<f64>());
+        let rid = weighted_pick(&resource_weights, rw_sum, rng.r#gen::<f64>());
         let is_error = error_resources.contains(&(rid as u32 + 1));
         records.push(LogRecord {
             client_id: cid as u32 + 1,

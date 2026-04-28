@@ -15,7 +15,7 @@
 //! indicator value PREDICTS the sign flip we observed in F-025.
 
 use adversarial_bench as adv;
-use real_data_bench::{public_datasets, Dataset};
+use real_data_bench::{Dataset, public_datasets};
 use std::collections::HashSet;
 
 fn compute_degrees(ds: &Dataset) -> Vec<u32> {

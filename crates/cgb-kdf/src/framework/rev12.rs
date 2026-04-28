@@ -276,11 +276,11 @@ impl KdfProcessorRev12 {
         // Initialize RARE node states
         self.rare_states.clear();
         for (&node, &layer) in &classification.layers {
-            if layer == Layer::Rare {
-                if let Some(fp) = classification.rare_fingerprints.get(&node) {
-                    self.rare_states
-                        .insert(node, RareNodeState::new(node, fp.clone()));
-                }
+            if layer == Layer::Rare
+                && let Some(fp) = classification.rare_fingerprints.get(&node)
+            {
+                self.rare_states
+                    .insert(node, RareNodeState::new(node, fp.clone()));
             }
         }
 
@@ -335,7 +335,7 @@ impl KdfProcessorRev12 {
             .map(|c| {
                 c.layers
                     .iter()
-                    .filter(|(_, &layer)| layer == Layer::Core || layer == Layer::Edge)
+                    .filter(|&(_, &layer)| layer == Layer::Core || layer == Layer::Edge)
                     .map(|(&id, _)| id.to_string())
                     .collect()
             })
@@ -513,10 +513,10 @@ impl KdfProcessorRev12 {
     /// Otherwise, returns the direct neighbor.
     pub fn get_rare_neighbor(&self, node: u32) -> Option<u32> {
         // First check if spoke_up - use analogy target
-        if let Some(state) = self.rare_states.get(&node) {
-            if state.spoke_up {
-                return state.analogy_target;
-            }
+        if let Some(state) = self.rare_states.get(&node)
+            && state.spoke_up
+        {
+            return state.analogy_target;
         }
         // Otherwise, use direct neighbor
         self.neighbors.get(&node).and_then(|n| n.first().copied())

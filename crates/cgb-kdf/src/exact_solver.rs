@@ -276,7 +276,7 @@ impl ExactSolver {
             let nodes_in_m: Vec<usize> = assignment
                 .iter()
                 .enumerate()
-                .filter(|(_, &mod_id)| mod_id == m)
+                .filter(|&(_, &mod_id)| mod_id == m)
                 .map(|(i, _)| i)
                 .collect();
 
@@ -373,10 +373,10 @@ impl ExactSolver {
             let mut cut = 0.0;
             for &i in &nodes_in_m {
                 for j in 0..n {
-                    if let Some(other_m) = assignment[j] {
-                        if other_m != m {
-                            cut += adj_matrix[i][j];
-                        }
+                    if let Some(other_m) = assignment[j]
+                        && other_m != m
+                    {
+                        cut += adj_matrix[i][j];
                     }
                     // Edges to unassigned nodes are optimistically ignored
                 }

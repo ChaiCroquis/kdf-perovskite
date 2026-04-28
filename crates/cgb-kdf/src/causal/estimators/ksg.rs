@@ -165,10 +165,10 @@ impl KsgEstimator {
 
         for _ in 0..self.surrogates {
             let surrogate = self.generate_surrogate(source);
-            if let Some(surrogate_te) = self.compute_ksg_te(&surrogate, target) {
-                if surrogate_te >= observed_te {
-                    greater_count += 1;
-                }
+            if let Some(surrogate_te) = self.compute_ksg_te(&surrogate, target)
+                && surrogate_te >= observed_te
+            {
+                greater_count += 1;
             }
         }
 

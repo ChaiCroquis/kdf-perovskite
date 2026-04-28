@@ -699,7 +699,7 @@ fn part_b_run_single(g: &TurnGraph, t_wait1: u64, t_wait2: u64, theta_u: f64) ->
     let rare_ids: HashSet<u32> = class
         .layers
         .iter()
-        .filter(|(_, &l)| l == Layer::Rare)
+        .filter(|&(_, &l)| l == Layer::Rare)
         .map(|(&id, _)| id)
         .collect();
     let answer_rare: HashSet<u32> = rare_ids.intersection(&g.answer_turns).copied().collect();
@@ -800,7 +800,9 @@ fn part_b_run() {
     );
     println!("t_wait1=30, t_wait2=30 (Claim 37/39 canonical)\n");
 
-    println!("| θ_U | total RARE | answer-RARE | spoke_up(ans) | demoted(ans) | spoke_up(non) | demoted(non) | avg cycles |");
+    println!(
+        "| θ_U | total RARE | answer-RARE | spoke_up(ans) | demoted(ans) | spoke_up(non) | demoted(non) | avg cycles |"
+    );
     println!("|---|---:|---:|---:|---:|---:|---:|---:|");
 
     for theta_u in [0.80_f64, 0.90, 1.00] {
@@ -836,7 +838,9 @@ fn part_b_run() {
     println!();
     println!("**Verdict(Part B)**:");
     println!("- answer-RARE turns の spoke_up 率が高い → sandwich が意味ある analogy を admit");
-    println!("- 両 group demote 率が高い → sandwich too strict or graph structure lacks cross-domain targets");
+    println!(
+        "- 両 group demote 率が高い → sandwich too strict or graph structure lacks cross-domain targets"
+    );
     println!("- avg cycles ≈ 60 → 大半の node が t_wait1+t_wait2 timeout に到達(spoke_up 希少)");
 }
 
@@ -855,9 +859,15 @@ fn main() {
     println!("## Overall interpretation");
     println!();
     println!("- **Part A** quantifies sandwich cost on the analogy discovery task");
-    println!("  - If canonical (0.70, 0.80) F1 < no-upper F1 → θ_U=0.80 rejects legitimate high-score analogies");
-    println!("  - This generalizes F-041 (Hopfield falsification) from associative memory to analogy task");
+    println!(
+        "  - If canonical (0.70, 0.80) F1 < no-upper F1 → θ_U=0.80 rejects legitimate high-score analogies"
+    );
+    println!(
+        "  - This generalizes F-041 (Hopfield falsification) from associative memory to analogy task"
+    );
     println!("- **Part B** exercises the T_wait 2-stage review on realistic LoCoMo graph");
-    println!("  - answer-RARE spoke_up rate = KDF's cross-domain preservation of information-rich rare nodes");
+    println!(
+        "  - answer-RARE spoke_up rate = KDF's cross-domain preservation of information-rich rare nodes"
+    );
     println!("  - demote rate = fraction of RARE lost after 60 cycles without analogy");
 }

@@ -102,9 +102,12 @@ impl BiasReport {
         };
         format!(
             "bias_score = {:.3} [{}]\n  I1 (deg==1 fraction):  {:.3}\n  I2 (power-law dev):    {:.3}\n  I3 (rare-deg signal):  {:.3}\n  I4 (rare-at-deg==1):   {:.3}",
-            self.bias_score, flag,
-            self.deg1_ratio, self.powerlaw_deviation,
-            self.rare_deg_signal, self.rare_deg1_rate,
+            self.bias_score,
+            flag,
+            self.deg1_ratio,
+            self.powerlaw_deviation,
+            self.rare_deg_signal,
+            self.rare_deg1_rate,
         )
     }
 }

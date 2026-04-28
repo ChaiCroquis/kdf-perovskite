@@ -5,7 +5,7 @@
 //!
 //! Run: cargo run --release --example kdf_early_termination_test
 
-use kdf::{cosine_similarity, Kdf, Layer};
+use kdf::{Kdf, Layer, cosine_similarity};
 use std::time::Instant;
 
 // ============================================================================
@@ -340,7 +340,7 @@ fn evaluate_rare_recall(true_layers: &[Layer], predicted_layers: &[Layer]) -> f6
     let true_rare: std::collections::HashSet<usize> = true_layers
         .iter()
         .enumerate()
-        .filter(|(_, &l)| l == Layer::Rare)
+        .filter(|&(_, &l)| l == Layer::Rare)
         .map(|(i, _)| i)
         .collect();
 
@@ -351,7 +351,7 @@ fn evaluate_rare_recall(true_layers: &[Layer], predicted_layers: &[Layer]) -> f6
     let predicted_rare: std::collections::HashSet<usize> = predicted_layers
         .iter()
         .enumerate()
-        .filter(|(_, &l)| l == Layer::Rare)
+        .filter(|&(_, &l)| l == Layer::Rare)
         .map(|(i, _)| i)
         .collect();
 

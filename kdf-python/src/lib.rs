@@ -13,11 +13,11 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
 // Import from kdf crate with explicit path
+use ::kdf::{Kdf as RustKdf, KdfParams, KdfResult as RustKdfResult, Layer as RustLayer};
 use ::kdf::{
     cosine_similarity as rust_cosine, euclidean_similarity as rust_euclidean,
     levenshtein_similarity as rust_levenshtein,
 };
-use ::kdf::{Kdf as RustKdf, KdfParams, KdfResult as RustKdfResult, Layer as RustLayer};
 
 /// Layer classification
 #[pyclass(eq, eq_int)]

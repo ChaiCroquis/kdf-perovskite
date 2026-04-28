@@ -150,13 +150,13 @@ impl<'a> PreScreeningOptimizer<'a> {
             }
         }
 
-        if let Some(id) = best_id {
-            if best_score >= threshold {
-                return Some(MatchResult {
-                    id,
-                    score: best_score,
-                });
-            }
+        if let Some(id) = best_id
+            && best_score >= threshold
+        {
+            return Some(MatchResult {
+                id,
+                score: best_score,
+            });
         }
 
         None
@@ -265,13 +265,13 @@ impl OwnedPreScreeningOptimizer {
             }
         }
 
-        if let Some(id) = best_id {
-            if best_score >= threshold {
-                return Some(MatchResult {
-                    id,
-                    score: best_score,
-                });
-            }
+        if let Some(id) = best_id
+            && best_score >= threshold
+        {
+            return Some(MatchResult {
+                id,
+                score: best_score,
+            });
         }
 
         None

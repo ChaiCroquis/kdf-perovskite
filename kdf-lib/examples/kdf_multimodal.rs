@@ -9,7 +9,7 @@
 //!
 //! Run: cargo run --example kdf_multimodal
 
-use kdf::{cosine_similarity, levenshtein_similarity, Kdf};
+use kdf::{Kdf, cosine_similarity, levenshtein_similarity};
 
 /// A multimodal data point with text and numeric features
 #[derive(Clone)]

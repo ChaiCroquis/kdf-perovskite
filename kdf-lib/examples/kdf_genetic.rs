@@ -164,7 +164,7 @@ fn kdf_ga(pop_size: usize, dim: usize, generations: usize) -> (f64, f64, Vec<f64
     let mut stagnation_count = 0;
     let mut last_best = f64::MAX;
 
-    for gen in 0..generations {
+    for r#gen in 0..generations {
         // Evaluate fitness
         for ind in &mut population {
             ind.fitness = rastrigin(&ind.genes);
@@ -191,7 +191,7 @@ fn kdf_ga(pop_size: usize, dim: usize, generations: usize) -> (f64, f64, Vec<f64
 
         // === ADAPTIVE KDF DIVERSITY INJECTION ===
         // Only apply KDF when stagnating or early in evolution
-        let apply_kdf = stagnation_count > 5 || gen < generations / 4;
+        let apply_kdf = stagnation_count > 5 || r#gen < generations / 4;
 
         let elite_count = pop_size / 5;
         let mut new_pop: Vec<Individual> = population.iter().take(elite_count).cloned().collect();
@@ -462,12 +462,12 @@ fn main() {
 
     println!("   世代 | Standard | KDF      | 差分");
     println!("   -----|----------|----------|--------");
-    for gen in [0, 10, 25, 50, 75, 99] {
-        if gen < std_hist.len() && gen < kdf_hist.len() {
-            let diff = std_hist[gen] - kdf_hist[gen];
+    for r#gen in [0, 10, 25, 50, 75, 99] {
+        if r#gen < std_hist.len() && r#gen < kdf_hist.len() {
+            let diff = std_hist[r#gen] - kdf_hist[r#gen];
             println!(
                 "   {:>4} | {:>8.4} | {:>8.4} | {:>+7.4}",
-                gen, std_hist[gen], kdf_hist[gen], diff
+                r#gen, std_hist[r#gen], kdf_hist[r#gen], diff
             );
         }
     }

@@ -15,7 +15,7 @@
 //! - **S4 Hybrid** (combines S1 + S2)
 
 use cgb_kdf::{Layer, NodeClassifier};
-use real_data_bench::{selectors::Selector, Dataset};
+use real_data_bench::{Dataset, selectors::Selector};
 use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap, HashSet};
 

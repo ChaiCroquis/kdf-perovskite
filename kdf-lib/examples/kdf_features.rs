@@ -1,5 +1,5 @@
 //! KDF-specific features demonstration: anomaly scoring, diversity sampling, statistics
-use kdf::{cosine_similarity, Kdf};
+use kdf::{Kdf, cosine_similarity};
 
 fn main() {
     println!("=== KDF-Specific Features Test ===\n");

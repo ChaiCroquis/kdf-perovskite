@@ -219,7 +219,7 @@ fn main() {
         let class_indices: Vec<usize> = train_labels
             .iter()
             .enumerate()
-            .filter(|(_, &l)| l == class)
+            .filter(|&(_, &l)| l == class)
             .map(|(i, _)| i)
             .collect();
 

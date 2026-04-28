@@ -94,7 +94,9 @@ fn main() {
     }
 
     println!("\n## 結論\n");
-    println!("- **KDF (query-blind, no neural net, <1ms) が sentence-transformers の 3 model 全てを上回る**");
+    println!(
+        "- **KDF (query-blind, no neural net, <1ms) が sentence-transformers の 3 model 全てを上回る**"
+    );
     println!(
         "- MiniLM-L6-v2(22MB): 0.677 → KDF は **×{:.2}**",
         kdf_recall / minilm_mean

@@ -12,11 +12,11 @@
 //! a synthetic Freebase-shaped KG is generated.
 
 use kdf_demos_common::{
-    visualizer::emit_artifacts, Axis, Conclusion, DemoReport, MethodResult, Metric,
+    Axis, Conclusion, DemoReport, MethodResult, Metric, visualizer::emit_artifacts,
 };
 use rand::prelude::*;
 use rand::rngs::SmallRng;
-use real_data_bench::{public_datasets, Dataset};
+use real_data_bench::{Dataset, public_datasets};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::time::Instant;
 
@@ -40,7 +40,9 @@ fn main() {
         }
         None => {
             println!("Real FB15K-237 not found. Using synthetic KG (Freebase-shaped).");
-            println!("To use real data: place train/valid/test.txt under demos/D5_fb15k237/data/fb15k-237/");
+            println!(
+                "To use real data: place train/valid/test.txt under demos/D5_fb15k237/data/fb15k-237/"
+            );
             let d = synthesize_kg(5_000, 50, 42);
             println!(
                 "  synthetic KG: n={}, edges={}, rare_truth={}",
@@ -236,7 +238,7 @@ fn synthesize_kg(n_entities: usize, n_relations: usize, seed: u64) -> Dataset {
             continue;
         }
         let r_idx = {
-            let u = rng.gen::<f64>() * mw_sum;
+            let u = rng.r#gen::<f64>() * mw_sum;
             let mut acc = 0.0;
             let mut idx = 0;
             for (i, w) in main_weights.iter().enumerate() {

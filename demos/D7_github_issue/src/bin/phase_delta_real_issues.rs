@@ -43,10 +43,10 @@ fn load_issues() -> Vec<Issue> {
     let mut all = Vec::new();
     for p in 1..=5 {
         let path = format!("benchmarks/real_data/data/rust-issues/page{}.json", p);
-        if let Ok(text) = std::fs::read_to_string(&path) {
-            if let Ok(batch) = serde_json::from_str::<Vec<Issue>>(&text) {
-                all.extend(batch);
-            }
+        if let Ok(text) = std::fs::read_to_string(&path)
+            && let Ok(batch) = serde_json::from_str::<Vec<Issue>>(&text)
+        {
+            all.extend(batch);
         }
     }
     all
@@ -57,7 +57,9 @@ fn main() {
     if issues.is_empty() {
         eprintln!("No issue data found. Fetch with:");
         eprintln!("  for p in 1 2 3 4 5; do");
-        eprintln!("    curl -sL \"https://api.github.com/repos/rust-lang/rust/issues?state=closed&per_page=100&page=$p\" -o benchmarks/real_data/data/rust-issues/page$p.json;");
+        eprintln!(
+            "    curl -sL \"https://api.github.com/repos/rust-lang/rust/issues?state=closed&per_page=100&page=$p\" -o benchmarks/real_data/data/rust-issues/page$p.json;"
+        );
         eprintln!("  done");
         std::process::exit(1);
     }

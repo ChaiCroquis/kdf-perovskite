@@ -155,11 +155,12 @@ pub fn build(config: &ObsidianBuildConfig) -> Result<Dataset, Box<dyn std::error
         let mut edge_set: HashSet<u32> = HashSet::new();
         for target in links {
             let key = normalize_link_target(&target);
-            if let Some(&dst_id) = path_to_id.get(&key) {
-                if dst_id != src_id && edge_set.insert(dst_id) {
-                    edges.push((src_id, dst_id, 1.0));
-                    *indeg.entry(dst_id).or_insert(0) += 1;
-                }
+            if let Some(&dst_id) = path_to_id.get(&key)
+                && dst_id != src_id
+                && edge_set.insert(dst_id)
+            {
+                edges.push((src_id, dst_id, 1.0));
+                *indeg.entry(dst_id).or_insert(0) += 1;
             }
         }
     }
@@ -169,7 +170,7 @@ pub fn build(config: &ObsidianBuildConfig) -> Result<Dataset, Box<dyn std::error
     let max_in = config.rare_indegree_max as u32;
     let rare_ground_truth: HashSet<u32> = indeg
         .iter()
-        .filter(|(_, &c)| c >= 1 && c <= max_in)
+        .filter(|&(_, &c)| c >= 1 && c <= max_in)
         .map(|(&id, _)| id)
         .collect();
 
@@ -180,7 +181,9 @@ pub fn build(config: &ObsidianBuildConfig) -> Result<Dataset, Box<dyn std::error
         rare_ground_truth,
         description: format!(
             "Obsidian Vault ({} total notes, {} read) PII masked; rare = notes with 1..={} incoming wiki-links",
-            all_notes.len(), read_set.len(), max_in
+            all_notes.len(),
+            read_set.len(),
+            max_in
         ),
     })
 }

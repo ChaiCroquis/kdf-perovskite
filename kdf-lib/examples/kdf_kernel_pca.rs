@@ -334,8 +334,17 @@ fn main() {
             0.0
         };
 
-        println!("   | {:>3} | {:>3} | {:>5.1}x | {:>5.1}ms | {:>7.1}ms | {:>5.1}x | {:>5.1}x | {:.0}% |",
-                 n, m, k, orig_time, total_kdf_time, speedup, theoretical_k3, quality * 100.0);
+        println!(
+            "   | {:>3} | {:>3} | {:>5.1}x | {:>5.1}ms | {:>7.1}ms | {:>5.1}x | {:>5.1}x | {:.0}% |",
+            n,
+            m,
+            k,
+            orig_time,
+            total_kdf_time,
+            speedup,
+            theoretical_k3,
+            quality * 100.0
+        );
     }
 
     // Large scale test

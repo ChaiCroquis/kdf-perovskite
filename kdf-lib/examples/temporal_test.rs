@@ -1,5 +1,5 @@
 //! Temporal KDF demonstration - time-aware data processing
-use kdf::{cosine_similarity, KdfParams, TemporalKdf, TemporalParams};
+use kdf::{KdfParams, TemporalKdf, TemporalParams, cosine_similarity};
 
 fn main() {
     println!("=== Temporal KDF Test ===\n");

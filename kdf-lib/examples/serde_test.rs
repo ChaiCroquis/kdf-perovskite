@@ -1,5 +1,5 @@
 //! Serialization/Deserialization test
-use kdf::{cosine_similarity, IncrementalKdf, KdfParams};
+use kdf::{IncrementalKdf, KdfParams, cosine_similarity};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]

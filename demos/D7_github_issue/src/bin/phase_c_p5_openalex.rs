@@ -56,7 +56,10 @@ fn main() {
         Ok(t) => t,
         Err(_) => {
             eprintln!("Missing {}. Fetch with:", path);
-            eprintln!("  curl -sL 'https://api.openalex.org/works?filter=publication_year:2000-2008,cited_by_count:30-500&per-page=200&sort=cited_by_count:desc&select=id,title,publication_year,cited_by_count,counts_by_year,concepts' -o {}", path);
+            eprintln!(
+                "  curl -sL 'https://api.openalex.org/works?filter=publication_year:2000-2008,cited_by_count:30-500&per-page=200&sort=cited_by_count:desc&select=id,title,publication_year,cited_by_count,counts_by_year,concepts' -o {}",
+                path
+            );
             std::process::exit(1);
         }
     };
@@ -127,7 +130,7 @@ fn main() {
     // Random averaged over 10 seeds
     let mut r_rand = 0.0;
     for s in 0..10u64 {
-        use rand::{rngs::SmallRng, seq::SliceRandom, SeedableRng};
+        use rand::{SeedableRng, rngs::SmallRng, seq::SliceRandom};
         let mut rng = SmallRng::seed_from_u64(50000 + s);
         let mut idx: Vec<u32> = (0..n as u32).collect();
         idx.shuffle(&mut rng);
@@ -179,6 +182,10 @@ fn main() {
 
     println!("\n## Interpretation");
     println!("Late-bloomer = paper with ≥50% of lifetime cites in 2020+. Graph = concept-sharing.");
-    println!("If KDF > Random and KDF > TopCite → structural (not popularity) signal predicts late rise.");
-    println!("If KDF ≈ Random → late bloom is independent of concept-graph structure (D5 type, as predicted).");
+    println!(
+        "If KDF > Random and KDF > TopCite → structural (not popularity) signal predicts late rise."
+    );
+    println!(
+        "If KDF ≈ Random → late bloom is independent of concept-graph structure (D5 type, as predicted)."
+    );
 }

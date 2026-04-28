@@ -1,7 +1,7 @@
 [package]
 name = "demo-d6-text-dedup"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 license-file = "../../LICENSE"
 description = "KDF Showcase D6 — Forum / SNS text dedup preserving minority opinions"
 default-run = "demo-d6-text-dedup"

@@ -7,7 +7,7 @@
 //!
 //! Run: cargo run --example kdf_code_review
 
-use kdf::{cosine_similarity, Kdf, Layer};
+use kdf::{Kdf, Layer, cosine_similarity};
 
 /// Represents a code change (diff hunk)
 #[derive(Clone)]

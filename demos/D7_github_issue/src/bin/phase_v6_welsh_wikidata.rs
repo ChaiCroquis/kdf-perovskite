@@ -68,7 +68,8 @@ fn http_get(url: &str) -> Result<String, String> {
 fn get_welsh_random_titles(n: usize) -> Result<Vec<String>, String> {
     let url = format!(
         "https://cy.wikipedia.org/w/api.php?action=query&list=random&rnnamespace=0&rnlimit={}&format=json",
-        n.min(50));
+        n.min(50)
+    );
     let body = http_get(&url)?;
     let resp: RandomList = serde_json::from_str(&body).map_err(|e| format!("JSON parse: {}", e))?;
     Ok(resp.query.random.into_iter().map(|p| p.title).collect())
@@ -85,15 +86,16 @@ fn get_wikidata_qids_for_welsh(titles: &[String]) -> Result<HashMap<String, Stri
         let url_encoded = urlencoding::encode(&titles_param).into_owned();
         let url = format!(
             "https://cy.wikipedia.org/w/api.php?action=query&titles={}&prop=pageprops&ppprop=wikibase_item&format=json",
-            url_encoded);
+            url_encoded
+        );
         let body = http_get(&url)?;
         let resp: PagePropsResp =
             serde_json::from_str(&body).map_err(|e| format!("JSON parse: {}", e))?;
         for (_, details) in resp.query.pages {
-            if let (Some(title), Some(props)) = (details.title, details.pageprops) {
-                if let Some(qid) = props.wikibase_item {
-                    map.insert(title, qid);
-                }
+            if let (Some(title), Some(props)) = (details.title, details.pageprops)
+                && let Some(qid) = props.wikibase_item
+            {
+                map.insert(title, qid);
             }
         }
     }
@@ -118,7 +120,8 @@ fn check_enwiki_sitelinks(qids: &[String]) -> Result<HashMap<String, bool>, Stri
         let ids_param = chunk.join("|");
         let url = format!(
             "https://www.wikidata.org/w/api.php?action=wbgetentities&ids={}&props=sitelinks&sitefilter=enwiki&format=json",
-            ids_param);
+            ids_param
+        );
         let body = http_get(&url)?;
         let resp: WikidataResp =
             serde_json::from_str(&body).map_err(|e| format!("wd JSON: {}", e))?;
@@ -173,12 +176,12 @@ fn main() {
 
     let welsh_only: Vec<&String> = enwiki_map
         .iter()
-        .filter(|(_, &has_en)| !has_en)
+        .filter(|&(_, &has_en)| !has_en)
         .map(|(qid, _)| qid)
         .collect();
     let cross_lang: Vec<&String> = enwiki_map
         .iter()
-        .filter(|(_, &has_en)| has_en)
+        .filter(|&(_, &has_en)| has_en)
         .map(|(qid, _)| qid)
         .collect();
 

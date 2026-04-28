@@ -61,6 +61,8 @@ pub mod vne;
 pub use framework::{
     ActivationScore,
     ClassificationStats,
+    DISCOVERY_THRESHOLD_DEFAULT,
+    DISCOVERY_THRESHOLD_UPPER_DEFAULT,
     DecayManager,
     FastNodeClassifier,
     HierarchicalRegionManager,
@@ -80,13 +82,11 @@ pub use framework::{
     // Rev.12 (Analogy Discovery + multi-stage review)
     ReviewPhase,
     SemanticImportance,
-    TransitionController,
-    TransitionScore,
-    DISCOVERY_THRESHOLD_DEFAULT,
-    DISCOVERY_THRESHOLD_UPPER_DEFAULT,
     T_WAIT_DEFAULT,
     T_WAIT_MAX,
     T_WAIT_MIN,
+    TransitionController,
+    TransitionScore,
 };
 
 // Existing components
@@ -99,8 +99,8 @@ pub use sleep_mode::{IncrementalEntropyCache, NREMResult, NodeMoveContext, Sleep
 
 // VNE (Von Neumann Entropy) Integration
 pub use vne::{
-    detect_change, von_neumann_entropy, von_neumann_entropy_detailed, AnomalyResult,
-    ChangeDetection, VNEMonitor, VNEResult, VNETriggeredSleepMode,
+    AnomalyResult, ChangeDetection, VNEMonitor, VNEResult, VNETriggeredSleepMode, detect_change,
+    von_neumann_entropy, von_neumann_entropy_detailed,
 };
 
 // Causal Discovery (Transfer Entropy)
@@ -112,12 +112,12 @@ pub use causal::{
 
 // Spectral TE Prioritization
 pub use spectral_te::{
-    prioritize_te_computation, NodeSpectralInfo, PairPriority, SpectralTEPrioritizer,
+    NodeSpectralInfo, PairPriority, SpectralTEPrioritizer, prioritize_te_computation,
 };
 
 // Text Processing
 pub use text_processor::{
-    extract_keywords, simple_tokenize, DomainClassifier, TextProcessor, Token,
+    DomainClassifier, TextProcessor, Token, extract_keywords, simple_tokenize,
 };
 
 // High-Level Engines

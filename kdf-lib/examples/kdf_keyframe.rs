@@ -9,7 +9,7 @@
 //!
 //! Run: cargo run --example kdf_keyframe
 
-use kdf::{cosine_similarity, Kdf, Layer};
+use kdf::{Kdf, Layer, cosine_similarity};
 
 /// Represents a video frame with visual features
 #[derive(Clone)]

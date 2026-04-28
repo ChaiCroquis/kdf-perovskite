@@ -417,12 +417,12 @@ impl AnalogyDiscoveryEngine {
             }
         }
 
-        if let Some(ref mapping) = best_mapping {
-            if mapping.overall_score >= self.discovery_threshold {
-                self.stats.successful_discoveries += 1;
-                self.discovery_history.push(mapping.clone());
-                return best_mapping;
-            }
+        if let Some(ref mapping) = best_mapping
+            && mapping.overall_score >= self.discovery_threshold
+        {
+            self.stats.successful_discoveries += 1;
+            self.discovery_history.push(mapping.clone());
+            return best_mapping;
         }
 
         None

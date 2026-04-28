@@ -1,7 +1,7 @@
 [package]
 name = "kdf-ml-verification"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 description = "KDF verification for ML training data redundancy"
 
 [workspace]

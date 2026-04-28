@@ -5,7 +5,7 @@
 //! 2. HashSet is_selected() vs Vec contains()
 //! 3. Overall process() performance at different scales
 
-use kdf::{cosine_similarity, Kdf, KdfParams, Layer};
+use kdf::{Kdf, KdfParams, Layer, cosine_similarity};
 use std::time::Instant;
 
 fn main() {

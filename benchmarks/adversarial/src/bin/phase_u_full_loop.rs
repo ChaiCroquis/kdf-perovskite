@@ -220,5 +220,7 @@ fn main() {
     println!("\n## Interpretation");
     println!("- If Full-Partial Δ ≈ 0: TransitionController adds NO value over ActivationScore");
     println!("- If Full-Partial Δ > 0: TransitionController genuinely improves temporal handling");
-    println!("- If Full-Partial Δ < 0: TransitionController HURTS (region-bonus wrongly boosts non-rares)");
+    println!(
+        "- If Full-Partial Δ < 0: TransitionController HURTS (region-bonus wrongly boosts non-rares)"
+    );
 }

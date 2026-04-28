@@ -15,8 +15,8 @@
 //! | 31 | Emergency intervention on crisis | [`MetaController::emergency_intervention`] |
 //! | 32 | Mode toggle (enable/disable) | [`MetaController::enabled`] |
 
-use super::decay::MasterSpecParams;
 use super::Layer;
+use super::decay::MasterSpecParams;
 
 /// Meta-cognitive controller implementing Claim 27-32.
 #[derive(Clone, Debug)]
@@ -233,7 +233,7 @@ mod tests {
         let picked = mc.emergency_intervention(0.0, edges.into_iter());
         assert_eq!(mc.emergency_count, 1);
         assert_eq!(picked.len(), 5); // 5% of 100
-                                     // Lowest-weight first
+        // Lowest-weight first
         assert_eq!(picked[0], (0, 1));
     }
 

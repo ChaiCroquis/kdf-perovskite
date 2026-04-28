@@ -13,8 +13,8 @@
 
 use adversarial_bench as adv;
 use adversarial_bench::solutions::RelativeDensitySelector;
-use real_data_bench::selectors::{KdfSel, RandomSel, Selector};
 use real_data_bench::Dataset;
+use real_data_bench::selectors::{KdfSel, RandomSel, Selector};
 use serde::Serialize;
 use std::collections::BTreeMap;
 use std::time::Instant;
@@ -32,13 +32,13 @@ struct RobustnessRow {
     advantage_over_random: f64,
 }
 
-fn run_condition<F: Fn(u64) -> Dataset>(name: &str, gen: F, out: &mut Vec<RobustnessRow>) {
+fn run_condition<F: Fn(u64) -> Dataset>(name: &str, r#gen: F, out: &mut Vec<RobustnessRow>) {
     let random = Box::new(RandomSel { p: 0.30 }) as Box<dyn Selector>;
     let kdf = Box::new(KdfSel) as Box<dyn Selector>;
     let reldensity = Box::new(RelativeDensitySelector::default()) as Box<dyn Selector>;
 
     for &ds_seed in &DATASET_SEEDS {
-        let ds = gen(ds_seed);
+        let ds = r#gen(ds_seed);
 
         let eval = |sel: &dyn Selector| -> Vec<f64> {
             (0..TRIAL_SEEDS_PER_DS)

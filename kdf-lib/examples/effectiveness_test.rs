@@ -1,5 +1,5 @@
 //! Effectiveness measurement for new features
-use kdf::{cosine_similarity, dtw_similarity, levenshtein_similarity, Kdf, KdfParams};
+use kdf::{Kdf, KdfParams, cosine_similarity, dtw_similarity, levenshtein_similarity};
 use std::time::Instant;
 
 fn main() {

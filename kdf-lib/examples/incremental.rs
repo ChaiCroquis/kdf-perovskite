@@ -1,6 +1,6 @@
 //! Incremental KDF example for streaming data
 
-use kdf::{cosine_similarity, IncrementalKdf, KdfParams};
+use kdf::{IncrementalKdf, KdfParams, cosine_similarity};
 
 fn main() {
     println!("=== KDF Incremental Processing Example ===\n");

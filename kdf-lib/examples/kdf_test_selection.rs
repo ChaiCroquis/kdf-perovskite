@@ -7,7 +7,7 @@
 //!
 //! Run: cargo run --example kdf_test_selection
 
-use kdf::{cosine_similarity, Kdf, Layer};
+use kdf::{Kdf, Layer, cosine_similarity};
 
 /// Represents a test case with its characteristics
 #[derive(Clone)]

@@ -10,7 +10,7 @@
 //!
 //! Run: cargo run --example kdf_adversarial
 
-use kdf::{cosine_similarity, Kdf, Layer};
+use kdf::{Kdf, Layer, cosine_similarity};
 
 /// Sample with features and ground truth label
 #[derive(Clone)]

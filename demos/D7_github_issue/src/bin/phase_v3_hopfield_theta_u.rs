@@ -20,14 +20,14 @@
 //! **失敗基準**: θ_U フィルタが spurious を 0〜20% 未満しか削減できなければ
 //! C3 conjecture は (現状の定式化では) 効果薄として **paper §4.2 を修正**する。
 
-use rand::{rngs::SmallRng, Rng, SeedableRng};
+use rand::{Rng, SeedableRng, rngs::SmallRng};
 
 const N: usize = 100; // neurons
 
 /// Generate a random bipolar pattern in {-1, +1}^N
 fn random_pattern(rng: &mut SmallRng) -> Vec<i8> {
     (0..N)
-        .map(|_| if rng.gen::<bool>() { 1 } else { -1 })
+        .map(|_| if rng.r#gen::<bool>() { 1 } else { -1 })
         .collect()
 }
 
@@ -178,7 +178,9 @@ fn main() {
     let theta_u_cases: Vec<Option<f64>> =
         vec![None, Some(0.80), Some(0.70), Some(0.55), Some(0.40)];
 
-    println!("| P (patterns) | θ_U | recall_correct | spurious_mixture | spurious_rejected | effective recall |");
+    println!(
+        "| P (patterns) | θ_U | recall_correct | spurious_mixture | spurious_rejected | effective recall |"
+    );
     println!("|---:|---:|---:|---:|---:|---:|");
 
     let mut results: Vec<(usize, Option<f64>, f64, f64, f64, f64)> = Vec::new();
@@ -223,13 +225,17 @@ fn main() {
     println!(
         "- **spurious_rejected**: θ_U フィルタが「複数パターン類似度 >= θ_U」として棄却した率"
     );
-    println!("- **effective_recall**: θ_U 棄却分を除外した純粋な recall 精度(棄却=「分からない」と答える戦略)\n");
+    println!(
+        "- **effective_recall**: θ_U 棄却分を除外した純粋な recall 精度(棄却=「分からない」と答える戦略)\n"
+    );
 
     // Quantify: θ_U filter effect
     println!("## 仮説検証:");
     println!();
     println!("**C3 conjecture** は「θ_U が spurious 抑制に寄与する」。");
-    println!("具体的には、θ_U=0.80 条件で spurious_mixture 率が baseline (None) より削減されれば支持。\n");
+    println!(
+        "具体的には、θ_U=0.80 条件で spurious_mixture 率が baseline (None) より削減されれば支持。\n"
+    );
 
     // For each P, compare baseline vs theta_u=0.80
     for &p in &p_values {

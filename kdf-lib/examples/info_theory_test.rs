@@ -1,5 +1,5 @@
 //! Information-theoretic foundation demonstration
-use kdf::{cosine_similarity, Kdf, KdfParams, TheoreticalBounds};
+use kdf::{Kdf, KdfParams, TheoreticalBounds, cosine_similarity};
 
 fn main() {
     println!("=== KDF Information-Theoretic Foundation ===\n");

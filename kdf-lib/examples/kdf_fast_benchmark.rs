@@ -2,7 +2,7 @@
 //!
 //! Run: cargo run --release --example kdf_fast_benchmark
 
-use kdf::{cosine_similarity, Kdf, Layer};
+use kdf::{Kdf, Layer, cosine_similarity};
 use std::time::Instant;
 
 fn generate_redundant_data(n: usize, dim: usize, redundancy: f64) -> Vec<Vec<f64>> {
@@ -40,7 +40,7 @@ fn rare_recall(true_layers: &[Layer], predicted_layers: &[Layer]) -> f64 {
     let true_rare: std::collections::HashSet<usize> = true_layers
         .iter()
         .enumerate()
-        .filter(|(_, &l)| l == Layer::Rare)
+        .filter(|&(_, &l)| l == Layer::Rare)
         .map(|(i, _)| i)
         .collect();
 
@@ -51,7 +51,7 @@ fn rare_recall(true_layers: &[Layer], predicted_layers: &[Layer]) -> f64 {
     let predicted_rare: std::collections::HashSet<usize> = predicted_layers
         .iter()
         .enumerate()
-        .filter(|(_, &l)| l == Layer::Rare)
+        .filter(|&(_, &l)| l == Layer::Rare)
         .map(|(i, _)| i)
         .collect();
 

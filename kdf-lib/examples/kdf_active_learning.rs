@@ -158,7 +158,7 @@ impl SimpleClassifier {
         let correct = test_data
             .iter()
             .zip(test_labels)
-            .filter(|(features, &label)| self.predict(features) == label)
+            .filter(|&(features, &label)| self.predict(features) == label)
             .count();
         correct as f64 / test_data.len() as f64
     }

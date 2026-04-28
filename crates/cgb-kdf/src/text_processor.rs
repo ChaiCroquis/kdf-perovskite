@@ -669,10 +669,10 @@ impl DomainClassifier {
         }
 
         // Find best domain
-        if let Some((&best_domain, &score)) = domain_scores.iter().max_by_key(|(_, &score)| score) {
-            if score > 0 {
-                return best_domain.to_string();
-            }
+        if let Some((&best_domain, &score)) = domain_scores.iter().max_by_key(|&(_, &score)| score)
+            && score > 0
+        {
+            return best_domain.to_string();
         }
 
         self.default_domain.clone()

@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use super::precomputed::PrecomputedFingerprint;
 use super::rng::SimpleRng;
-use super::types::{hash_to_seed, CacheStats, Fingerprint, FingerprintKey, NodeLabel};
+use super::types::{CacheStats, Fingerprint, FingerprintKey, NodeLabel, hash_to_seed};
 
 /// Structural Fingerprint Engine
 ///

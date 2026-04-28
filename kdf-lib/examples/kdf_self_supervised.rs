@@ -7,7 +7,7 @@
 //!
 //! Run: cargo run --example kdf_self_supervised
 
-use kdf::{cosine_similarity, Kdf, Layer};
+use kdf::{Kdf, Layer, cosine_similarity};
 use std::collections::HashMap;
 
 /// Representation learning sample

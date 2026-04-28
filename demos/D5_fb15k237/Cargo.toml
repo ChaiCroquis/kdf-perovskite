@@ -1,7 +1,7 @@
 [package]
 name = "demo-d5-fb15k237"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 license-file = "../../LICENSE"
 description = "KDF Showcase D5 — Knowledge graph curation preserving rare entities"
 

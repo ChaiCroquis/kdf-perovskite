@@ -1,6 +1,6 @@
 //! Custom similarity function example for KDF
 
-use kdf::{euclidean_similarity, jaccard_similarity, Kdf};
+use kdf::{Kdf, euclidean_similarity, jaccard_similarity};
 use std::collections::HashSet;
 
 /// Custom item type with tokens

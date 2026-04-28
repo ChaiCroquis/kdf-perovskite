@@ -3,7 +3,7 @@
 //! Demonstrates how KDF can make classical k-NN competitive with modern approaches
 //! by reducing dataset size while preserving rare/important cases.
 
-use kdf::{cosine_similarity, Kdf};
+use kdf::{Kdf, cosine_similarity};
 use std::collections::HashMap;
 use std::time::Instant;
 
@@ -43,7 +43,7 @@ impl KNN {
         let correct = test_data
             .iter()
             .zip(test_labels)
-            .filter(|(query, &label)| self.predict(query, k) == label)
+            .filter(|&(query, &label)| self.predict(query, k) == label)
             .count();
         correct as f64 / test_data.len() as f64
     }
@@ -138,7 +138,7 @@ fn main() {
         let class_test: Vec<_> = test_data
             .iter()
             .zip(&test_labels)
-            .filter(|(_, &l)| l == class)
+            .filter(|&(_, &l)| l == class)
             .map(|(d, _)| d.clone())
             .collect();
         let class_labels: Vec<_> = vec![class; class_test.len()];
@@ -194,7 +194,7 @@ fn main() {
         let class_test: Vec<_> = test_data
             .iter()
             .zip(&test_labels)
-            .filter(|(_, &l)| l == class)
+            .filter(|&(_, &l)| l == class)
             .map(|(d, _)| d.clone())
             .collect();
         let class_labels: Vec<_> = vec![class; class_test.len()];
@@ -249,7 +249,7 @@ fn main() {
         let class_test: Vec<_> = test_data
             .iter()
             .zip(&test_labels)
-            .filter(|(_, &l)| l == class)
+            .filter(|&(_, &l)| l == class)
             .map(|(d, _)| d.clone())
             .collect();
         let class_labels: Vec<_> = vec![class; class_test.len()];

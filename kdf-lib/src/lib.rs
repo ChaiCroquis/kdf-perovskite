@@ -606,7 +606,7 @@ impl KdfResult {
         self.clusters
             .iter()
             .enumerate()
-            .filter(|(_, &r)| r == rep)
+            .filter(|&(_, &r)| r == rep)
             .map(|(i, _)| i)
             .collect()
     }
@@ -625,7 +625,7 @@ impl KdfResult {
         self.layers
             .iter()
             .enumerate()
-            .filter(|(_, &layer)| layer == Layer::Rare)
+            .filter(|&(_, &layer)| layer == Layer::Rare)
             .map(|(i, _)| i)
             .collect()
     }
@@ -635,7 +635,7 @@ impl KdfResult {
         self.layers
             .iter()
             .enumerate()
-            .filter(|(_, &layer)| layer == Layer::Edge)
+            .filter(|&(_, &layer)| layer == Layer::Edge)
             .map(|(i, _)| i)
             .collect()
     }
@@ -645,7 +645,7 @@ impl KdfResult {
         self.layers
             .iter()
             .enumerate()
-            .filter(|(_, &layer)| layer == Layer::Core)
+            .filter(|&(_, &layer)| layer == Layer::Core)
             .map(|(i, _)| i)
             .collect()
     }
@@ -1324,7 +1324,7 @@ impl TheoreticalBounds {
             .layers
             .iter()
             .enumerate()
-            .filter(|(_, &layer)| layer == Layer::Rare)
+            .filter(|&(_, &layer)| layer == Layer::Rare)
             .all(|(i, _)| result.is_selected(i))
     }
 

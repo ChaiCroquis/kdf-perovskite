@@ -1,5 +1,5 @@
 //! Comprehensive feature test for all KDF functionality
-use kdf::{cosine_similarity, Kdf, Layer, SelectionReason};
+use kdf::{Kdf, Layer, SelectionReason, cosine_similarity};
 
 fn main() {
     println!("=== 新機能テスト ===\n");

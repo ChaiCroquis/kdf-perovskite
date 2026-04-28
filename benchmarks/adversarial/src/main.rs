@@ -5,7 +5,7 @@
 
 use adversarial_bench::*;
 use real_data_bench::wilcoxon::wilcoxon_signed_rank;
-use real_data_bench::{metrics, selectors::all_selectors, Dataset, TrialResult};
+use real_data_bench::{Dataset, TrialResult, metrics, selectors::all_selectors};
 use std::collections::BTreeMap;
 use std::time::Instant;
 
@@ -106,7 +106,9 @@ fn print_table(all: &[TrialResult]) {
             .push(r);
     }
 
-    println!("| Dataset | Method | Rare Recall | Precision@Rare | F1 | Compression | Time (ms) | trials |");
+    println!(
+        "| Dataset | Method | Rare Recall | Precision@Rare | F1 | Compression | Time (ms) | trials |"
+    );
     println!("|---|---|---:|---:|---:|---:|---:|---:|");
     for ((ds, method), rs) in &by_key {
         let n = rs.len() as f64;

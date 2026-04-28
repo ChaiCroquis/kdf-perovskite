@@ -4,7 +4,7 @@
 //!
 //! Run: cargo run --example kdf_auto_threshold
 
-use kdf::{cosine_similarity, Kdf};
+use kdf::{Kdf, cosine_similarity};
 
 fn main() {
     println!("=== KDF Auto-Threshold Demo ===\n");

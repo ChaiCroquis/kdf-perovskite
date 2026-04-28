@@ -8,7 +8,7 @@
 use std::collections::HashSet;
 use std::time::Instant;
 
-use kdf::{cosine_similarity, Kdf, KdfParams, KdfResult, Layer};
+use kdf::{Kdf, KdfParams, KdfResult, Layer, cosine_similarity};
 
 fn main() {
     println!("{}", "=".repeat(70));

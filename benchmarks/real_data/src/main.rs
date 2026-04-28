@@ -1,8 +1,8 @@
 //! Phase 6 real-data benchmark runner (Obsidian + public datasets).
 
 use real_data_bench::{
-    metrics, obsidian, public_datasets, selectors::all_selectors, wilcoxon::wilcoxon_signed_rank,
-    Dataset, TrialResult,
+    Dataset, TrialResult, metrics, obsidian, public_datasets, selectors::all_selectors,
+    wilcoxon::wilcoxon_signed_rank,
 };
 use std::collections::{BTreeMap, HashSet};
 use std::path::PathBuf;
@@ -120,7 +120,9 @@ fn print_table(all: &[TrialResult]) {
             .push(r);
     }
     println!("\n## Aggregated results");
-    println!("| Dataset | Method | Rare Recall | Precision@Rare | F1 | Compression | Time (ms) | trials |");
+    println!(
+        "| Dataset | Method | Rare Recall | Precision@Rare | F1 | Compression | Time (ms) | trials |"
+    );
     println!("|---|---|---:|---:|---:|---:|---:|---:|");
     for ((ds, method), rs) in &by_key {
         let n = rs.len() as f64;

@@ -35,10 +35,10 @@ fn load(dir: &str) -> Vec<Issue> {
     let mut all = Vec::new();
     for p in 1..=5 {
         let path = format!("benchmarks/real_data/data/{}/page{}.json", dir, p);
-        if let Ok(text) = std::fs::read_to_string(&path) {
-            if let Ok(batch) = serde_json::from_str::<Vec<Issue>>(&text) {
-                all.extend(batch);
-            }
+        if let Ok(text) = std::fs::read_to_string(&path)
+            && let Ok(batch) = serde_json::from_str::<Vec<Issue>>(&text)
+        {
+            all.extend(batch);
         }
     }
     all
@@ -120,7 +120,7 @@ fn run_one(repo: &'static str, dir: &str) -> Option<Result_> {
     // Random averaged over 10 seeds
     let mut r_rand = 0.0;
     for s in 0..10u64 {
-        use rand::{rngs::SmallRng, seq::SliceRandom, SeedableRng};
+        use rand::{SeedableRng, rngs::SmallRng, seq::SliceRandom};
         let mut rng = SmallRng::seed_from_u64(40000 + s);
         let mut idx: Vec<u32> = (0..n as u32).collect();
         idx.shuffle(&mut rng);
@@ -220,5 +220,7 @@ fn main() {
     println!(
         "\nInterpretation: a ratio > 1 means KDF surfaces rare-labeled issues faster than Random"
     );
-    println!("on a structure-only graph (shared labels + shared authors). No text read, no ground-truth labels.");
+    println!(
+        "on a structure-only graph (shared labels + shared authors). No text read, no ground-truth labels."
+    );
 }

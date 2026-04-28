@@ -1,5 +1,5 @@
 //! Test new features: Builder pattern, Levenshtein, DTW, parallel processing
-use kdf::{cosine_similarity, dtw_similarity, levenshtein_similarity, Kdf, KdfParams};
+use kdf::{Kdf, KdfParams, cosine_similarity, dtw_similarity, levenshtein_similarity};
 
 fn main() {
     println!("=== New Features Test ===\n");

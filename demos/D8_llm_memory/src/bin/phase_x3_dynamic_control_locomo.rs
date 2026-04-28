@@ -57,7 +57,7 @@
 //! - answer_turn_recall @ 30% keep
 //! - δα_edge 累計(Claim 29 δk⁴ 発動)
 
-use cgb_kdf::framework::multimodal::{select_top_k_multi_modal, MultiModalWeights};
+use cgb_kdf::framework::multimodal::{MultiModalWeights, select_top_k_multi_modal};
 use cgb_kdf::{
     ActivationScore, HierarchicalRegionManager, Layer, MasterSpecParams, MetaController,
     NodeClassifier, RegionKind, TransitionController,
@@ -574,7 +574,9 @@ fn main() {
     println!();
     println!("- **Claim 21 領域周期 5:3:1** は deterministic な tick count で正確に一致");
     println!("  (integer tick 実装の reproducibility 確認)");
-    println!("- **Claim 25 ActivationScore** は event 記録で累積、tick advance で exp 減衰、数値が sensible 範囲内");
+    println!(
+        "- **Claim 25 ActivationScore** は event 記録で累積、tick advance で exp 減衰、数値が sensible 範囲内"
+    );
     println!(
         "- **Claim 27-32 MetaController** は δk 観測 + α 更新ループが稼働、α が bound 内で推移"
     );

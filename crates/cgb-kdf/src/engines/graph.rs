@@ -30,7 +30,7 @@ impl SimpleGraph {
     pub(crate) fn get_nodes_by_layer(&self, layer: Layer) -> Vec<String> {
         self.nodes
             .iter()
-            .filter(|(_, &l)| l == layer)
+            .filter(|&(_, &l)| l == layer)
             .map(|(id, _)| id.clone())
             .collect()
     }

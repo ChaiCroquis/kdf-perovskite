@@ -202,10 +202,10 @@ impl DecayManager {
 
     /// Check if a node should be skipped (GARBAGE or decayed)
     pub fn should_skip(&self, node: u32) -> bool {
-        if let Some(ref class) = self.classification {
-            if let Some(&layer) = class.layers.get(&node) {
-                return !layer.should_process();
-            }
+        if let Some(ref class) = self.classification
+            && let Some(&layer) = class.layers.get(&node)
+        {
+            return !layer.should_process();
         }
         false
     }
@@ -217,10 +217,10 @@ impl DecayManager {
 
     /// Check if a node is protected (RARE)
     pub fn is_protected(&self, node: u32) -> bool {
-        if let Some(ref class) = self.classification {
-            if let Some(&layer) = class.layers.get(&node) {
-                return layer.is_protected();
-            }
+        if let Some(ref class) = self.classification
+            && let Some(&layer) = class.layers.get(&node)
+        {
+            return layer.is_protected();
         }
         false
     }

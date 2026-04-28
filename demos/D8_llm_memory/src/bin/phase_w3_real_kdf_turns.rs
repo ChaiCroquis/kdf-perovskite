@@ -168,7 +168,7 @@ fn kdf_textsim_select(
     text_rare: &[f64],
     keep: usize,
 ) -> HashSet<u32> {
-    use cgb_kdf::framework::multimodal::{select_top_k_multi_modal, MultiModalWeights};
+    use cgb_kdf::framework::multimodal::{MultiModalWeights, select_top_k_multi_modal};
     use cgb_kdf::{Layer, NodeClassifier};
     let mut c = NodeClassifier::default();
     let class = c.classify(n, edges);

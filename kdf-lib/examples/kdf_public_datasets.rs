@@ -12,7 +12,7 @@
 //!   - Iris: https://archive.ics.uci.edu/ml/datasets/iris
 //!   - 20 Newsgroups: http://qwone.com/~jason/20Newsgroups/
 
-use kdf::{levenshtein_similarity, Kdf};
+use kdf::{Kdf, levenshtein_similarity};
 use std::collections::HashSet;
 
 fn main() {

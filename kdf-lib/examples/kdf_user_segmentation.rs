@@ -7,7 +7,7 @@
 //!
 //! Run: cargo run --example kdf_user_segmentation
 
-use kdf::{cosine_similarity, Kdf, Layer};
+use kdf::{Kdf, Layer, cosine_similarity};
 
 /// User profile with behavioral features
 #[derive(Clone)]

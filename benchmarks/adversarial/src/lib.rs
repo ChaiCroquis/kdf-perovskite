@@ -137,7 +137,7 @@ pub fn zero_redundancy(n: usize, seed: u64) -> Dataset {
     let rare: HashSet<u32> = deg
         .iter()
         .enumerate()
-        .filter(|(_, &d)| d == 1)
+        .filter(|&(_, &d)| d == 1)
         .map(|(i, _)| i as u32)
         .collect();
     Dataset {

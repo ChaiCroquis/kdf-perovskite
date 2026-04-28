@@ -1,7 +1,7 @@
 [package]
 name = "demo-d3-ml-longtail"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 license-file = "../../LICENSE"
 description = "KDF Showcase D3 — ML training data curation preserving long-tail classes"
 

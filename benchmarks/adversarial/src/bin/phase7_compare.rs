@@ -8,10 +8,9 @@ use adversarial_bench::{
     solutions::{FingerprintIsolationSelector, PersistentRareMemory, RelativeDensitySelector},
 };
 use real_data_bench::{
-    metrics,
+    Dataset, TrialResult, metrics,
     selectors::{KdfSel, RandomSel, Selector, StratifiedSel},
     wilcoxon::wilcoxon_signed_rank,
-    Dataset, TrialResult,
 };
 use std::collections::BTreeMap;
 use std::time::Instant;

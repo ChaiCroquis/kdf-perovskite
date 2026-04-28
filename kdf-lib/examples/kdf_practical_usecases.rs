@@ -8,7 +8,7 @@
 //!   3. 不均衡データ前処理 - 少数クラスの保護
 //!   4. キャッシュ管理 - 希少アクセスパターンの保持
 
-use kdf::{levenshtein_similarity, Kdf};
+use kdf::{Kdf, levenshtein_similarity};
 
 fn main() {
     println!("# KDF 実用ユースケース\n");
@@ -190,12 +190,12 @@ fn usecase_imbalanced_data() {
     let majority_selected = labels
         .iter()
         .enumerate()
-        .filter(|(i, &l)| l == 0 && selected_set.contains(i))
+        .filter(|&(ref i, &l)| l == 0 && selected_set.contains(i))
         .count();
     let minority_selected = labels
         .iter()
         .enumerate()
-        .filter(|(i, &l)| l == 1 && selected_set.contains(i))
+        .filter(|&(ref i, &l)| l == 1 && selected_set.contains(i))
         .count();
 
     println!("データ分布:");

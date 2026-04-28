@@ -1,7 +1,7 @@
 [package]
 name = "demo-d4-movielens"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 license-file = "../../LICENSE"
 description = "KDF Showcase D4 — Long-tail recommendation: preserve niche items"
 

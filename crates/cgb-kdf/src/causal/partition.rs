@@ -176,10 +176,9 @@ impl CausalPartitionBuilder {
 
                 if let Some(link) =
                     engine.compute_pair(source_data, target_data, strategy, source, target)
+                    && link.te >= self.te_threshold
                 {
-                    if link.te >= self.te_threshold {
-                        causal_links.push(link);
-                    }
+                    causal_links.push(link);
                 }
             }
         }

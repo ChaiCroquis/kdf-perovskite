@@ -25,7 +25,7 @@
 //! - KDF+Analogy (fingerprint-isolated bonus)
 
 use kdf_demos_common::{
-    visualizer::emit_artifacts, Axis, Conclusion, DemoReport, MethodResult, Metric,
+    Axis, Conclusion, DemoReport, MethodResult, Metric, visualizer::emit_artifacts,
 };
 use rand::prelude::*;
 use rand::rngs::SmallRng;
@@ -51,7 +51,7 @@ fn main() {
     let class_freq = class_frequencies(&labels);
     let minority_classes: HashSet<u32> = class_freq
         .iter()
-        .filter(|(_, &c)| c < (N_SAMPLES as u32) / N_CLASSES as u32)
+        .filter(|&(_, &c)| c < (N_SAMPLES as u32) / N_CLASSES as u32)
         .map(|(&c, _)| c)
         .collect();
 
@@ -259,7 +259,7 @@ fn synthesize_longtail_dataset(
     let mut samples = Vec::with_capacity(n);
     let mut labels = Vec::with_capacity(n);
     for _ in 0..n {
-        let u = rng.gen::<f64>();
+        let u = rng.r#gen::<f64>();
         let mut acc = 0.0;
         let mut c = n_classes - 1;
         for (i, p) in class_probs.iter().enumerate() {
@@ -272,7 +272,7 @@ fn synthesize_longtail_dataset(
         // Sample = centroid + Gaussian noise
         let feat: Vec<f64> = centroids[c]
             .iter()
-            .map(|&m| m + (rng.gen::<f64>() - 0.5) * 2.0)
+            .map(|&m| m + (rng.r#gen::<f64>() - 0.5) * 2.0)
             .collect();
         samples.push(feat);
         labels.push(c as u32);

@@ -482,7 +482,7 @@ fn check_rare_preservation(layers_true: &[Layer], selected: &[usize]) -> f64 {
     let rare_indices: HashSet<usize> = layers_true
         .iter()
         .enumerate()
-        .filter(|(_, &l)| l == Layer::Rare)
+        .filter(|&(_, &l)| l == Layer::Rare)
         .map(|(i, _)| i)
         .collect();
 

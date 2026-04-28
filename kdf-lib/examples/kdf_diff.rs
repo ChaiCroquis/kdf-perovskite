@@ -11,7 +11,7 @@
 //!
 //! Run: cargo run --example kdf_diff
 
-use kdf::{cosine_similarity, Kdf, KdfResult, Layer};
+use kdf::{Kdf, KdfResult, Layer, cosine_similarity};
 use std::collections::HashSet;
 
 /// Result of differential analysis between two KDF snapshots

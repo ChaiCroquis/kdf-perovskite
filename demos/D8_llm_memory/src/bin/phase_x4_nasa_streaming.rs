@@ -560,11 +560,19 @@ fn main() {
     println!();
     let best_streaming = c1.max(c2).max(c3).max(c4);
     if best_streaming > c0 + 0.005 {
-        println!("- ✅ **streaming 動的制御が C0 static を +{:.4} 上回る** → Claim 14/25/27-32 の streaming scenario での value proposition が empirical に validated", best_streaming - c0);
+        println!(
+            "- ✅ **streaming 動的制御が C0 static を +{:.4} 上回る** → Claim 14/25/27-32 の streaming scenario での value proposition が empirical に validated",
+            best_streaming - c0
+        );
     } else if (best_streaming - c0).abs() <= 0.005 {
-        println!("- ⚠️ **streaming 動的制御は C0 static と同等**(Δ ≤ 0.005)→ NASA log の時系列特性では rare error がほぼ均等分布のため、decay / activation の benefit が出ない可能性");
+        println!(
+            "- ⚠️ **streaming 動的制御は C0 static と同等**(Δ ≤ 0.005)→ NASA log の時系列特性では rare error がほぼ均等分布のため、decay / activation の benefit が出ない可能性"
+        );
     } else {
-        println!("- ❌ **streaming 動的制御が C0 static を下回る(Δ={:.4})** → streaming-aware ranking が rare error を先に捨ててしまう、F-069/F-071 と同じ pattern の generalization", best_streaming - c0);
+        println!(
+            "- ❌ **streaming 動的制御が C0 static を下回る(Δ={:.4})** → streaming-aware ranking が rare error を先に捨ててしまう、F-069/F-071 と同じ pattern の generalization",
+            best_streaming - c0
+        );
     }
     println!();
     println!("F-025 基準値(NASA-HTTP 実データ static KDF baseline): 0.237、Random 0.102");

@@ -136,7 +136,7 @@ fn kdf_textsim_select(
     text_rare: &[f64],
     keep: usize,
 ) -> HashSet<u32> {
-    use cgb_kdf::framework::multimodal::{select_top_k_multi_modal, MultiModalWeights};
+    use cgb_kdf::framework::multimodal::{MultiModalWeights, select_top_k_multi_modal};
     use cgb_kdf::{Layer, NodeClassifier};
     let mut c = NodeClassifier::default();
     let class = c.classify(n, edges);
@@ -174,10 +174,10 @@ fn session_recall(
     }
     let mut sessions_hit: HashSet<String> = HashSet::new();
     for &i in sel {
-        if let Some(row) = flat.get(i as usize) {
-            if answer_sessions.contains(&row.0) {
-                sessions_hit.insert(row.0.clone());
-            }
+        if let Some(row) = flat.get(i as usize)
+            && answer_sessions.contains(&row.0)
+        {
+            sessions_hit.insert(row.0.clone());
         }
     }
     sessions_hit.len() as f64 / answer_sessions.len() as f64

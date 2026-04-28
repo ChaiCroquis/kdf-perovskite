@@ -1,6 +1,6 @@
 //! Basic usage example for KDF
 
-use kdf::{cosine_similarity, Kdf};
+use kdf::{Kdf, cosine_similarity};
 
 fn main() {
     println!("=== KDF Basic Usage Example ===\n");

@@ -2,7 +2,7 @@
 //!
 //! Enables running KDF directly in the browser
 
-use kdf::{cosine_similarity, euclidean_similarity, levenshtein_similarity, Kdf};
+use kdf::{Kdf, cosine_similarity, euclidean_similarity, levenshtein_similarity};
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
