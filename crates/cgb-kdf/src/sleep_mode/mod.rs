@@ -17,7 +17,6 @@ mod context;
 mod cooling;
 mod entropy_cache;
 mod optimizer;
-mod rng;
 
 #[cfg(test)]
 mod tests;

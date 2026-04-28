@@ -8,7 +8,7 @@
 // Module declarations
 mod engine;
 mod precomputed;
-mod rng;
+pub(crate) mod rng;
 mod types;
 
 // Re-exports

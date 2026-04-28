@@ -2,11 +2,12 @@
 
 use std::collections::HashMap;
 
+use crate::fingerprint::rng::SimpleRng;
 use crate::interning::NodeIdMap;
 
 use super::{
     context::NodeMoveContext, cooling::AdaptiveCoolingScheduler,
-    entropy_cache::IncrementalEntropyCache, rng::SimpleRng,
+    entropy_cache::IncrementalEntropyCache,
 };
 
 /// NREM optimization result

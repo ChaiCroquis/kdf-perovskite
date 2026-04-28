@@ -7,6 +7,7 @@
 
 use std::collections::{HashMap, HashSet};
 
+use super::fingerprint::rng::SimpleRng;
 use super::fingerprint::{Fingerprint, NodeLabel, StructuralFingerprintEngine};
 use super::prescreening::{Candidate, OwnedPreScreeningOptimizer};
 
@@ -505,34 +506,6 @@ impl AnalogyDiscoveryEngine {
     pub fn clear_history(&mut self) {
         self.discovery_history.clear();
         self.stats = DiscoveryStats::default();
-    }
-}
-
-/// Simple deterministic RNG
-struct SimpleRng {
-    state: u64,
-}
-
-impl SimpleRng {
-    fn new(seed: u64) -> Self {
-        Self {
-            state: seed.wrapping_add(1),
-        }
-    }
-
-    fn next(&mut self) -> u64 {
-        self.state ^= self.state << 13;
-        self.state ^= self.state >> 7;
-        self.state ^= self.state << 17;
-        self.state
-    }
-
-    fn next_f64(&mut self) -> f64 {
-        (self.next() as f64) / (u64::MAX as f64)
-    }
-
-    fn next_usize(&mut self) -> usize {
-        self.next() as usize
     }
 }
 
