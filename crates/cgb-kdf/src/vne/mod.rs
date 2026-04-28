@@ -17,6 +17,7 @@
 pub mod entropy;
 pub mod matrix;
 pub mod monitor;
+pub mod sparse;
 pub mod triggered;
 pub mod types;
 

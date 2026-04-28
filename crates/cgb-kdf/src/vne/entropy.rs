@@ -1,22 +1,60 @@
 //! VNE calculation and change detection
 
 use super::matrix::{density_matrix, laplacian_matrix};
+use super::sparse;
 use super::types::{ChangeDetection, VNEResult};
 use nalgebra::SymmetricEigen;
+
+/// Switch to sparse Hutchinson + Chebyshev approximation at or above this size.
+///
+/// Below the threshold the dense `SymmetricEigen` path is used so that small
+/// graphs preserve bit-exact reproducibility (Claim 15). At and above it, the
+/// dense path's O(n³) cost (~10¹² ops at n = 10⁴) becomes infeasible online,
+/// so we trade bit-exactness for tolerance-bounded determinism (seeded RNG).
+pub const SPARSE_THRESHOLD: usize = 1000;
 
 /// Compute Von Neumann Entropy from edge list
 ///
 /// VNE = -Σ λᵢ * ln(λᵢ) where λᵢ > 0
 ///
+/// # Dispatch
+/// `node_count < `[`SPARSE_THRESHOLD`]: dense `SymmetricEigen` (bit-exact).
+/// Otherwise: [`sparse::von_neumann_entropy_sparse`] (deterministic, ≈1e-2 rel. err).
+///
 /// # Arguments
 /// * `node_count` - Number of nodes
 /// * `edges` - Edge list as (from, to, weight)
 pub fn von_neumann_entropy(node_count: usize, edges: &[(u32, u32, f64)]) -> f64 {
-    von_neumann_entropy_detailed(node_count, edges).entropy
+    if node_count < SPARSE_THRESHOLD {
+        von_neumann_entropy_dense(node_count, edges).entropy
+    } else {
+        sparse::von_neumann_entropy_sparse(node_count, edges)
+    }
 }
 
-/// Compute detailed VNE result including eigenvalues and spectral gap
+/// Compute detailed VNE result including eigenvalues and spectral gap.
+///
+/// On the sparse path (`node_count >= `[`SPARSE_THRESHOLD`]) eigenvalues and
+/// `spectral_gap` are not computed — those fields are left empty / zero.
+/// `num_components` is recovered via union-find on the edge list.
 pub fn von_neumann_entropy_detailed(node_count: usize, edges: &[(u32, u32, f64)]) -> VNEResult {
+    if node_count < SPARSE_THRESHOLD {
+        von_neumann_entropy_dense(node_count, edges)
+    } else {
+        VNEResult {
+            entropy: sparse::von_neumann_entropy_sparse(node_count, edges),
+            eigenvalues: Vec::new(),
+            spectral_gap: 0.0,
+            num_components: sparse::count_components(node_count, edges),
+        }
+    }
+}
+
+/// Dense VNE via full eigendecomposition. O(n³) — caller is responsible for
+/// invoking only on small graphs (see [`SPARSE_THRESHOLD`]). Exposed so the
+/// precision test and benchmark example can compare against it directly,
+/// bypassing the dispatch in [`von_neumann_entropy_detailed`].
+pub fn von_neumann_entropy_dense(node_count: usize, edges: &[(u32, u32, f64)]) -> VNEResult {
     if node_count == 0 {
         return VNEResult::empty();
     }

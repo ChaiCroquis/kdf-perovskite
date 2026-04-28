@@ -8,6 +8,9 @@ license-file = "../../LICENSE"
 [dependencies]
 # Linear Algebra (固有値計算)
 nalgebra = "0.33"
+# Sparse linear algebra for VNE on n >= 1000 (Hutchinson + Chebyshev,
+# avoids dense O(n³) eigendecomposition). Apache-2.0, matches nalgebra.
+nalgebra-sparse = "0.10"
 # Parallelism (Step 2/3 hotspot parallelization for apply_edge_decay and batch_compute)
 rayon = { workspace = true }
 # RNG (deterministic, defensible).
