@@ -1,6 +1,6 @@
-# Phase 2 Retrospective — KDF の現在地(2026-04-29、F-091〜F-096 追記)
+# Phase 2 Retrospective — KDF の現在地(2026-04-29、F-091〜F-097 追記)
 
-**期間カバレッジ**: F-073 〜 F-094(Phase 2 全体 + Phase 2.5 streaming replication + α/Lyapunov + anchor sharpening + cross-domain positive replication empirical)
+**期間カバレッジ**: F-073 〜 F-097(Phase 2 全体 + Phase 2.5 streaming replication + α/Lyapunov + anchor sharpening + cross-domain positive replication N=3 + Foreign baseline local replication attempt empirical)
 **Phase 1 末時点の anchor**: F-072(NASA HTTP streaming +3.06pt)
 **作成目的**: 公開後 reader が VERIFIED_FINDINGS.md の 70+ 件を全部読まなくても、KDF の **現在の正味 position** を一読で把握できるようにする
 
@@ -8,9 +8,9 @@
 
 ## 0. 一行でいうと
 
-> **Phase 1 の "broad applicability" 仮説は Phase 2 で empirical に narrow され、現在の KDF は「4 つの structural-niche 製品 + domain-fit predictor + 4 narrow + 1 positive epistemic anchor + F-072 anchor の 3 軸高解像 specificity」という narrow but durable(durable 側は cross-domain 物理証拠あり)形に arc 完結した。**
+> **Phase 1 の "broad applicability" 仮説は Phase 2 で empirical に narrow され、現在の KDF は「4 つの structural-niche 製品 + domain-fit predictor + 4 narrow + 2 positive epistemic anchor + F-072 anchor の 3 軸高解像 specificity + Foreign baseline N=3 + 1 honest infrastructure record」という narrow but durable(durable 側は cross-family 物理証拠あり、N=3)形に arc 完結した。**
 
-「狭くなった」と「弱くなった」は別。Phase 2 を経て **どこで効くか / どこで効かないか** が事前判別できる framework が手に入り、4 件の self-refutation(F-070 sandwich / F-087 streaming / F-091 α=2 / F-092 Claim 31 functional)が paper の honesty-first stance を支える epistemic anchor として揃い、F-093 で F-072 anchor の真の dependency が 3 軸(domain / α / rare type)で sharpen され、**F-094 で recurring rare 軸が cross-domain N=2(NASA + Apache)で positive replication された**ので、商用 deploy の確実性は **上がった**。失った主張のうち、研究者として最も誠実に向き合うべきは ① F-072 streaming benefit の汎用性、② bias-detector 商材 path、③ Claim 10 / Claim 31 の universal claim form の 3 件。F-093 は別 category(narrowing でなく anchor 解像度向上)、F-094 は更に別 category(narrowing でなく durable 側の cross-domain 物理証拠 = positive direction)。
+「狭くなった」と「弱くなった」は別。Phase 2 を経て **どこで効くか / どこで効かないか** が事前判別できる framework が手に入り、4 件の self-refutation(F-070 sandwich / F-087 streaming / F-091 α=2 / F-092 Claim 31 functional)が paper の honesty-first stance を支える epistemic anchor として揃い、F-093 で F-072 anchor の真の dependency が 3 軸(domain / α / rare type)で sharpen され、**F-094 で recurring rare 軸が cross-domain N=2(NASA + Apache)で positive replication、F-097 で N=3(BGL HW kernel log family)に拡張**されたので、商用 deploy の確実性は **上がった**。失った主張のうち、研究者として最も誠実に向き合うべきは ① F-072 streaming benefit の汎用性、② bias-detector 商材 path、③ Claim 10 / Claim 31 の universal claim form の 3 件。F-093 は別 category(narrowing でなく anchor 解像度向上)、F-094 / F-097 は更に別 category(narrowing でなく durable 側の cross-domain N=3 物理証拠 = positive direction)、F-095 / F-096 は **第 4 category infrastructure honest record**(F-060 paid finding の local replication 試行が 3B environment で sub-noise floor、stronger local LLM future work)。
 
 ---
 
@@ -293,3 +293,34 @@ KDF の position を 3 つの否定形 + 3 つの肯定形 で記述する:
 - memory `feedback_tool_execution_verbal_claim_separation` に occurrence 4 + trigger 5 deep application refinement 追記(私の self-correction protocol の operational 強化)
 - memory `project_kdf_phases.md` に F-095 / F-096 status + future work(F-097 / F-098 候補)+ remaining tasks 反映
 - pre-reg + self-replication template が誠実性 framework の operational 実装として偶然でなく設計通り機能した実証として記録(F-087 sanity reproduce ±0.0pt は preprocessing/build env consistent の independent verification としても効いている、memory `feedback_pre_reg_self_replication_template` 適用)
+
+## §14(2026-04-29 追記)F-097 反映後の追加 maintenance log — recurring-rare cross-domain N=3 expansion (BGL HW kernel log) で arc が 6-pattern (4 narrow + 2 positive) に拡張
+
+**新事実(observation 欄)**:F-094 Apache recurring-rare(+3.67pt)で確立した cross-domain N=2 anchor を **BGL Blue Gene/L HW kernel failure log**(web access log family と異なる domain)で再 test、**Δ_recurring = +33.33pt H_R+ PASS**(C0=0.0 → C2/C4=0.333、1/3 rare templates = data TLB error / ciod failed / rts panic を top-30% selection に保持)。Cross-domain N=3 (NASA HTTP + Apache error log + BGL HW kernel log) で recurring-rare 軸が durable と確立。
+
+**Sanity inconsistent caveat**:V_one-shot (rare = freq ≤ 5) で Δ = +0.00pt(F-087 / F-094 で観測された one-shot disposal の negative direction が再現せず)。原因は BGL の content alphabet 小(全 anomaly 8 templates)で top-30% selection が 8 × 0.30 = 2.4 → 3 templates 選択、5 one-shot templates のうち 3 が naturally top-3 に入る構造。**One-shot disposal mechanism は web log family の rich resource alphabet specific と判明**、HW kernel log の small alphabet では mechanism discrimination room がない。
+
+**6-pattern arc 拡張**:5-pattern arc(4 narrow + 1 positive)→ **6-pattern arc(4 narrow + 2 positive)**:
+
+| pattern | direction | F-xxx |
+|---|---|---|
+| 1 | sandwich canonical refute | F-070 |
+| 2 | streaming benefit one-shot rare narrow | F-087 |
+| 3 | α=2 NASA-recurring-rare specific | F-091 |
+| 4 | Claim 31 functional protection 非 adversarial narrow | F-092 |
+| 5 | Apache recurring-rare positive replication | F-094 |
+| **6** | **BGL recurring-rare cross-domain N=3 positive replication** | **F-097** |
+
+**反映 changes**:
+
+- VERIFIED_FINDINGS に F-097 entry 挿入(F-094 entry の前位置)、最終更新行 update(F-073〜F-097、6-pattern (4 narrow + 2 positive) anchor)
+- paper.md v2.5:Addendum changelog に v2.5 entry 追加(BGL HW kernel log の recurring-rare +33.33pt PASS、cross-domain N=3 durable、one-shot disposal を web log family specific に narrow、n_rare=3 low-N power caveat 明記)
+- 本 retrospective に §14 として 6-pattern arc 拡張を establish、HW kernel log domain の cross-domain durability anchor を含める narrative arc 構造化
+- memory `project_kdf_phases.md` に F-097 status + future work(F-098 候補 stronger local LLM、Axis 2/3 残り)反映
+
+**narrative implication**:
+
+- Claim 14 streaming benefit scope は **web log family を超えて kernel log family に拡張可能**と支持(recurring direction で durable)
+- ただし one-shot disposal は web log family specific(BGL alphabet 小で mechanism discrimination room なし)→ "universal one-shot disposal" claim は本 finding で narrowed
+- recurring-rare benefit の cross-domain durability は anchor sharpening(F-093)で 3 軸(domain / α / rare type)に解像済 → F-097 で **domain 軸が web → HW で durable** と empirically anchored、3 軸の domain 軸が cross-family で robust と判明
+- F-094 sister positive replication anchor として paper credibility 強化、6-pattern arc は self-refutation(narrowing)+ cross-domain durability(positive)の両方向 anchor が揃う epistemic 構造

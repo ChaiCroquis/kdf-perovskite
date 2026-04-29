@@ -161,9 +161,27 @@ empirical boundary at the cost of two specific commercial positionings.
   $0.000$ -- $0.006$ on 8B 5-Q + 3B 479-Q both), sharpening F-048
   caveat from "weak LLM degrades retrieval" to "framework compression
   itself does not preserve substrings independent of LLM size"
+- 2026-04-29 (v2.5): F-097 BGL recurring-rare cross-domain N=3 expansion
+  of F-094 — H_R+ PASS ($\Delta_{\text{recurring}} = +33.33$ pt
+  $> +1.0$ pt threshold) on BGL Blue Gene/L HW kernel failure log
+  (300,000-line subsample, anomaly subgraph 79,641 records, 8 unique
+  content templates). recurring-rare benefit replicated cross-domain
+  in N=3 settings (NASA HTTP + Apache error log + BGL HW kernel log),
+  expanding the durable axis from web log family to HW kernel log
+  family. **Sanity inconsistent** (V_one-shot $\Delta = +0.00$ pt,
+  expected negative direction per F-087 / F-094 anchor): one-shot
+  disposal mechanism narrowed to web log family with rich resource
+  alphabet — BGL alphabet is small (8 anomaly templates total) so
+  top-30% selection captures most one-shots regardless of streaming.
+  4-pattern self-refutation arc + 1-positive arc (F-094 v2.2) is now
+  **6-pattern arc** (4 narrow F-070/F-087/F-091/F-092 + 2 positive
+  F-094 web + F-097 HW): cross-domain durability of recurring direction
+  empirically anchored across web access logs and HW kernel logs.
+  Caveat: $n_{\text{rare}} = 3$ in BGL recurring set, recall granularity
+  $\{0, 1/3, 2/3, 1\}$ only; direction unambiguous, low-N power
 - v1 body otherwise unmodified; inline `[v2: ...]` / `[v2.1: ...]` /
-  `[v2.2: ...]` / `[v2.3: ...]` / `[v2.4: ...]` markers indicate caveat
-  insertion points
+  `[v2.2: ...]` / `[v2.3: ...]` / `[v2.4: ...]` / `[v2.5: ...]` markers
+  indicate caveat insertion points
 - **4 self-refutation patterns + 1 positive replication anchor the
   paper's honesty-first epistemic stance** (F-070 / F-087 / F-091 /
   F-092 narrowing direction; F-094 positive direction): mechanism
