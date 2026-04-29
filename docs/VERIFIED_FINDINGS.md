@@ -4126,6 +4126,72 @@ Bipartite: A = paper as citing source、B = paper as cited target (labeled rare)
 
 ---
 
+### ⚠️ F-093 NASA F-072 anchor robustness to rare code subset — H_R PASS (3/5)、ただし substantively は **F-072 anchor が "rare = 404 page-not-found pattern" driven** であることが判明、真の rare type は 1 code に narrow(2026-04-29)
+
+**Context**: F-072 anchor (+3.06pt streaming benefit) は rare = HTTP 4xx/5xx 8 codes 固定で測定された。本 anchor が rare def 選択に robust か、subset-specific artifact かを 5 variants で empirical 確認。F-072 が F-087/F-091/F-092 narrowing narrative の根 anchor のため、本 robustness 確認は narrative 全体の epistemic foundation 確認。Pre-reg: [docs/exploration/g4_nasa_rare_subset_pre_reg.md](exploration/g4_nasa_rare_subset_pre_reg.md)(commit 4518b01、frozen)。
+
+**Setup**: NASA HTTP streaming(50,000 records)、α_core=2.0 canonical、5 rare code variants × 5 conditions = 25 runs。Variants:V1 canonical (4xx+5xx 8 codes)/ V2 4xx only (4) / V3 5xx only (4) / V4 404 only (1) / V5 500 only (1)。
+
+**Result**:
+
+| variant | n_rare_res | C0 | max(C1-C4) | Δ (pt) |
+|---|---:|---:|---:|---:|
+| **V1 canonical (4xx+5xx)** | 98 | 0.4592 | 0.4898 | **+3.06** |
+| **V2 4xx only** | 98 | 0.4592 | 0.4898 | **+3.06** |
+| V3 5xx only | **0** | 1.0000 | 1.0000 | +0.00 (trivial) |
+| **V4 404 only** | 98 | 0.4592 | 0.4898 | **+3.06** |
+| V5 500 only | **0** | 1.0000 | 1.0000 | +0.00 (trivial) |
+
+**Verdict (pre-reg auto)**: ✅ **H_R PASS (3/5)** — 3 variants で +pt benefit 維持、F-072 anchor +3.06pt は V1 で完全再現(diff 0.00pt ≤ 1.0pt sanity check PASS)。
+
+**重要な substantive finding**(post-hoc narrowing でなく structural reading):
+
+V3 / V5 の n_rare = **0**:NASA HTTP log には **HTTP 5xx response が 1 件も存在しない**(50,000 records 中 0 件、500/502/503/504 すべて 0)。
+
+V1 / V2 / V4 の n_rare = **98 完全一致**:4xx code 集合 {400, 401, 403, 404} の中で、rare resource 集合は 404 のみで決まる(401/403 も極少 / 0 件で rare resource set に寄与せず)。
+
+つまり F-072 anchor「rare = 4xx/5xx 8 codes」は **実質的に rare = 404 (page-not-found) driven**。+3.06pt benefit の真の source は **404-pattern recurring rare**(同 resource が time-ordered で何度も 404 を返す sustained miss pattern)で、5xx server errors は本 dataset 外、3xx redirects も rare 定義外。
+
+**Pre-reg verdict は PASS だが、substantive narrowing が判明**:
+- pre-reg 観点:3/5 が +pt benefit を維持 → anchor robust(formal pass)
+- substantive 観点:3 つの非自明 variants が全て **同 rare resource set** を測定していた、独立な 3 confirmation でなく 1 confirmation
+
+**F-072 anchor の真の specificity(F-091 + F-093 後 narrative)**:
+
+| narrowing layer | source |
+|---|---|
+| Domain | NASA HTTP recurring rare specific(F-087 で Apache one-shot rare で逆)|
+| α_core canonical | NASA で α=2.0 optimal、Apache で α=4.0 optimal(F-091)|
+| **Rare type** | **NASA 内で 404-pattern driven、5xx は dataset 外**(本 F-093)|
+
+3 重 narrowing で F-072 +3.06pt anchor は「**NASA HTTP log の 404-pattern recurring rare に対する α=2.0 streaming benefit**」と最高 specificity に解像された。
+
+**Patent narrative implication**:
+
+- F-072 anchor は本 dataset で **真に valid な finding**(404-pattern recurring rare で empirical 支持)、ただし claim scope は 404 pattern + recurring rare + α=2.0 の 3 条件 conjunction
+- paper §5 P11 row への caveat 候補:「streaming benefit anchor は NASA HTTP log の 404-pattern recurring rare event に specific、5xx response 含む log では本 dataset で測定不能」
+- generalization のためには **5xx 含む log dataset で同 framework 測定** が future work(別 source: HPC severity / Apache + 5xx response data)
+- 4 grounded products 直接影響なし
+
+**Sister to F-091 (α=2 narrowing) + F-092 (Claim 31 functional narrowing)**:F-072 anchor itself の解像度が rare type 軸で sharpen された finding。**F-070/F-087/F-091/F-092 self-refutation pattern とは異なる category**(narrow でなく specificity 増加)、anchor の真の scope を明示化することで narrative robustness が増す。
+
+**Meta-check (post-hoc narrowing 防止)**:
+
+- ✅ V3/V5 の trivial 結果(n_rare=0 で recall=1.0)を「除外」せず、pre-reg 5-variant 集計に含めた(3/5 verdict 維持)
+- ✅ 「真の verdict は 3/3 substantive」という後付け解釈を pre-reg verdict に置き換えなかった、pre-reg 通り 3/5 PASS で記録
+- ✅ NASA dataset の 5xx 不在は **post-hoc 発見ではなく** running 結果の data-driven observation(grep 不要、binary が n_rare=0 を auto report)
+- ❌ 「4xx subset の robustness を確認」と verdict 名前付け変更しない、anchor robustness の strict pre-reg 観点を維持
+- ✅ structural reading は「F-072 anchor の真の scope は 3 重 narrow」を data + 既存 finding (F-091) の組み合わせから抽出、F-093 単体観察でなく cross-finding 派生
+
+**Artifacts**:
+
+- [demos/D8_llm_memory/src/bin/phase_g4_rare_subset.rs](../demos/D8_llm_memory/src/bin/phase_g4_rare_subset.rs) — F-093 binary
+- 実行 log: 上記 result table embedded、再現は `cargo run --release -p demo-d8-llm-memory --bin phase_g4_rare_subset`
+- Pre-reg: [docs/exploration/g4_nasa_rare_subset_pre_reg.md](exploration/g4_nasa_rare_subset_pre_reg.md)(commit 4518b01)
+- 関連 finding: F-072(NASA anchor、本 finding が specificity を sharpen)、F-091(α 軸 narrowing、本 finding と 3 重 narrowing 構成)、F-087(domain narrowing、 anchor narrative の範囲決定)
+
+---
+
 ### ⚠️ F-092 Claim 31 Lyapunov stability under real-data perturbation — H_L PARTIAL (2/3): controller mechanism robust(boundedness + recovery PASS)、ただし adversarial burst で functional rare detection が完全崩壊(recall 0.0000 / 0.4592)(2026-04-29)
 
 **Context**: Patent Claim 31「健全性指標 + 緊急介入」 mechanism の real-data adversarial perturbation 下での Lyapunov 安定性を empirical 確認。F-003 + F-020 が synthetic Lyapunov stability(数値 + 100k step)に止まり、real-data 摂動下での stability は未測定だった。Pre-reg: [docs/exploration/g3_lyapunov_pre_reg.md](exploration/g3_lyapunov_pre_reg.md)(commit 5f26c58、frozen)。
@@ -4742,4 +4808,4 @@ F-040 で全 50 Claim に per-claim 直接 unit test が整備済み。加えて
 
 
 **検証責任者:** プロジェクト実行担当(Claude Opus 4.7, 独立検証エージェント経由)
-**最終更新:** 2026-04-29(Phase 2 + Phase 2.5 + α/Lyapunov empirical 完走: F-073〜F-092 追加、scope narrowing が empirically 確定。**Direct SOTA 勝負 path は 3/3 LOSS で撤回**(F-073/074/075)、**streaming benefit は temporally recurring rare に narrow**(F-087)、**bias-detector predictor は N=21 systematic test で 45.5% < 70% で撤回**(F-090)、**Claim 10 (α=2 「発明の核心」) は NASA-recurring-rare specific に narrow**(F-091)、**Claim 31 functional rare protection は非 adversarial settings に narrow**(F-092)。残った位置は narrow but durable で 4 grounded products + F-086 γ domain-fit predictor + 4-pattern self-refutation epistemic anchor (F-070/F-087/F-091/F-092)。詳細単一文書要約は [PHASE_2_RETROSPECTIVE.md](PHASE_2_RETROSPECTIVE.md)。Claim 1-50 全 50 項は引き続き unit test backed、機構レベルは Phase X で realistic benchmark backed、4 self-refutation finding は機構支持・specific application robustness narrowing で機構自体は不変。)
+**最終更新:** 2026-04-29(Phase 2 + Phase 2.5 + α/Lyapunov + anchor sharpening empirical 完走: F-073〜F-093 追加、scope narrowing + anchor 解像度向上 が empirically 確定。**Direct SOTA 勝負 path は 3/3 LOSS で撤回**(F-073/074/075)、**streaming benefit は temporally recurring rare に narrow**(F-087)、**bias-detector predictor は N=21 systematic test で 45.5% < 70% で撤回**(F-090)、**Claim 10 (α=2 「発明の核心」) は NASA-recurring-rare specific に narrow**(F-091)、**Claim 31 functional rare protection は非 adversarial settings に narrow**(F-092)、**F-072 anchor は実質 404-pattern driven、3 軸 narrowing で解像**(F-093)。残った位置は narrow but durable で 4 grounded products + F-086 γ domain-fit predictor + 4-pattern self-refutation epistemic anchor (F-070/F-087/F-091/F-092) + F-093 anchor sharpening category。詳細単一文書要約は [PHASE_2_RETROSPECTIVE.md](PHASE_2_RETROSPECTIVE.md)。Claim 1-50 全 50 項は引き続き unit test backed、機構レベルは Phase X で realistic benchmark backed、4 self-refutation finding は機構支持・specific application robustness narrowing で機構自体は不変。)

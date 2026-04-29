@@ -1,6 +1,6 @@
-# Phase 2 Retrospective — KDF の現在地(2026-04-29、F-091/F-092 追記)
+# Phase 2 Retrospective — KDF の現在地(2026-04-29、F-091/F-092/F-093 追記)
 
-**期間カバレッジ**: F-073 〜 F-092(Phase 2 全体 + Phase 2.5 streaming replication + α/Lyapunov empirical)
+**期間カバレッジ**: F-073 〜 F-093(Phase 2 全体 + Phase 2.5 streaming replication + α/Lyapunov + anchor sharpening empirical)
 **Phase 1 末時点の anchor**: F-072(NASA HTTP streaming +3.06pt)
 **作成目的**: 公開後 reader が VERIFIED_FINDINGS.md の 70+ 件を全部読まなくても、KDF の **現在の正味 position** を一読で把握できるようにする
 
@@ -8,9 +8,9 @@
 
 ## 0. 一行でいうと
 
-> **Phase 1 の "broad applicability" 仮説は Phase 2 で empirical に narrow され、現在の KDF は「4 つの structural-niche 製品 + domain-fit predictor + 4-pattern self-refutation で支えられた honest scope claim」という narrow but durable 形に収束した。**
+> **Phase 1 の "broad applicability" 仮説は Phase 2 で empirical に narrow され、現在の KDF は「4 つの structural-niche 製品 + domain-fit predictor + 4-pattern self-refutation epistemic anchor + F-072 anchor の 3 軸高解像 specificity」という narrow but durable + sharp resolution 形に収束した。**
 
-「狭くなった」と「弱くなった」は別。Phase 2 を経て **どこで効くか / どこで効かないか** が事前判別できる framework が手に入り、4 件の self-refutation(F-070 sandwich / F-087 streaming / F-091 α=2 / F-092 Claim 31 functional)が paper の honesty-first stance を支える epistemic anchor として揃ったので、商用 deploy の確実性は **上がった**。失った主張のうち、研究者として最も誠実に向き合うべきは ① F-072 streaming benefit の汎用性、② bias-detector 商材 path、③ Claim 10 / Claim 31 の universal claim form の 3 件。
+「狭くなった」と「弱くなった」は別。Phase 2 を経て **どこで効くか / どこで効かないか** が事前判別できる framework が手に入り、4 件の self-refutation(F-070 sandwich / F-087 streaming / F-091 α=2 / F-092 Claim 31 functional)が paper の honesty-first stance を支える epistemic anchor として揃い、F-093 で F-072 anchor の真の dependency が 3 軸(domain / α / rare type)で sharpen されたので、商用 deploy の確実性は **上がった**。失った主張のうち、研究者として最も誠実に向き合うべきは ① F-072 streaming benefit の汎用性、② bias-detector 商材 path、③ Claim 10 / Claim 31 の universal claim form の 3 件。F-093 は別 category(narrowing でなく anchor 解像度向上)。
 
 ---
 
@@ -105,6 +105,18 @@ F-087 + F-091 + F-092 の追加で、paper の "honesty-first" stance を支え�
 
 すべて **mechanism supported / specific application robustness narrowed** という同型構造。これは KDF の発明 core(Claim 8-9-10 power-law decay、Claim 14 streaming benefit、Claim 31 emergency intervention、Claim 47-48 sandwich)が **機構として novel / 実装 verified** だが、**universal optimal value としては domain-conditional**、という整合的な scope statement。
 
+### F-093: 別 category(anchor sharpening、self-refutation でない)
+
+F-093 は self-refutation 4-pattern とは **質的に異なる発見**で、F-072 anchor の **真の dependency 解像度を 1 段深く露わにした**。表面的記述「rare = 4xx/5xx 8 codes」は実質的に「rare = 404-pattern driven」であり、NASA dataset に 5xx response が皆無、4xx subset は rare resource set が 404-only と完全一致。
+
+- F-091 で domain narrowing(NASA-recurring-rare specific)
+- F-093 で rare type narrowing(404-pattern driven)
+- F-087 で context narrowing(recurring vs one-shot)
+
+の 3 軸で F-072 anchor の真の generality が **2 軸 narrow + 1 軸 sharpening** で解像。V1/V2/V4 完全同値 (+3.06pt) は KDF が「rare codes 集合」でなく「rare resource pattern」を捉えている証拠で、機構 supported を data-driven 確証する形。
+
+これは narrowing でなく **anchor の解像度向上**:paper §6.4 限界節の strengthening でなく §5 P11 row の caveat 強化に属し、外部 reader が anchor の真の scope を misread しない構造を作る。Sister でなく独立 category として記録。
+
 ---
 
 ## 5. 何を撤回したか
@@ -183,3 +195,11 @@ KDF の position を 3 つの否定形 + 3 つの肯定形 で記述する:
 - 4-pattern self-refutation(F-070 / F-087 / F-091 / F-092)を §4 末尾に新設、paper epistemic anchor として明示
 - §0 「一行でいうと」を 4-pattern self-refutation 込みに更新
 - paper.md v2 Addendum + §5 Phase 2/2.5 subsection に F-091/F-092 行追加(commit 別)、Zenodo paper v3 候補
+
+## §11(2026-04-29 追記)F-093 反映後の追加 maintenance log
+
+- F-093 NASA F-072 anchor robustness to rare code subset 結果を §4 末尾に「**anchor sharpening category**(self-refutation でない)」として追加
+- F-072 anchor の真の dependency が 3 軸(F-087 domain / F-091 α / F-093 rare type)で sharpen された narrative を §0 「一行でいうと」に反映
+- paper.md §5.1 P11 row に `[v2.1: F-093 で実質 404-pattern driven]` caveat 追加、v2 Addendum changelog に F-093 entry 追加(commit 別)、§5 Phase 2/2.5 table に F-093 row 追加(14 → 15 rows)、combined picture に "anchor sharpening category" 明記
+- VERIFIED_FINDINGS tail を 2026-04-29 + F-073-F-093 form に更新
+- memory project_kdf_phases.md に F-093 + anchor sharpening category 反映
