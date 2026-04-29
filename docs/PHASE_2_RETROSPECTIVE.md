@@ -325,7 +325,7 @@ KDF の position を 3 つの否定形 + 3 つの肯定形 で記述する:
 - recurring-rare benefit の cross-domain durability は anchor sharpening(F-093)で 3 軸(domain / α / rare type)に解像済 → F-097 で **domain 軸が web → HW で durable** と empirically anchored、3 軸の domain 軸が cross-family で robust と判明
 - F-094 sister positive replication anchor として paper credibility 強化、6-pattern arc は self-refutation(narrowing)+ cross-domain durability(positive)の両方向 anchor が揃う epistemic 構造
 
-## §15(2026-04-29 追記)F-099 反映後の追加 maintenance log — Router design space documentation + template `_template_pre_reg.md` 初 test case effectiveness 確認
+## §15(2026-04-29 追記)F-099 反映後の追加 maintenance log — Router design space documentation + template `_template_pre_reg.md` 初 test case **initial 運用記録**(severity 高い test は F-100+ pending)
 
 **新事実(observation 欄)**:F-060 で確立した v2 router(precision AND length≥100)の **design space を 5 cells × 3 variants = 15 evaluations で frontier mapping**、F-096 evaluate run で観測された v1 router +6.26pt exploratory observation を post-hoc replication form で documentation。
 
@@ -344,40 +344,44 @@ KDF の position を 3 つの否定形 + 3 つの肯定形 で記述する:
 
 **Interpretation**:
 
-- **v2 design 正当性 empirically anchored**:v1 standalone(precision query → KDF unconditionally)は paid setting で Mem0 >> KDF のため routing が actively harmful、v2 の length filter が **必要な safeguard** と判明
+- **v2 の length≥100 component の necessity が間接 logic で anchored**(2026-04-29 user 評価 input 反映、precision-protocol drift prevention):v1 standalone(precision query → KDF unconditionally)は paid setting で Mem0 >> KDF のため routing が actively harmful、v2 の length filter が **必要な safeguard**。**ただし precision component の独立 necessity は本 finding では立証されない** — v3(length-only)が LoCoMo cells で v2 と同一 +9.66 / +22.43pt を出すため、precision filter は length filter と redundant の可能性示唆。Precision filter の独立 necessity は F-060 design rationale 等別 anchor で評価、F-099 anchors:length component の必要性のみ
 - **v1 ≠ v2 の差は short context のみで現れる**:LoCoMo は always >100 turns で length filter discriminator として無効化、v1=v2=v3 同一値、precision filter のみ effective
 - **v1 standalone は product candidate でない**:paid で highly significant harm、local で sub-noise floor +6pt(absolute floor では meaningful gain でない)
 - **F-060 v2 published values の deterministic reproducibility** が ±0.0004 tolerance で confirmed、paper §5 published numerics の信頼性 backed
 - **independent v1 verification(fresh paid data)は F-100+ deferred**、本 finding は post-hoc characterization
 
-**Template `_template_pre_reg.md` 初 test case effectiveness**:
+**Template `_template_pre_reg.md` 初 test case initial 運用記録**(2026-04-29 user 評価 input 反映で premature confirmation 警戒):
 
-Direction A occurrence 1-4(`feedback_tool_execution_verbal_claim_separation` memory)で trigger 5 protocol が body memory 依存で 4 連続 fail した後、user input(2026-04-29 post-F-097 評価)で **「protocol を覚える」より「protocol を template に埋め込む」design** に移行。本 F-099 は template 初 test case で以下を empirically confirm:
+Direction A occurrence 1-4(`feedback_tool_execution_verbal_claim_separation` memory)で trigger 5 protocol が body memory 依存で 4 連続 fail した後、user input(2026-04-29 post-F-097 評価)で **「protocol を覚える」より「protocol を template に埋め込む」design** に移行。本 F-099 は template **initial 運用** evidence:
 
-| §0 sub-section | 物理化対象 | F-099 での catch | effectiveness |
+| §0 sub-section | 物理化対象 | F-099 での catch | severity 評価 |
 |---|---|---|---|
-| §0.1 Anchor constraint deep application | trigger 5 物理化 | wall-clock anchor(post-hoc deterministic、no LLM)を明確 identification、F-095 の wall-clock 過大評価 pattern を構造的に prevent | ✅ confirmed |
-| §0.2 Frozen specification | post-hoc narrowing 禁止 | threshold ±2pt 事前固定、結果見て緩和不可能な checkbox state | ✅ confirmed |
-| §0.3 Observation/interpretation 分離 | observation_vs_interpretation 物理化 | post-hoc 性質を §1 で明示、「fresh discovery」narrative drift を構造的 prevent | ✅ confirmed |
-| §0.4 Segment split | recommendation_boundary 物理化 | post-hoc deterministic の private nature 明示、user push 不要 | ✅ confirmed |
+| §0.1 Anchor constraint deep application | trigger 5 物理化 | wall-clock anchor(post-hoc deterministic、no LLM)を明確 identification | **self-evident**(F-095 type estimation severity なし)|
+| §0.2 Frozen specification | post-hoc narrowing 禁止 | threshold ±2pt 事前固定 | **self-evident**(post-hoc deterministic で緩和 motivation 元々低い)|
+| §0.3 Observation/interpretation 分離 | observation_vs_interpretation 物理化 | post-hoc 性質を §1 で明示 | **mild severity**(narrative drift risk あり、F-096 explicit reference で natural)|
+| §0.4 Segment split | recommendation_boundary 物理化 | private nature 明示 | **self-evident** |
 
-→ template の §0 checkbox 群が 4 trigger 全部を catch する fail-safe として機能、Direction A occurrence 5 を **structurally prevent**(body memory 依存しない)。memory `feedback_tool_execution_verbal_claim_separation` の operational form として確立。
+→ 4 sub-section の §0 catches は **self-evident pattern のみ確認**、template が severity 高い failure pattern(LLM bench wall-clock / apples-to-apples 判定 / framework behavior compression 等、occurrence 1-4 起源)を catch する能力は **F-099 では test されていない**。「Direction A occurrence 5 を structurally prevent」と書くと「F-099 で立証済」と誤読 risk(精度的に inaccurate)。
+
+**正確な state**:F-099 で template が **non-failure 動作** することは initial 運用 evidence として確認、structural prevention 能力は **F-100+ severity 高い test case で本格 verify** 要(F-098 stronger local LLM 候補が GPU bench severity + ill-formed hypothesis risk を natural に含むため、第 2 test case の自然な候補)。
+
+memory `feedback_tool_execution_verbal_claim_separation` の operational form として **形は完成**、ただし **effectiveness 確証は initial 運用 evidence 段階 + 第 2 test case pending**。
 
 **反映 changes**:
 
 - VERIFIED_FINDINGS に F-099 entry 挿入(F-097 entry の前位置)、最終更新行 update(F-073〜F-099)
 - paper.md v2.6 entry 追加(v1 router characterization、v2 design 正当性 anchor、template 初 test case mention)
-- 本 retrospective に §15 として Router design space frontier mapping + template effectiveness 確認 record establish
+- 本 retrospective に §15 として Router design space frontier mapping + template **initial 運用記録**(severity 高い test は F-100+ pending)establish
 - memory `feedback_tool_execution_verbal_claim_separation` に operational form section 追加(F-099 lessons learned 含む)
 - memory `project_kdf_phases.md` に F-099 status + template integration 反映
 
 **6-pattern arc 不変**(F-099 は別 epistemic category):
 
-F-099 は self-refutation でも cross-domain positive replication でもない、**Router design space documentation + template operational verification** の別 category。F-093(anchor sharpening)+ F-095/F-096(infrastructure honest record)と同 level の **5th category**(router design space frontier mapping + template effectiveness anchor)に位置。
+F-099 は self-refutation でも cross-domain positive replication でもない、**Router design space documentation + template initial 運用記録**(severity 高い test は F-100+ pending)の別 category。F-093(anchor sharpening)+ F-095/F-096(infrastructure honest record)と同 level の **5th category**(router design space frontier mapping + template initial 運用 anchor)に位置。
 
 **narrative implication**:
 
 - **Mem0 hybrid Router の commercial path は v2 design 一択**、v1 / v3 は研究記録 only(product candidate でない)
 - **Router design space が完全 documented**、PCT consult input として claim 範囲明確化に貢献(precision routing の AND 条件が必要 safeguard と empirically anchored)
-- **Template effectiveness が initial test case で confirmed**、今後の new finding drafting で template 強制使用、Direction A occurrence 5 の structural prevention
+- **Template initial 運用 evidence が F-099 で取得**、今後の new finding drafting で template 強制使用。Direction A occurrence 5 の structural prevention 能力は **F-100+ 第 2 test case(severity 高い LLM bench / apples-to-apples 含む)で本格 verify pending**(F-099 は low-severity initial 運用、self-evident pattern のみ catch)
 - **F-100+ candidate**:fresh paid LongMemEval で v1 independent verification(本 finding の post-hoc 性質を resolve、F-099 の "post-hoc but pre-registered" 状態を independent finding に格上げ)

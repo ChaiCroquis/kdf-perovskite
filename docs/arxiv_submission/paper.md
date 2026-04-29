@@ -167,20 +167,30 @@ empirical boundary at the cost of two specific commercial positionings.
   $p=10^{-7}$, F-059 $\Delta_{v1}=-13.00$ pt $p=10^{-10}$); H_v1_local
   REPRODUCED (F-096 LongMemEval local $\Delta_{v1}=+6.26$ pt deterministic
   post-hoc replication); Sanity 4/4 paid v2 cells match F-060 published
-  values within $\pm 0.0004$. **v2 design (precision AND length$\ge$100)
-  empirically justified**: v1 standalone is harmful in paid setting where
-  Mem0 $>>$ KDF (routes precision queries to lower performer);
-  $v_1 \neq v_2$ only on short-context (LongMemEval), demonstrating the
-  AND-conjunction safeguard. v1 is **not a product candidate** (paid hurt
-  significant, local help at sub-noise floor). Router design space now
-  fully documented (5 cells × 3 variants). **First test case of pre-reg
+  values within $\pm 0.0004$. **F-099 anchors v2's length$\ge$100
+  component necessity** (indirect logic from v1 -11/-13 pt vs v2 0 pt
+  on paid LongMemEval): without the length filter, routing precision
+  queries to KDF (the lower performer in paid setting where Mem0 $>>$
+  KDF) is actively harmful. Important caveat: **F-099 does NOT
+  establish the precision component's independent necessity** — the
+  v3 variant (length-only, no precision filter) yields identical
+  $+9.66 / +22.43$ pt gain on LoCoMo cells as v2 (precision AND length),
+  suggesting the precision filter may be redundant once the length
+  filter is satisfied on these test cells. Precision filter necessity
+  remains evaluated by other anchors (e.g., F-060 design rationale),
+  not by F-099. v1 is **not a product candidate** (paid hurt significant,
+  local help at sub-noise floor). Router design space now fully
+  documented (5 cells × 3 variants). **First test case of pre-reg
   template `_template_pre_reg.md`** (operational form of trigger 5 /
-  post-hoc narrowing / observation-interpretation / recommendation-boundary
-  protocols, introduced after Direction A occurrence 1-4 showed body
-  memory dependence as root failure mode). Template §0 checkbox group
-  caught the post-hoc nature explicitly in §0.3, prevented narrative
-  drift structurally. Independent v1 verification on fresh paid data
-  is deferred to F-100+
+  post-hoc narrowing / observation-interpretation / recommendation-
+  boundary protocols, introduced after Direction A occurrence 1-4
+  showed body memory dependence as root failure mode). F-099 is a
+  **low-severity** test case (post-hoc deterministic, no LLM, no GPU
+  bench, no apples-to-apples confusion) — §0 catches confirmed here
+  are self-evident; **structural prevention of Direction A occurrence
+  5 awaits a higher-severity F-100+ second test case** (LLM bench /
+  wall-clock estimation / framework behavior comparison). Independent
+  v1 verification on fresh paid data is also deferred to F-100+
 - 2026-04-29 (v2.5): F-097 BGL recurring-rare cross-domain N=3 expansion
   of F-094 — H_R+ PASS ($\Delta_{\text{recurring}} = +33.33$ pt
   $> +1.0$ pt threshold) on BGL Blue Gene/L HW kernel failure log

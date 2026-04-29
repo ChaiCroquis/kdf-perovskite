@@ -4032,7 +4032,7 @@ Bipartite: A = paper as citing source、B = paper as cited target (labeled rare)
 
 ---
 
-### ✅ F-099 v1 router(precision-only, no length filter)characterization across 5 cells — H_v1_paid PASS_negative(LongMemEval paid -11.60/-13.00pt p<10⁻⁷)、H_v1_local REPRODUCED、Sanity 4/4 match、v2 design 正当性 empirically anchored、template `_template_pre_reg.md` 初 test case(2026-04-29)
+### ✅ F-099 v1 router(precision-only, no length filter)characterization across 5 cells — H_v1_paid PASS_negative(LongMemEval paid -11.60/-13.00pt p<10⁻⁷)、H_v1_local REPRODUCED、Sanity 4/4 match、**v2 の length≥100 component の necessity** が間接 logic で anchored(precision component の necessity は本 finding では立証されない、v3 vs v2 比較で precision filter は length filter と redundant の可能性示唆)、template `_template_pre_reg.md` 初 test case(2026-04-29)
 
 **Pre-reg**: [docs/exploration/g10_v1_router_characterization_pre_reg.md](exploration/g10_v1_router_characterization_pre_reg.md)(commit 5cbd21d、frozen)
 **Template first test case**: [docs/exploration/_template_pre_reg.md](exploration/_template_pre_reg.md)(2026-04-29 user input、Direction A occurrence 1-4 後の operational form)
@@ -4080,7 +4080,12 @@ Full 5-cell × 3-variant table:
 
 2. **H_v1_local REPRODUCED** — F-096 +6.26pt は deterministic post-hoc replication で確認、ただし **independent verification ではない**(同 data に同 binary を流した結果、必ず一致する性質)。F-100+ で fresh paid data に v1 を test するのが independent verification の path。
 
-3. **v2 design 正当性 anchor** — v2(precision AND length≥100)は LongMemEval paid 4 cells で +0.00pt(routing 不発動で safe)、LoCoMo paid 4 cells で +9.66 / +22.43pt(routing 発動で help)。**「両条件 AND」の design rationale が v1 -11pt vs v2 0pt の対比で empirically anchored**。
+3. **v2 の length≥100 component の necessity が間接 logic で anchored**(精度を上げた wording、user 評価 input 2026-04-29 反映):
+   - v1 standalone(precision のみ、length=0)→ paid LongMemEval で **-11/-13pt highly significant harm**
+   - v2(precision AND length≥100)→ paid LongMemEval で **+0pt(routing 不発動で safe)**
+   - **対比**:length≥100 component が無いと v1 のように routing が actively harmful になる → **length component が必要不可欠**(これが本 finding で empirically backed)
+   - ただし **precision component の necessity は本 finding では立証されない**:v3(length≥100 のみ、precision 無)と v2(両条件 AND)が LoCoMo cells で同一 +9.66 / +22.43pt(F-099 raw table 参照)、precision filter は length filter と **redundant の可能性**示唆。Precision filter の独立 necessity は別 finding(F-052 / F-060 anchor 等)で別途 evaluation 要 or 未測定
+   - F-099 anchors:**length component の必要性**(間接 logic で v1 vs v2 対比から)、F-099 not anchors:precision component の独立 necessity。「v2 design 全体 justified」と書くと precision の必要性も F-099 で立証されたかのように誤読される risk(precision-protocol drift、PCT consult で claim 範囲 wording に注意)
 
 4. **LoCoMo cells で v1=v2=v3 同一** — LoCoMo conversations は always >100 turns、length filter discriminator として機能せず、precision filter のみ effective。LoCoMo 上の Δ は精密 routing decision の差でなく、precision-coverage の差で決まる。
 
@@ -4095,16 +4100,20 @@ Full 5-cell × 3-variant table:
 - Router design space frontier として v1 / v2 / v3 全 documented、PCT consult input として claim 範囲明確化に貢献
 - F-100+ candidate:fresh paid LongMemEval で v1 independent verification(本 finding の post-hoc 性質を resolve)
 
-**Template `_template_pre_reg.md` effectiveness lessons learned(occurrence 5 防止 anchor)**:
+**Template `_template_pre_reg.md` initial 運用記録(2026-04-29 user 評価 input、premature confirmation 警戒で wording 精度修正)**:
 
-本 finding は template 初使用 test case として以下を記録:
+本 finding は template **initial 運用** evidence として以下を記録(severity 高い failure pattern の structural prevention 確証は **F-100+ 第 2 test case pending**):
 
-- **§0.1 anchor constraint**:wall-clock anchor が「post-hoc deterministic、no LLM」と明確に identified、F-095 の wall-clock 過大評価のような pattern を構造的に prevent。**effectiveness confirmed**
-- **§0.2 frozen specification**:threshold ±2pt が事前固定、結果見て緩和不可能な checkbox 状態。**effectiveness confirmed**
-- **§0.3 observation/interpretation 分離**:post-hoc 性質を §1 で明示、F-096 v1 +6.26pt を「fresh discovery」と表現する narrative drift を構造的に prevent。**effectiveness confirmed**
-- **§0.4 segment split**:post-hoc deterministic の private nature を明示、user push 不要と確認。**effectiveness confirmed**
+- **§0.1 anchor constraint**:wall-clock anchor が「post-hoc deterministic、no LLM」と明確 identified。**ただし F-095 の wall-clock 過大評価のような severity 高い estimation 場面ではなく、self-evident な non-failure 確認**
+- **§0.2 frozen specification**:threshold ±2pt 事前固定、結果見て緩和不可能 state。**post-hoc deterministic で threshold 緩和 motivation 元々低く、severity 低い test**
+- **§0.3 observation/interpretation 分離**:post-hoc 性質を §1 で明示、F-096 v1 +6.26pt を「fresh discovery」narrative drift として表現する risk は structurally prevent。**mild severity test、F-096 explicit reference で natural な分離**
+- **§0.4 segment split**:post-hoc deterministic の private nature 明示、user push 不要 segment 確定。**self-evident**
 
-template の §0 checkbox 群が 4 trigger 全部を catch する fail-safe として機能、Direction A occurrence 5 を **structurally prevent**(body memory に依存しない)。memory `feedback_tool_execution_verbal_claim_separation` の operational form として確立。
+→ 4 sub-section の §0 catches は **self-evident pattern のみ確認**、template が severity 高い failure pattern(LLM bench wall-clock / apples-to-apples 判定 / framework behavior compression 等、occurrence 1-4 起源)を catch する能力は **F-099 では test されていない**。「Direction A occurrence 5 を structurally prevent」と書くと「F-099 で立証済」と誤読 risk(精度的に inaccurate)。
+
+**正確な state**:F-099 で template が **non-failure 動作** することは initial 運用 evidence として確認、structural prevention 能力は **F-100+ severity 高い test case で本格 verify** 要(F-098 stronger local LLM 候補が GPU bench severity + ill-formed hypothesis risk を natural に含むため、第 2 test case の自然な候補)。
+
+memory `feedback_tool_execution_verbal_claim_separation` の operational form として **形は完成**、ただし **effectiveness 確証は initial 運用 evidence 段階 + 第 2 test case pending**(2026-04-29 user 評価 input 反映)。
 
 **Pattern note(arc 拡張)**:
 
