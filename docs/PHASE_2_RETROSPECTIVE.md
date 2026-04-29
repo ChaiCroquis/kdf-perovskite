@@ -1,6 +1,6 @@
-# Phase 2 Retrospective — KDF の現在地(2026-04-29)
+# Phase 2 Retrospective — KDF の現在地(2026-04-29、F-091/F-092 追記)
 
-**期間カバレッジ**: F-073 〜 F-090(Phase 2 全体 + Phase 2.5 streaming replication)
+**期間カバレッジ**: F-073 〜 F-092(Phase 2 全体 + Phase 2.5 streaming replication + α/Lyapunov empirical)
 **Phase 1 末時点の anchor**: F-072(NASA HTTP streaming +3.06pt)
 **作成目的**: 公開後 reader が VERIFIED_FINDINGS.md の 70+ 件を全部読まなくても、KDF の **現在の正味 position** を一読で把握できるようにする
 
@@ -8,9 +8,9 @@
 
 ## 0. 一行でいうと
 
-> **Phase 1 の "broad applicability" 仮説は Phase 2 で empirical に narrow され、現在の KDF は「4 つの structural-niche 製品 + domain-fit predictor」という narrow but durable 形に収束した。**
+> **Phase 1 の "broad applicability" 仮説は Phase 2 で empirical に narrow され、現在の KDF は「4 つの structural-niche 製品 + domain-fit predictor + 4-pattern self-refutation で支えられた honest scope claim」という narrow but durable 形に収束した。**
 
-「狭くなった」と「弱くなった」は別。Phase 2 を経て **どこで効くか / どこで効かないか** が事前判別できる framework が手に入ったので、商用 deploy の確実性は **上がった**。失った主張のうち、研究者として最も誠実に向き合うべきは ① F-072 streaming benefit の汎用性、② bias-detector 商材 path の 2 件。
+「狭くなった」と「弱くなった」は別。Phase 2 を経て **どこで効くか / どこで効かないか** が事前判別できる framework が手に入り、4 件の self-refutation(F-070 sandwich / F-087 streaming / F-091 α=2 / F-092 Claim 31 functional)が paper の honesty-first stance を支える epistemic anchor として揃ったので、商用 deploy の確実性は **上がった**。失った主張のうち、研究者として最も誠実に向き合うべきは ① F-072 streaming benefit の汎用性、② bias-detector 商材 path、③ Claim 10 / Claim 31 の universal claim form の 3 件。
 
 ---
 
@@ -65,6 +65,45 @@ Apache error log で同 framework を再現した結果、**−13.04pt の逆向
 → paper §"streaming は真の use case" は **半分正しい**。streaming benefit は「rare が時系列上で recurring」な domain に specific、one-shot rare では actively harmful。
 
 **商業 implication**: SOC realtime anomaly detection / SIEM 系 positioning は NASA-style status-coded recurring error log のみ candidate。一般 log streaming(syslog format / Apache error / Linux audit)は scope 外と見なすべき。
+
+### Claim 10(α=2 「発明の核心」)→ NASA-recurring-rare specific(F-091)
+
+α_core ∈ {0.5, 1.0, 2.0, 3.0, 4.0} sweep を NASA + Apache streaming + MovieLens null control で実行した結果:
+
+| domain | best α | α=2.0 vs best | implication |
+|---|:---:|---:|---|
+| NASA HTTP(recurring rare) | **α=2.0** | diff 0.00pt | F-072 anchor +3.06pt 完全再現、α=2 は NASA で empirical 最適 |
+| Apache error log(one-shot rare) | **α=4.0** | diff −17.39pt | aggressive decay で streaming が static を +4.35pt 上回る、α=2 は最適でない |
+| MovieLens(static null) | (α 不感)| range 0.00pt | null control PASS、α は decay path 経由でのみ影響 |
+
+→ Claim 10 機構は支持、ただし **canonical α=2.0 は domain-universal でない**。one-shot rare では α=4.0 が optimal、F-087 narrowing(streaming は recurring rare 限定)を **further refined**:streaming は α tuning で one-shot rare にも benefit 出せる可能性、ただし α は domain-specific calibration 必要。
+
+### Claim 31(緊急介入 mechanism)→ 非 adversarial settings 限定(F-092)
+
+NASA HTTP streaming に **window 50 で rare-target 1000 events** を adversarial burst として注入、controller stability を測定:
+
+| metric | result | verdict |
+|---|---|:---:|
+| **boundedness** α_edge ∈ [1.0, 2.5] 全 100 window | 違反 0 | ✅ |
+| **recovery** w55 で baseline ±0.3 内 | diff 0.0043 | ✅ |
+| **functional** recall_perturbed / baseline ≥ 0.80 | 0.000 / 0.4592 | ❌ |
+
+→ controller stability mechanism(α bound + adaptive recovery)は real-data 摂動下で **empirical 支持**。ただし adversarial degree inflation で natural rare resources が Rare → Core layer demote → top-30% selection から漏れる。**functional rare protection 主張は narrow**:production deploy では rate limiting / provenance filter 等の defense layer が必要。
+
+---
+
+## 4-pattern self-refutation 蓄積(本 retrospective の epistemic anchor)
+
+F-087 + F-091 + F-092 の追加で、paper の "honesty-first" stance を支える self-refutation 例が **4 件 同型 pattern** で揃った:
+
+| F-xxx | 機構 | specific value / application |
+|---|:---:|:---:|
+| F-070 | Sandwich 2-threshold ✓ | canonical (θ_L, θ_U) = (0.70, 0.80) refuted |
+| F-087 | Streaming framework ✓ | "universal" claim narrowed to recurring rare |
+| F-091 | Claim 10 power-law decay ✓ | canonical α=2.0 narrowed to NASA-specific |
+| F-092 | Claim 31 controller stability ✓ | functional rare protection narrowed to non-adversarial |
+
+すべて **mechanism supported / specific application robustness narrowed** という同型構造。これは KDF の発明 core(Claim 8-9-10 power-law decay、Claim 14 streaming benefit、Claim 31 emergency intervention、Claim 47-48 sandwich)が **機構として novel / 実装 verified** だが、**universal optimal value としては domain-conditional**、という整合的な scope statement。
 
 ---
 
@@ -133,6 +172,14 @@ KDF の position を 3 つの否定形 + 3 つの肯定形 で記述する:
 直近 next step 候補(優先度順):
 
 1. arxiv_submission/paper.md §F-072 段落の F-087 narrowing 反映(corrigendum or v2)
-2. PUBLIC_SUMMARY.md の P7 bias-detector 項目を「F-090 で撤回」マーカーに変更
+2. PUBLIC_SUMMARY.md の P7 bias-detector 項目を「F-090 で撤回」マーカーに変更(完了)
 3. F-088 / F-089 streaming(別 sprint で proper rare 定義設計)
 4. Preprocessor thesis empirical demo(collaborator 確保時)
+
+## §10(2026-04-29 追記)F-091 + F-092 反映後の追加 maintenance log
+
+- F-091 Claim 10 (α=2) cross-domain robustness 結果を §4 に追加(NASA で robust、Apache で α=4 が optimal、canonical narrowing)
+- F-092 Claim 31 Lyapunov real-data perturbation 結果を §4 に追加(controller mechanism robust、functional rare protection narrow)
+- 4-pattern self-refutation(F-070 / F-087 / F-091 / F-092)を §4 末尾に新設、paper epistemic anchor として明示
+- §0 「一行でいうと」を 4-pattern self-refutation 込みに更新
+- paper.md v2 Addendum + §5 Phase 2/2.5 subsection に F-091/F-092 行追加(commit 別)、Zenodo paper v3 候補

@@ -47,6 +47,26 @@ comprehensive single-document retrospective lives at
   (e.g., NASA HTTP 4xx/5xx persistent failure modes). For one-shot rare
   events, decay washes out the signal and ActivationScore amplifies
   common-path dominance, inverting the desired ordering.
+- **F-091 (2026-04-29) — Claim 10 ($\alpha=2$ "core of the invention")
+  narrows to NASA-recurring-rare specific.** $\alpha_{\text{core}}$ sweep
+  $\{0.5, 1.0, 2.0, 3.0, 4.0\}$ on NASA + Apache streaming + MovieLens
+  null control: NASA confirms $\alpha=2.0$ is empirically optimal
+  (diff $0.00$ pt vs best, F-072 anchor reproduced bit-exact); Apache
+  shows $\alpha=4.0$ optimal, $\alpha=2.0$ off by $-17.39$ pt. MovieLens
+  null PASS (no decay path). Claim 10 mechanism supported, but the
+  canonical $\alpha=2.0$ is **not domain-universal**; one-shot rare
+  requires domain-specific calibration.
+- **F-092 (2026-04-29) — Claim 31 functional rare protection narrows
+  to non-adversarial settings.** Real-data adversarial burst
+  perturbation (NASA window 50 + 1000 rare-target events): controller
+  mechanism PASSes boundedness ($\alpha_{\text{edge}} \in [1.0, 2.5]$
+  all 100 windows) and recovery (diff $0.0043$ at w55), but functional
+  rare detection FAILs (recall_perturbed $= 0.000$ vs. baseline
+  $0.4592$). Adversarial degree inflation demotes natural rare resources
+  from Rare to Core layer. Claim 31 controller-stability claim is
+  empirically supported; the implicit rare-protection-under-attack
+  reading is not. Production deploy requires upstream defense layer
+  (rate-limit / provenance filter).
 
 **Substantive withdrawals**:
 
@@ -91,10 +111,20 @@ empirical boundary at the cost of two specific commercial positionings.
   recurring rare per F-087 Apache replication failure
 - 2026-04-29: bias-detector commercial path withdrawn per F-090
   systematic test (45.5% < 70% threshold)
+- 2026-04-29: Claim 10 ($\alpha=2$ "core of the invention") narrowed
+  to NASA-recurring-rare specific per F-091 cross-domain $\alpha$ sweep
+  (Apache optimal at $\alpha=4.0$, $\alpha=2.0$ off by $-17.39$ pt)
+- 2026-04-29: Claim 31 functional rare protection narrowed to
+  non-adversarial settings per F-092 real-data burst perturbation
+  (controller boundedness + recovery PASS, functional recall FAIL
+  $0.000 / 0.4592$)
 - 2026-04-29: Phase 2 / Phase 2.5 subsection added to §5 with
-  F-073 -- F-090 raw findings
+  F-073 -- F-092 raw findings (12 → 14 rows)
 - v1 body otherwise unmodified; inline `[v2: ...]` markers indicate
   caveat insertion points
+- **4 self-refutation patterns now anchor the paper's
+  honesty-first epistemic stance** (F-070 / F-087 / F-091 / F-092):
+  mechanism supported, specific application robustness narrowed
 
 ---
 
@@ -606,14 +636,19 @@ they delineate three concrete narrowings.
 | **F-086 γ** | Domain-fit predictor sweep (N=5 meta-families) | 3 PASS / 2 REJECT; hub-peripheral / hub-biased / peer-network distinction validated | **F-086 γ replaces `bias-detector` as the working predictor** (γ-check correlation rate framework) |
 | **F-087** | Apache error log streaming replication (LogHub Apache.log, freq $\le 10$ rare) | streaming $-13.04$ pt vs. C0 static; full streaming reaches recall $0.000$ | **Streaming benefit (F-072) narrows to temporally recurring rare**; one-shot rare actively harmed by decay + activation |
 | **F-090** | `bias-detector` predictor on N=21 datasets, certain prediction $= 11$ | accuracy $5/11 = 45.5\% \ll 70\%$ pre-registered threshold | `bias-detector` commercial path **withdrawn**; v1 §6.1 reference is updated; F-086 γ remains the working predictor |
+| **F-091** | Claim 10 ($\alpha_{\text{core}}=2.0$, "core of the invention") cross-domain robustness; $\alpha \in \{0.5, 1.0, 2.0, 3.0, 4.0\}$ sweep on NASA + Apache streaming + MovieLens null control | NASA: $\alpha=2.0$ optimal (diff $0.00$ pt vs best); Apache: $\alpha=4.0$ optimal, $\alpha=2.0$ diff $-17.39$ pt; MovieLens null PASS | **H_α PARTIAL (1/2)**: Claim 10 mechanism supported, but canonical $\alpha=2.0$ is NASA-recurring-rare-specific; one-shot rare requires domain-specific $\alpha$ calibration. Sister to F-070 (sandwich canonical refute) |
+| **F-092** | Claim 31 Lyapunov stability under real-data adversarial burst perturbation (NASA HTTP w50 + 1000 rare-target events) | Boundedness PASS ($\alpha_{\text{edge}} \in [1.0, 2.5]$ all 100 windows); Recovery PASS (diff $0.0043$ at w55); Functional FAIL (recall_perturbed $/$ recall_baseline $= 0.000 / 0.4592$) | **H_L PARTIAL (2/3)**: Controller mechanism robust, but adversarial degree inflation demotes natural rare resources from Rare to Core layer. **4th self-refutation pattern** (F-070 / F-087 / F-091 sister); production deploy needs upstream rate-limit / provenance defense layer |
 
 The combined picture: KDF's empirically validated core is now **four
 product candidates** (Obsidian / MovieLens niche / Mem0 hybrid Router /
 Git Core preservation) plus the F-086 γ domain-fit framework. The v1
 "narrow but durable" theme is preserved; v2 sharpens the empirical
-boundary at the cost of two specific commercial positionings (direct
-SOTA-beating positioning, and `bias-detector` as commercial predictor).
-See [`docs/PHASE_2_RETROSPECTIVE.md`](../PHASE_2_RETROSPECTIVE.md) for
+boundary at the cost of three specific positionings (direct
+SOTA-beating, `bias-detector` as commercial predictor, and Claim 10 /
+Claim 14 / Claim 31 universal value claims — all narrowed to
+domain-conditional or scope-conditional form via the **four-finding
+self-refutation pattern** F-070 / F-087 / F-091 / F-092). See
+[`docs/PHASE_2_RETROSPECTIVE.md`](../PHASE_2_RETROSPECTIVE.md) for
 the single-document retrospective.
 
 **F-060 — Empirical validation of a complementary architecture via the Ext-1 Precision-Query Router (2026-04-19, zero added cost)**:

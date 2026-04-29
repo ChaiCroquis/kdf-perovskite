@@ -4126,6 +4126,148 @@ Bipartite: A = paper as citing source、B = paper as cited target (labeled rare)
 
 ---
 
+### ⚠️ F-092 Claim 31 Lyapunov stability under real-data perturbation — H_L PARTIAL (2/3): controller mechanism robust(boundedness + recovery PASS)、ただし adversarial burst で functional rare detection が完全崩壊(recall 0.0000 / 0.4592)(2026-04-29)
+
+**Context**: Patent Claim 31「健全性指標 + 緊急介入」 mechanism の real-data adversarial perturbation 下での Lyapunov 安定性を empirical 確認。F-003 + F-020 が synthetic Lyapunov stability(数値 + 100k step)に止まり、real-data 摂動下での stability は未測定だった。Pre-reg: [docs/exploration/g3_lyapunov_pre_reg.md](exploration/g3_lyapunov_pre_reg.md)(commit 5f26c58、frozen)。
+
+**Setup**: NASA HTTP streaming(50,000 records、F-072/F-091 anchor base)、α_core=2.0 canonical、`MetaController` adaptive α_edge update。Window 50(全 100 window 中の中間)で **rare resource (HTTP 500) 1000 events 注入**(natural burst rate ~10x)、burst event は既存 rare resource に対し新規 synthetic IP からの edge として concat。
+
+**Conditions**: C_baseline(perturbation なし)+ C_perturbed(burst at w50)、両者 C4 full streaming(decay + activation + meta α adaptive)。
+
+**3 PASS criteria(pre-reg frozen)**:
+
+| 観点 | 結果 | verdict |
+|---|---|:---:|
+| **1. boundedness**: α_edge 全 100 window で範囲 (1.0, 2.5) 内 | 100/100 window で stay | ✅ PASS |
+| **2. recovery**: 摂動後 5 window 以内に α_edge が baseline ±0.3 内に return | window 55 で diff = 0.0043 | ✅ PASS |
+| **3. functional**: 最終 rare recall, perturbed/baseline ≥ 0.80 | 0.0000 / 0.4592 = 0.000 | ❌ FAIL |
+
+**Verdict (pre-reg auto)**: ⚠️ **H_L PARTIAL (2/3)** — controller stability mechanism は robust、ただし functional rare detection は adversarial burst に脆弱。
+
+**Trajectory observation**(window 50 burst 前後):
+
+| window | α_edge_B | α_edge_P | \|Rare\|_B | \|Rare\|_P | recall_P |
+|---:|---:|---:|---:|---:|---:|
+| 49 | 2.5000 | 2.5000 | 1281 | 1281 | 0.3061 |
+| **50** | **2.5000** | **2.5000** | **1292** | **2259** | **0.0000** ← burst |
+| 51 | 2.5000 | 2.5000 | 1297 | 2261 | 0.0000 |
+| 55 | 2.5000 | 2.4957 | 1329 | 2290 | 0.0000 |
+| 99 | 2.3237 | 2.5000 | (~1370) | (~2330) | 0.0000 |
+
+burst で |Rare|_P が 1292 → 2259(+967、burst IP 数 1000 と整合)、そのまま recall 0.0000 が最終 window まで維持。
+
+**Substantive insight(post-hoc narrowing でなく structural reading)**:
+
+burst が rare resource の degree を artificial inflation:
+
+1. 各 rare target に対し ~10 burst edge 追加(1000 burst events / 98 rare resources ≈ 10/resource)
+2. 自然 degree 数〜数十 → burst 後 degree 倍増、`rare_min_degree` 閾値超え → Rare layer から **Core layer へ demote**
+3. ActivationScore は burst window 50 で spike するが、`act.advance_tick()` の decay により残 50 window で減衰
+4. 最終 window で:Rare layer は burst IPs 主体(1000+)、natural rare resources は Core layer に居る、score = 0.7·0.67 + 0.3·(decayed act) ≈ 0.469
+5. Top-30% selection は recent activation 高い natural Core/Edge resources を優先、natural rare resources は selected set から漏れる → recall = 0.000
+
+これは **adversarial degree inflation attack** の structural vulnerability:burst で natural rare を「graduation」させて Rare layer 保護を解除可能。Claim 31 controller mechanism 自体は安定だが、**rare 保護の functional 担保は別 layer の問題**。
+
+**Patent narrative implication**:
+
+- **Claim 31 controller mechanism stability**:real-data 摂動下で **empirical 支持**(α bound 0% 違反、recovery 5 window 以内達成)
+- **Claim 31 functional rare protection guarantee**:adversarial degree inflation 下では **支持されず**、claim narrowing 必要
+- F-070(sandwich canonical refute)/ F-091(Claim 10 cross-domain narrowing)/ F-087(Claim 14 streaming narrowing)に続く **第 4 self-refutation pattern**:mechanism ✓ / specific application robustness は narrow scope
+- paper §6.4 限界節更新候補:「Claim 31 mechanism は stability 保証、ただし adversarial degree inflation には脆弱、production deploy では rate limiting 等の上位 defense layer 必要」
+- 4 grounded products(Obsidian / MovieLens / Mem0 hybrid / Git Core)に直接影響なし — それらは production-style adversarial attack 想定外の context
+
+**Future work suggestion**(post-F-092、研究 planning material のみ、推奨でない):
+
+1. Rate limiting layer:burst 検出時の event ingestion throttle
+2. Differential degree weighting:急増 degree の重み低下
+3. Provenance tracking:event source の信頼度に基づく filter
+4. F-090 失敗 framework + F-092 narrowing で「KDF + adversarial defense layer」 hybrid product 候補
+
+**Meta-check (post-hoc narrowing 防止)**:
+
+- ❌ threshold 緩和なし(0.3 / 5 window / 0.80 frozen)
+- ❌ perturbation magnitude 変更なし(1000 events frozen、結果見て 100 events に縮小しない)
+- ❌ 「functional metric は別問題」と除外しない(pre-reg §4 で 3 metric 同列扱い frozen)
+- ✅ structural reading: degree inflation mechanism は post-hoc derive でなく、code(NodeClassifier rare 判定 + activation decay)+ trajectory(|Rare| 増加)から data-driven 抽出
+- ✅ Claim 31 narrowing は F-070/F-087/F-091 sister pattern として記録、honest self-refutation 蓄積
+
+**Artifacts**:
+
+- [demos/D8_llm_memory/src/bin/phase_g3_lyapunov.rs](../demos/D8_llm_memory/src/bin/phase_g3_lyapunov.rs) — F-092 binary
+- 実行 log: 上記 trajectory + 3 metric 結果 embedded、再現は `cargo run --release -p demo-d8-llm-memory --bin phase_g3_lyapunov`
+- Pre-reg: [docs/exploration/g3_lyapunov_pre_reg.md](exploration/g3_lyapunov_pre_reg.md)(commit 5f26c58)
+- 関連 finding: F-003 / F-020(synthetic Lyapunov、本 finding の real-data extension)、F-091(Claim 10 narrowing、sister pattern)、F-070(canonical refute)、F-087(streaming narrowing)
+
+---
+
+### ⚠️ F-091 Claim 10 (α_core=2.0、発明の核心) cross-domain robustness — H_α PARTIAL (1/2): NASA で robust 確証、Apache で domain-specific calibration 必要(2026-04-29)
+
+**Context**: Patent Claim 10「α=2 ベき乗項の指数を 2 に固定(発明の核心)」の cross-domain robustness を realistic streaming benchmark で empirical 確認。 F-040 で全 50 claim unit-test backed、Phase X realistic で Claim 1/5/14/17/20-32/36-41/47-48 backed、しかし **Claim 10 の α=2.0 は realistic cross-domain で未測定だった**。Pre-reg: [docs/exploration/g2_alpha_sweep_pre_reg.md](exploration/g2_alpha_sweep_pre_reg.md)(commit f1c0096、frozen)。
+
+**Setup**: α_core ∈ {0.5, 1.0, 2.0(canonical)、3.0, 4.0} sweep × 5 conditions(C0 static / C1 decay / C2 +activation / C3 +meta / C4 full)× 2 streaming domains + MovieLens static null control = 55 runs。`MasterSpecParams.alpha_core` を直接 mutate、他 α 値は default 維持。
+
+**Domains(pre-reg frozen)**:
+- NASA HTTP streaming(50,000 records、time-ordered replay): **temporally recurring rare**(F-072 anchor +3.06pt)
+- Apache error log streaming(31,062 records、freq ≤ 10): **one-shot rare**(F-087 anchor −13.04pt)
+- MovieLens Film-Noir bipartite(static): **null control**(α 影響なし想定)
+
+**Result(per-α best of streaming conditions C1-C4)**:
+
+| α | NASA | Apache | Δ vs canonical(α=2.0)|
+|---:|---:|---:|---:|
+| 0.5 | 0.4490 | 0.3478 | NASA: −4.08pt / Apache: +4.35pt |
+| 1.0 | 0.4490 | 0.3478 | NASA: −4.08pt / Apache: +4.35pt |
+| **2.0** | **0.4898** | **0.3043** | (canonical reference) |
+| 3.0 | 0.4796 | 0.3478 | NASA: −1.02pt / Apache: +4.35pt |
+| 4.0 | **0.2143** | **0.4783** | NASA: −27.55pt / Apache: **+17.40pt** |
+
+**α=2.0 vs best α per domain(pre-reg robustness threshold ≤ 1.0pt)**:
+
+- NASA: best = 0.4898(at α=2.0)、α=2.0 diff = **0.00pt** ≤ 1.0pt → **PASS**
+- Apache: best = 0.4783(at α=**4.0**)、α=2.0 diff = **−17.39pt** ≫ 1.0pt → **FAIL**
+
+**Verdict (pre-reg auto)**: ⚠️ **H_α PARTIAL (1/2)**: NASA で robust(α=2.0 が best と一致)、Apache で **α=4.0 が best**(canonical α=2.0 と 17.39pt 乖離)、domain-specific calibration 必要。
+
+**Null control**: MovieLens γ-check が α 全 5 値で 0.3882 不変、range = **0.00pt** ≤ 0.5pt → **PASS**(test 設計 OK、α は decay path 経由でのみ影響、static graph には影響しない構造的に確証)。
+
+**Substantive insights(post-hoc narrowing 禁止 protocol 下の honest reading)**:
+
+1. **F-072 anchor 完全再現**: α=2.0 で NASA C1 decay = 0.4898(F-072 既知 +3.06pt over C0=0.4592 と完全一致)、bit-exact replication 確認
+2. **NASA で α=2.0 が真に optimal**: α ∈ {0.5, 1.0, 3.0, 4.0} のいずれも α=2.0 を上回らない、Claim 10 の NASA recurring rare context での optimality 強い empirical 確証
+3. **Apache での逆転**: α=4.0(極めて強い decay)で Apache C1 decay = 0.4783、static C0 = 0.4348 を **+4.35pt 上回る**。F-087 で「streaming が actively harmful」と narrow した結論は **α=2.0 限定**だった可能性、α=4.0 では逆転
+4. **Apache α=4.0 機構推定**(post-hoc interpretation、structural reading): aggressive decay により全 edge が rapidly 消去、graph topology が「最近の event のみ」に縮小、rare path が relative に強調される。これは F-087 narrowing(streaming benefit は recurring rare 限定)を **further narrow**: 「α tuning すれば one-shot rare でも streaming benefit を出せる可能性」という新領域を示唆、ただし α=4.0 default は patent canonical 範囲外で claim coverage 外
+5. **NASA で α=4.0 が崩壊**(0.2143、static 0.4592 から −24.49pt): α が大きすぎる場合、recurring rare event でも信号が消去される。**α=2.0 は canonical として recurring rare に最適**だが one-shot rare には不適、universal optimum でない
+
+**Patent narrative implication**:
+
+- Claim 10 「α=2 発明の核心」**機構として支持**(NASA で best、F-072 / F-087 anchor 整合)、但し **universal optimal value としての主張は narrow 必要**
+- F-070 sandwich canonical (θ_L, θ_U) = (0.70, 0.80) refute と **同列の self-refutation pattern**:機構 ✓ / canonical specific value は domain-specific calibration 要
+- paper §6.4 限界節 + paper v3 Addendum の「Claim 10 narrowing」候補
+
+**Updated grounded position (post-F-091)**:
+
+- Claim 10 機構(λ(C) = β(1 + γ C^α) の non-linear decay rate form)は引き続き validated
+- α=2.0 canonical は **NASA-type recurring rare context で empirical optimal** だが domain universal でない
+- Apache-type one-shot rare では α=4.0 が optimal、これは F-087 streaming narrowing に新層追加(streaming は α tuning で one-shot rare にも適用可能、ただし α は domain-specific)
+- 4 grounded products(Obsidian / MovieLens / Mem0 hybrid / Git Core)に直接影響なし — それらは static / temporal-clustered context
+
+**Meta-check (post-hoc narrowing 防止)**:
+
+- ❌ **threshold 緩和なし**: 1.0pt 固定、結果見て 2.0pt にしない
+- ❌ **α set tweak なし**: {0.5, 1.0, 2.0, 3.0, 4.0} frozen、結果見て {1.5, 2.0, 2.5} に narrow しない
+- ❌ **Apache 例外扱い禁止**: opposite rare structure を含むことが test 設計の核、結果が partial だからと "Apache は別 category" と除外しない
+- ✅ **interpretation は structural reading**: Apache α=4.0 機構推定は post-hoc derive でなく F-087 narrowing + decay 機構との整合性から抽出
+- ✅ **null control 結果は test validity の Confirmation**: α range = 0.00pt は α が想定外 path で漏れていないことを確証
+
+**Artifacts**:
+
+- [demos/D8_llm_memory/src/bin/phase_g2_alpha_sweep.rs](../demos/D8_llm_memory/src/bin/phase_g2_alpha_sweep.rs) — F-091 binary
+- 実行 log: 上記 result table embedded、再現は `cargo run --release -p demo-d8-llm-memory --bin phase_g2_alpha_sweep`
+- Pre-reg: [docs/exploration/g2_alpha_sweep_pre_reg.md](exploration/g2_alpha_sweep_pre_reg.md)(commit f1c0096)
+- 関連 finding: F-072(NASA anchor 再現)、F-087(Apache narrowing further refined)、F-070(sandwich canonical refute、self-refutation の sister pattern)
+
+---
+
 ### ❌ F-090 bias-detector predictor 撤回 — N=21 systematic test で certain prediction accuracy 45.5% < 70% threshold(2026-04-29)
 
 **Context**: Phase 2.5 byproduct claim "bias-detector が 7/8 正予測(87.5%)、独立 applicability-predictor tool として商材化可能" を systematic に validate。Pre-reg: [docs/exploration/phase_2_5_pre_reg_addendum.md](exploration/phase_2_5_pre_reg_addendum.md) §3(commit a8679be、frozen)。
@@ -4600,4 +4742,4 @@ F-040 で全 50 Claim に per-claim 直接 unit test が整備済み。加えて
 
 
 **検証責任者:** プロジェクト実行担当(Claude Opus 4.7, 独立検証エージェント経由)
-**最終更新:** 2026-04-29(Phase 2 + Phase 2.5 streaming replication 完走: F-073〜F-090 追加、scope narrowing が empirically 確定。**Direct SOTA 勝負 path は 3/3 LOSS で撤回**(F-073/074/075)、**streaming benefit は temporally recurring rare に narrow**(F-087)、**bias-detector predictor は N=21 systematic test で 45.5% < 70% で撤回**(F-090)。残った位置は narrow but durable で 4 grounded products + F-086 γ domain-fit predictor。詳細単一文書要約は [PHASE_2_RETROSPECTIVE.md](PHASE_2_RETROSPECTIVE.md)。Claim 1-50 全 50 項は引き続き unit test backed、機構レベルは Phase X で realistic benchmark backed、F-087/F-090 はそれぞれ Claim 14 streaming application scope と byproduct tool の narrowing・撤回で機構自体は不変。)
+**最終更新:** 2026-04-29(Phase 2 + Phase 2.5 + α/Lyapunov empirical 完走: F-073〜F-092 追加、scope narrowing が empirically 確定。**Direct SOTA 勝負 path は 3/3 LOSS で撤回**(F-073/074/075)、**streaming benefit は temporally recurring rare に narrow**(F-087)、**bias-detector predictor は N=21 systematic test で 45.5% < 70% で撤回**(F-090)、**Claim 10 (α=2 「発明の核心」) は NASA-recurring-rare specific に narrow**(F-091)、**Claim 31 functional rare protection は非 adversarial settings に narrow**(F-092)。残った位置は narrow but durable で 4 grounded products + F-086 γ domain-fit predictor + 4-pattern self-refutation epistemic anchor (F-070/F-087/F-091/F-092)。詳細単一文書要約は [PHASE_2_RETROSPECTIVE.md](PHASE_2_RETROSPECTIVE.md)。Claim 1-50 全 50 項は引き続き unit test backed、機構レベルは Phase X で realistic benchmark backed、4 self-refutation finding は機構支持・specific application robustness narrowing で機構自体は不変。)
