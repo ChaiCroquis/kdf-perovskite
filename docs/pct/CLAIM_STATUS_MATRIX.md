@@ -45,7 +45,7 @@
 
 ## 1. 一行 summary(弁理士 5 分把握用)
 
-> **cgb-kdf 全 50 Claim は F-040 で per-claim unit test backed(基底)、うち主要 18 Claim(Claim 1, 5, 10, 14, 16-19, 20-22, 23-26, 27-32, 33, 36-41, 44, 46, 47-48)が realistic benchmark backed。Application narrowing 5 件(F-070 sandwich canonical / F-087 streaming one-shot / F-091 α=2 NASA-specific / F-092 Claim 31 functional non-adversarial / F-097 Claim 25 BGL alphabet caveat)、Cross-domain positive replication 2 件(F-094/F-097 recurring-rare N=3、Claim 14 streaming benefit を web log + HW kernel log family に anchor)。Mechanism は 全 Claim 不変 supported、narrow されたのは specific application instances のみ。**
+> **cgb-kdf 全 50 Claim は F-040 で per-claim unit test backed(基底)、うち 31 Claim(全 50 の 62%)が realistic benchmark backed(R 18 件 narrow なし + R-N 13 件 application-narrowed)。残り 19 Claim(38%)は unit-only(うち 15 件は structural / math primitive で trivial 認定候補、4 件 = Claim 26 / 42 / 43 / 45 は non-trivial で realistic test 設計候補)。Application narrowing 5 件(F-070 sandwich canonical / F-087 streaming one-shot / F-091 α=2 NASA-specific / F-092 Claim 31 functional non-adversarial / F-097 Claim 25 BGL alphabet caveat)、Cross-domain positive replication 2 件(F-094/F-097 recurring-rare N=3、Claim 14 streaming benefit を web log + HW kernel log family に anchor)。Mechanism は 全 Claim 不変 supported、narrow されたのは specific application instances のみ。**
 
 ---
 
@@ -106,24 +106,33 @@
 
 ---
 
-## 3. Statistics
+## 3. Statistics(2026-04-29 user 評価 input 反映で精度修正 + U sub-split 追加)
 
 ### Test backing distribution
 
-| Test level | count | claim numbers |
-|---|---:|---|
-| **U** unit only | **22** | 2-4, 6-9, 11-13, 15, 26, 34-35, 42-43, 45, 49-50 |
-| **R** realistic backed(narrow なし)| **15** | 1, 16-19(=4)、20-24(=5)、27-30(=4)、32, 33, 44, 46 |
-| **R-N** realistic backed but application narrowed | **13** | 5, 10, 14, 25, 31, 36-41(=6)、47-48(=2) |
-| **計** | **50** | (うち主要 28 Claim が realistic backed = 28/50 = 56%)|
+| Test level | count | % | claim numbers |
+|---|---:|---:|---|
+| **U** unit only | **19** | 38% | 2-4, 6-9, 11-13, 15, 26, 34-35, 42-43, 45, 49-50 |
+| **R** realistic backed(narrow なし) | **18** | 36% | 1, 16-19(=4)、20-24(=5)、27-30(=4)、32, 33, 44, 46 |
+| **R-N** realistic backed but application narrowed | **13** | 26% | 5, 10, 14, 25, 31, 36-41(=6)、47-48(=2) |
+| **計** | **50** | 100% | **R + R-N = 31 Claim(62%)が realistic backed** |
+
+#### U sub-split(2026-04-29 user 評価 input 反映、PCT defensibility 焦点化)
+
+| sub-category | count | claim numbers | PCT defensibility |
+|---|---:|---|---|
+| **U-trivial** structural / math primitive(realistic test 不要 候補)| **15** | 2-4(=3), 6-9(=4), 11-13(=3), 15, 34-35(=2), 49-50(=2)| **trivial 認定 OK の可能性高**(structural primitive、unit test で十分)、弁理士 confirm 候補 |
+| **U-non-trivial?** realistic test 価値あり 候補 | **4** | 26(意味的重要度), 42(Rare→Core 昇格条件), 43(Rare→Core 昇格 trigger), 45(0.40:0.35:0.25 specific value)| realistic backing 弱、wording 修正 or realistic test 設計候補(post-consult Axis 2 full)|
+
+→ U-non-trivial 4 件 vs U-trivial 15 件の split が PCT 価値判断の核心:**U:19 を一括「弱い」とせず、4 件に集中して realistic test 価値判断**。
 
 ### Mechanism / Application split
 
-| M/A | count | description |
-|---|---:|---|
-| **M only** | **22** | data structures、math foundations、controller mechanisms(Claim 2-4, 6-9, 11-13, 15, 17, 20-24, 26-30, 32, 34-35, 49-50)|
-| **A only** | **5** | application-specific(Claim 18-19, 42-43, 44, 45)|
-| **M+A** | **23** | umbrella + application instances(Claim 1, 5, 10, 14, 16, 25, 31, 33, 36-41, 46, 47-48)|
+| M/A | count | % | description |
+|---|---:|---:|---|
+| **M only** | **27** | 54% | data structures、math foundations、controller mechanisms(Claim 2-4, 6-9, 11-13, 15, 17, 20-24, 26-30, 32, 34-35, 49-50)|
+| **A only** | **6** | 12% | application-specific(Claim 18-19, 42-43, 44, 45)|
+| **M+A** | **17** | 34% | umbrella + application instances(Claim 1, 5, 10, 14, 16, 25, 31, 33, 36-41(=6), 46, 47-48(=2))|
 
 ### Application narrowing(F-xxx → claim)
 
@@ -161,13 +170,26 @@
 
 - **Claim 14 + Claim 25 streaming benefit、recurring rare 軸**:F-072 NASA HTTP +3.06pt + F-094 Apache recurring +3.67pt + F-097 BGL recurring +33.33pt、cross-domain N=3 で durable(web access log family + HW kernel log family の両 family across)。**機構 + application 両 supported、PCT 出願時の strongest evidence cluster**。
 
+### 4.4 PCT cost-benefit observation(2026-04-29 user 評価 input 反映、本 doc scope 外の user-side parallel work flag)
+
+本 document は **claim defensibility 観点** で claim landscape を可視化したが、**PCT go/no-go 判定の本質**は claim defensibility(本 doc)+ 商用化 path × 地理的市場 mapping(user-side parallel work)の 2 input 統合。後者は本 Axis 2 minimal scope 外、user 側で **弁理士相談 着手前に並行整理**が必要な観点として flag:
+
+- **defensible claim core**:R(18 件)+ R-N(13 件)= 31 Claim(62%)が realistic backed。これが PCT 出願 cost を投じる technical anchor
+- **必要な user input**(本 doc に含まない):
+  - 4 grounded products(Obsidian / MovieLens niche / Mem0 hybrid Router / Git Core)の **地理的市場**(US / EU / JP / その他)
+  - 主要市場が日本のみ → JP 出願で十分、PCT 不要 / US/EU 必要 → PCT 価値あり(数百万円 PCT 費用回収可能性)
+  - 商用化 timeline(short-term licensing / long-term commercial deploy)と PCT 30 month 期限の整合
+- **本 doc + 商用 path mapping 両方 揃って初めて PCT go/no-go 判定 input 完成**、弁理士 consult appointment はそれ以後
+
+→ user-side parallel work として弁理士相談前に揃えるべき情報:**(i) 地理的市場 priorities、(ii) 商用化 timeline、(iii) PCT 出願費用 budget**。本 document(claim defensibility)+ 上記 3 点 = consult input 揃う。
+
 ---
 
 ## 5. Gaps inventory(PCT consult discussion items、minimal-test design は本 doc scope 外)
 
-### 5.1 Unit-only Claims(realistic test 未実施、22 件)
+### 5.1 Unit-only Claims(realistic test 未実施、19 件)
 
-以下の Claim は F-040 per-claim unit test backed のみ、realistic benchmark 未実施。**Trivial 認定可能か / realistic test 設計が必要か は 弁理士 judgment**:
+以下の Claim は F-040 per-claim unit test backed のみ、realistic benchmark 未実施。**Trivial 認定可能か / realistic test 設計が必要か は 弁理士 judgment**(§3 U sub-split で 15 trivial 候補 + 4 non-trivial 候補に分類済):
 
 | Claim | 内容 | trivial 認定可能性(私の constraint-derived 推定)|
 |:---:|---|---|
@@ -181,7 +203,7 @@
 | 45 | 0.40:0.35:0.25 specific value | **non-trivial**(specific value、Claim 44 7:2:1 と pair で realistic test 候補)|
 | 49-50 | library entry / program form | trivial(API/deployment primitive)|
 
-→ **弁理士 consult discussion items**:non-trivial 候補(Claim 26, 42-43, 45)で realistic test 設計の費用対効果評価。post-consult feedback 反映後、別 finding(Axis 2 full)で minimal-test design。
+→ **弁理士 consult discussion items**:non-trivial 候補 4 件(Claim 26, 42-43, 45)で realistic test 設計の費用対効果評価(15 trivial 候補は wording 修正 / preferred embodiment 格下げで弁理士 judgment 受け)。post-consult feedback 反映後、別 finding(Axis 2 full)で minimal-test design 着手。
 
 ### 5.2 Application narrow Claims の PCT wording strategy(13 件)
 
