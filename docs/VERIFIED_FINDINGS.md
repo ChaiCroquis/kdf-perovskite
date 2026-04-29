@@ -4032,6 +4032,106 @@ Bipartite: A = paper as citing source、B = paper as cited target (labeled rare)
 
 ---
 
+### ✅ F-099 v1 router(precision-only, no length filter)characterization across 5 cells — H_v1_paid PASS_negative(LongMemEval paid -11.60/-13.00pt p<10⁻⁷)、H_v1_local REPRODUCED、Sanity 4/4 match、v2 design 正当性 empirically anchored、template `_template_pre_reg.md` 初 test case(2026-04-29)
+
+**Pre-reg**: [docs/exploration/g10_v1_router_characterization_pre_reg.md](exploration/g10_v1_router_characterization_pre_reg.md)(commit 5cbd21d、frozen)
+**Template first test case**: [docs/exploration/_template_pre_reg.md](exploration/_template_pre_reg.md)(2026-04-29 user input、Direction A occurrence 1-4 後の operational form)
+
+**Context**: F-060(2026-04-19)で確立した ext1_precision_router の **v2 variant**(precision AND length≥100 → KDF)が primary、v1(precision-only、length filter 無)+ v3(length-only)は computed されたが documented されていなかった。F-096 evaluate run で **LongMemEval local 3B environment 上で v1 router Δ=+6.26pt p=10⁻⁹** という exploratory observation が得られたため、本 finding は v1 design space を **5 cells × 3 variants = 15 evaluations** で frontier 完成、+ F-096 v1 observation を post-hoc replication form で documentation。
+
+**Setup(frozen per pre-reg §3)**:
+- Router script: `ext1_precision_router.py` F-060 binary 不変
+- Cells: 6 entries(4 paid F-053/F-057/F-058/F-059 + 2 local F-096 LongMemEval/LoCoMo)
+- Variants: v1(precision、length=0)+ v2(precision、length≥100)+ v3(length≥100、precision=False)
+- Metric: routed accuracy + paired contingency + McNemar exact p
+- Wall-clock: ~数秒(post-hoc deterministic、no LLM call)
+
+**Result(raw measurement、observation 欄)**:
+
+Full 5-cell × 3-variant table:
+
+| cell | env | variant | Mem0 | Router | KDF | Δ pt | p |
+|---|:---:|---|---:|---:|---:|---:|---:|
+| F-053 LongMemEval × gpt-4o-mini | paid | v1 | 0.6720 | 0.5560 | 0.4340 | **−11.60** | 1.12×10⁻⁷ ★ |
+| F-053 LongMemEval × gpt-4o-mini | paid | v2 | 0.6720 | 0.6720 | 0.4340 | +0.00 | 1.0 |
+| F-053 LongMemEval × gpt-4o-mini | paid | v3 | 0.6720 | 0.6720 | 0.4340 | +0.00 | 1.0 |
+| F-059 LongMemEval × gpt-4.1-mini | paid | v1 | 0.7220 | 0.5920 | 0.4520 | **−13.00** | 8.37×10⁻¹⁰ ★★ |
+| F-059 LongMemEval × gpt-4.1-mini | paid | v2 | 0.7220 | 0.7220 | 0.4520 | +0.00 | 1.0 |
+| F-059 LongMemEval × gpt-4.1-mini | paid | v3 | 0.7220 | 0.7220 | 0.4520 | +0.00 | 1.0 |
+| F-057 LoCoMo temporal × gpt-4o-mini | paid | v1/v2/v3 (identical) | 0.2056 | 0.3022 | 0.3115 | **+9.66** | 3.22×10⁻³ ★ |
+| F-058 LoCoMo temporal × gpt-4.1-mini | paid | v1/v2/v3 (identical) | 0.0903 | 0.3146 | 0.3240 | **+22.43** | 3.99×10⁻¹⁴ ★★ |
+| F-096 LongMemEval × local qwen2.5:3b | local | v1 | 0.0271 | 0.0898 | 0.1566 | **+6.26** | 1.86×10⁻⁹ ★★ |
+| F-096 LongMemEval × local qwen2.5:3b | local | v2 | 0.0271 | 0.0271 | 0.1566 | +0.00 | 1.0 |
+| F-096 LongMemEval × local qwen2.5:3b | local | v3 | 0.0271 | 0.0271 | 0.1566 | +0.00 | 1.0 |
+| F-096 LoCoMo × local qwen2.5:3b | local | v1/v2/v3 (identical) | 0.0000 | 0.0062 | 0.0062 | +0.62 | 0.5 |
+
+**Verdict(pre-reg auto、frozen thresholds)**:
+
+| 観点 | result | verdict |
+|---|---|---|
+| **H_v1_paid F-053**(Δ < -2pt PASS_negative / |Δ|≤2pt NEUTRAL / >+2pt PASS_positive)| Δ=−11.60pt p=10⁻⁷ | ✅ **PASS_negative** |
+| **H_v1_paid F-059**(同 thresholds)| Δ=−13.00pt p=10⁻¹⁰ | ✅ **PASS_negative** |
+| **H_v1_local F-096**(Δ ∈ [+6.20, +6.30] REPRODUCED / 外 DRIFT)| Δ=+6.26pt p=10⁻⁹ | ✅ **REPRODUCED** |
+| **Sanity v2 vs F-060 published**(tolerance ±0.005)| 4/4 cells match(diff ±0.0004) | ✅ **all_match** |
+
+**Interpretation(observation との明示分離、memory `feedback_observation_vs_interpretation` 適用)**:
+
+1. **H_v1_paid PASS_negative confirmed** — v1 router(precision query → KDF)は paid environment で **highly significant に harmful**(両 model で p<10⁻⁷、effect -11〜-13pt)。原因:F-053/F-059 の Mem0(0.672 / 0.722)が KDF(0.434 / 0.452)を 24-27pt 上回るため、precision query を KDF に routing する v1 design は absolute lower performer に投げて損する構造。short context(LongMemEval、~22 turns)では length filter(v2)が必要な safeguard と判明。
+
+2. **H_v1_local REPRODUCED** — F-096 +6.26pt は deterministic post-hoc replication で確認、ただし **independent verification ではない**(同 data に同 binary を流した結果、必ず一致する性質)。F-100+ で fresh paid data に v1 を test するのが independent verification の path。
+
+3. **v2 design 正当性 anchor** — v2(precision AND length≥100)は LongMemEval paid 4 cells で +0.00pt(routing 不発動で safe)、LoCoMo paid 4 cells で +9.66 / +22.43pt(routing 発動で help)。**「両条件 AND」の design rationale が v1 -11pt vs v2 0pt の対比で empirically anchored**。
+
+4. **LoCoMo cells で v1=v2=v3 同一** — LoCoMo conversations は always >100 turns、length filter discriminator として機能せず、precision filter のみ effective。LoCoMo 上の Δ は精密 routing decision の差でなく、precision-coverage の差で決まる。
+
+5. **F-060 published values reproducibility** — Sanity 4/4 cells で ±0.0004 tolerance match、F-060 v2 results が dev branch 上で deterministic に再現可能、paper §5 published numerics の信頼性 backed。
+
+6. **Local v1 +6.26pt の sub-noise floor caveat** — F-096 local environment は Mem0=0.027 / KDF=0.157 で sub-noise floor(F-096 entry interpretation §1 通り)、v1 +6.26pt は **絶対値が tiny**(Mem0 27/1000 → Router 90/1000 で 6 Q 差程度)、commercial 意味のある signal でない。「local-LLM-weak deployment で v1 が help」narrative は absolute floor caveat 必須。
+
+**Honest record per memory `feedback_decision_framework`**:
+
+- v1 router は **product candidate でない**(paid で highly significant harm、local で absolute floor では meaningful gain でない)
+- F-060 v2 design(precision AND length)は **paid deployment の正しい default**、本 finding で empirical justification
+- Router design space frontier として v1 / v2 / v3 全 documented、PCT consult input として claim 範囲明確化に貢献
+- F-100+ candidate:fresh paid LongMemEval で v1 independent verification(本 finding の post-hoc 性質を resolve)
+
+**Template `_template_pre_reg.md` effectiveness lessons learned(occurrence 5 防止 anchor)**:
+
+本 finding は template 初使用 test case として以下を記録:
+
+- **§0.1 anchor constraint**:wall-clock anchor が「post-hoc deterministic、no LLM」と明確に identified、F-095 の wall-clock 過大評価のような pattern を構造的に prevent。**effectiveness confirmed**
+- **§0.2 frozen specification**:threshold ±2pt が事前固定、結果見て緩和不可能な checkbox 状態。**effectiveness confirmed**
+- **§0.3 observation/interpretation 分離**:post-hoc 性質を §1 で明示、F-096 v1 +6.26pt を「fresh discovery」と表現する narrative drift を構造的に prevent。**effectiveness confirmed**
+- **§0.4 segment split**:post-hoc deterministic の private nature を明示、user push 不要と確認。**effectiveness confirmed**
+
+template の §0 checkbox 群が 4 trigger 全部を catch する fail-safe として機能、Direction A occurrence 5 を **structurally prevent**(body memory に依存しない)。memory `feedback_tool_execution_verbal_claim_separation` の operational form として確立。
+
+**Pattern note(arc 拡張)**:
+
+| pattern | direction | F-xxx |
+|---|---|---|
+| 1 | sandwich canonical refute | F-070 |
+| 2 | streaming benefit one-shot rare narrow | F-087 |
+| 3 | α=2 NASA-recurring-rare specific | F-091 |
+| 4 | Claim 31 functional protection 非 adversarial narrow | F-092 |
+| 5 | Apache recurring-rare positive replication | F-094 |
+| 6 | BGL recurring-rare cross-domain N=3 | F-097 |
+
+F-099 は **6-pattern arc 不変**、router design space frontier mapping(v2 primary を v1 / v3 比較で justify)+ template effectiveness empirical anchor として機能。Anchor sharpening(F-093)+ Infrastructure honest record(F-095/F-096)と同 level の **separate epistemic category**(router design space documentation + template operational verification)に位置。
+
+**Artifacts**:
+- pre-reg: [g10_v1_router_characterization_pre_reg.md](exploration/g10_v1_router_characterization_pre_reg.md)(commit 5cbd21d、template 初使用)
+- script: [demos/D8_llm_memory/scripts/phase_g10_v1_router_full.py](../demos/D8_llm_memory/scripts/phase_g10_v1_router_full.py)
+- verdict JSON: `demos/D8_llm_memory/out/g10_v1_router_full_verdict.json`(15-entry full table)
+
+**Reproducibility pin**:
+- ext1_precision_router.py F-060 binary、不変流用
+- input JSONs: F-053/F-057/F-058/F-059 + F-096 g8 result JSONs(全 commit 済)
+- Python 3.13.9、ノー LLM、deterministic post-hoc
+- HW: i7-13700F 16C24T、CPU only(GPU 不要)
+
+---
+
 ### ✅ F-097 BGL recurring-rare cross-domain N=3 expansion of F-094 — H_R+ PASS (Δ_recurring = +33.33pt)、Sanity V_one-shot inconsistent (Δ=+0pt)、HW kernel log domain で recurring 軸 durable、one-shot disposal は web log family specific と判明(2026-04-29)
 
 **Pre-reg**: [docs/exploration/g9_bgl_recurring_pre_reg.md](exploration/g9_bgl_recurring_pre_reg.md)(commit ef27f22、frozen)
@@ -5032,4 +5132,4 @@ F-040 で全 50 Claim に per-claim 直接 unit test が整備済み。加えて
 ---
 
 **検証責任者:** プロジェクト実行担当(Claude Opus 4.7, 独立検証エージェント経由)
-**最終更新:** 2026-04-29(Phase 2 + Phase 2.5 + α/Lyapunov + anchor sharpening + cross-domain positive replication N=3 + Foreign baseline local replication attempt 完走: F-073〜F-097 追加、scope narrowing + anchor 解像度向上 + cross-domain durability + infrastructure honest 記録 が empirically 確定。**Direct SOTA 勝負 path は 3/3 LOSS で撤回**(F-073/074/075)、**streaming benefit は temporally recurring rare に narrow**(F-087)、**bias-detector predictor は N=21 systematic test で 45.5% < 70% で撤回**(F-090)、**Claim 10 (α=2 「発明の核心」) は NASA-recurring-rare specific に narrow**(F-091)、**Claim 31 functional rare protection は非 adversarial settings に narrow**(F-092)、**F-072 anchor は実質 404-pattern driven、3 軸 narrowing で解像**(F-093)、**Apache recurring-rare で +3.67pt positive replication、cross-domain N=2 で arc 完結**(F-094)、**F-095 local replication infrastructure-infeasible (8B + batch=4 で wall-clock 33-36h)、F-096 で qwen2.5-3b + ingest batching optimization で feasible 化したが 3B environment が sub-noise floor で inconclusive、stronger local LLM が future work**、**F-097 BGL HW kernel log で recurring-rare +33.33pt PASS、cross-domain N=3 (NASA + Apache + BGL) で recurring-rare 軸 durable、ただし one-shot disposal は web log family specific と判明**。残った位置は narrow but durable で 4 grounded products + F-086 γ domain-fit predictor + **6-pattern (4 narrow + 2 positive) self-refutation epistemic anchor (F-070/F-087/F-091/F-092 + F-094/F-097)** + F-093 anchor sharpening category + **F-095/F-096 infrastructure honest 記録 chain**(Direction A occurrence 4 record + trigger 5 deep application refinement)。詳細単一文書要約は public [PHASE_2_RETROSPECTIVE.md](PHASE_2_RETROSPECTIVE.md)。Claim 1-50 全 50 項は引き続き unit test backed、機構レベルは Phase X で realistic benchmark backed、4 self-refutation finding は機構支持・specific application robustness narrowing で機構自体は不変、F-094/F-097 で cross-domain recurring-rare 軸の positive replication N=3 が同 mechanism を支持、F-096 inconclusive は F-060 paid finding を refute せず infrastructure threshold を anchor 化、F-097 sanity inconsistent は one-shot disposal mechanism を web log family specific に narrow.)
+**最終更新:** 2026-04-29(Phase 2 + Phase 2.5 + α/Lyapunov + anchor sharpening + cross-domain positive replication N=3 + Foreign baseline local replication attempt + Router design space documentation 完走: F-073〜F-099 追加(F-099 で template `_template_pre_reg.md` が operational form として initial test case でも effectiveness confirmed)、scope narrowing + anchor 解像度向上 + cross-domain durability + infrastructure honest 記録 が empirically 確定。**Direct SOTA 勝負 path は 3/3 LOSS で撤回**(F-073/074/075)、**streaming benefit は temporally recurring rare に narrow**(F-087)、**bias-detector predictor は N=21 systematic test で 45.5% < 70% で撤回**(F-090)、**Claim 10 (α=2 「発明の核心」) は NASA-recurring-rare specific に narrow**(F-091)、**Claim 31 functional rare protection は非 adversarial settings に narrow**(F-092)、**F-072 anchor は実質 404-pattern driven、3 軸 narrowing で解像**(F-093)、**Apache recurring-rare で +3.67pt positive replication、cross-domain N=2 で arc 完結**(F-094)、**F-095 local replication infrastructure-infeasible (8B + batch=4 で wall-clock 33-36h)、F-096 で qwen2.5-3b + ingest batching optimization で feasible 化したが 3B environment が sub-noise floor で inconclusive、stronger local LLM が future work**、**F-097 BGL HW kernel log で recurring-rare +33.33pt PASS、cross-domain N=3 (NASA + Apache + BGL) で recurring-rare 軸 durable、ただし one-shot disposal は web log family specific と判明**。残った位置は narrow but durable で 4 grounded products + F-086 γ domain-fit predictor + **6-pattern (4 narrow + 2 positive) self-refutation epistemic anchor (F-070/F-087/F-091/F-092 + F-094/F-097)** + F-093 anchor sharpening category + **F-095/F-096 infrastructure honest 記録 chain**(Direction A occurrence 4 record + trigger 5 deep application refinement)。詳細単一文書要約は public [PHASE_2_RETROSPECTIVE.md](PHASE_2_RETROSPECTIVE.md)。Claim 1-50 全 50 項は引き続き unit test backed、機構レベルは Phase X で realistic benchmark backed、4 self-refutation finding は機構支持・specific application robustness narrowing で機構自体は不変、F-094/F-097 で cross-domain recurring-rare 軸の positive replication N=3 が同 mechanism を支持、F-096 inconclusive は F-060 paid finding を refute せず infrastructure threshold を anchor 化、F-097 sanity inconsistent は one-shot disposal mechanism を web log family specific に narrow.)

@@ -161,6 +161,26 @@ empirical boundary at the cost of two specific commercial positionings.
   $0.000$ -- $0.006$ on 8B 5-Q + 3B 479-Q both), sharpening F-048
   caveat from "weak LLM degrades retrieval" to "framework compression
   itself does not preserve substrings independent of LLM size"
+- 2026-04-29 (v2.6): F-099 v1 router (precision-only, no length filter)
+  characterization across 5 cells × 3 variants — H_v1_paid PASS_negative
+  on both LongMemEval paid cells (F-053 $\Delta_{v1}=-11.60$ pt
+  $p=10^{-7}$, F-059 $\Delta_{v1}=-13.00$ pt $p=10^{-10}$); H_v1_local
+  REPRODUCED (F-096 LongMemEval local $\Delta_{v1}=+6.26$ pt deterministic
+  post-hoc replication); Sanity 4/4 paid v2 cells match F-060 published
+  values within $\pm 0.0004$. **v2 design (precision AND length$\ge$100)
+  empirically justified**: v1 standalone is harmful in paid setting where
+  Mem0 $>>$ KDF (routes precision queries to lower performer);
+  $v_1 \neq v_2$ only on short-context (LongMemEval), demonstrating the
+  AND-conjunction safeguard. v1 is **not a product candidate** (paid hurt
+  significant, local help at sub-noise floor). Router design space now
+  fully documented (5 cells × 3 variants). **First test case of pre-reg
+  template `_template_pre_reg.md`** (operational form of trigger 5 /
+  post-hoc narrowing / observation-interpretation / recommendation-boundary
+  protocols, introduced after Direction A occurrence 1-4 showed body
+  memory dependence as root failure mode). Template §0 checkbox group
+  caught the post-hoc nature explicitly in §0.3, prevented narrative
+  drift structurally. Independent v1 verification on fresh paid data
+  is deferred to F-100+
 - 2026-04-29 (v2.5): F-097 BGL recurring-rare cross-domain N=3 expansion
   of F-094 — H_R+ PASS ($\Delta_{\text{recurring}} = +33.33$ pt
   $> +1.0$ pt threshold) on BGL Blue Gene/L HW kernel failure log

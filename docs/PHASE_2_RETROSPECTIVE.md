@@ -1,6 +1,6 @@
-# Phase 2 Retrospective — KDF の現在地(2026-04-29、F-091〜F-097 追記)
+# Phase 2 Retrospective — KDF の現在地(2026-04-29、F-091〜F-099 追記)
 
-**期間カバレッジ**: F-073 〜 F-097(Phase 2 全体 + Phase 2.5 streaming replication + α/Lyapunov + anchor sharpening + cross-domain positive replication N=3 + Foreign baseline local replication attempt empirical)
+**期間カバレッジ**: F-073 〜 F-099(Phase 2 全体 + Phase 2.5 streaming replication + α/Lyapunov + anchor sharpening + cross-domain positive replication N=3 + Foreign baseline local replication attempt + Router design space documentation + pre-reg template `_template_pre_reg.md` operational form 確立 empirical)
 **Phase 1 末時点の anchor**: F-072(NASA HTTP streaming +3.06pt)
 **作成目的**: 公開後 reader が VERIFIED_FINDINGS.md の 70+ 件を全部読まなくても、KDF の **現在の正味 position** を一読で把握できるようにする
 
@@ -324,3 +324,60 @@ KDF の position を 3 つの否定形 + 3 つの肯定形 で記述する:
 - ただし one-shot disposal は web log family specific(BGL alphabet 小で mechanism discrimination room なし)→ "universal one-shot disposal" claim は本 finding で narrowed
 - recurring-rare benefit の cross-domain durability は anchor sharpening(F-093)で 3 軸(domain / α / rare type)に解像済 → F-097 で **domain 軸が web → HW で durable** と empirically anchored、3 軸の domain 軸が cross-family で robust と判明
 - F-094 sister positive replication anchor として paper credibility 強化、6-pattern arc は self-refutation(narrowing)+ cross-domain durability(positive)の両方向 anchor が揃う epistemic 構造
+
+## §15(2026-04-29 追記)F-099 反映後の追加 maintenance log — Router design space documentation + template `_template_pre_reg.md` 初 test case effectiveness 確認
+
+**新事実(observation 欄)**:F-060 で確立した v2 router(precision AND length≥100)の **design space を 5 cells × 3 variants = 15 evaluations で frontier mapping**、F-096 evaluate run で観測された v1 router +6.26pt exploratory observation を post-hoc replication form で documentation。
+
+**5-cell × 3-variant frontier**:
+
+| cell | env | v1 (precision-only) | v2 (precision+length) | v3 (length-only) |
+|---|:---:|---:|---:|---:|
+| F-053 LongMemEval × gpt-4o-mini | paid | **−11.60** p=10⁻⁷ | +0.00 | +0.00 |
+| F-059 LongMemEval × gpt-4.1-mini | paid | **−13.00** p=10⁻¹⁰ | +0.00 | +0.00 |
+| F-057 LoCoMo temporal × gpt-4o-mini | paid | +9.66 | +9.66 | +9.66 |
+| F-058 LoCoMo temporal × gpt-4.1-mini | paid | +22.43 | +22.43 | +22.43 |
+| F-096 LongMemEval × local qwen2.5:3b | local | **+6.26** p=10⁻⁹ | +0.00 | +0.00 |
+| F-096 LoCoMo × local qwen2.5:3b | local | +0.62 | +0.62 | +0.62 |
+
+**Pre-reg verdict**:H_v1_paid PASS_negative(両 paid LongMemEval で highly significant harm)+ H_v1_local REPRODUCED(F-096 deterministic post-hoc 一致)+ Sanity v2 4/4 paid cells F-060 published values と ±0.0004 tolerance match。
+
+**Interpretation**:
+
+- **v2 design 正当性 empirically anchored**:v1 standalone(precision query → KDF unconditionally)は paid setting で Mem0 >> KDF のため routing が actively harmful、v2 の length filter が **必要な safeguard** と判明
+- **v1 ≠ v2 の差は short context のみで現れる**:LoCoMo は always >100 turns で length filter discriminator として無効化、v1=v2=v3 同一値、precision filter のみ effective
+- **v1 standalone は product candidate でない**:paid で highly significant harm、local で sub-noise floor +6pt(absolute floor では meaningful gain でない)
+- **F-060 v2 published values の deterministic reproducibility** が ±0.0004 tolerance で confirmed、paper §5 published numerics の信頼性 backed
+- **independent v1 verification(fresh paid data)は F-100+ deferred**、本 finding は post-hoc characterization
+
+**Template `_template_pre_reg.md` 初 test case effectiveness**:
+
+Direction A occurrence 1-4(`feedback_tool_execution_verbal_claim_separation` memory)で trigger 5 protocol が body memory 依存で 4 連続 fail した後、user input(2026-04-29 post-F-097 評価)で **「protocol を覚える」より「protocol を template に埋め込む」design** に移行。本 F-099 は template 初 test case で以下を empirically confirm:
+
+| §0 sub-section | 物理化対象 | F-099 での catch | effectiveness |
+|---|---|---|---|
+| §0.1 Anchor constraint deep application | trigger 5 物理化 | wall-clock anchor(post-hoc deterministic、no LLM)を明確 identification、F-095 の wall-clock 過大評価 pattern を構造的に prevent | ✅ confirmed |
+| §0.2 Frozen specification | post-hoc narrowing 禁止 | threshold ±2pt 事前固定、結果見て緩和不可能な checkbox state | ✅ confirmed |
+| §0.3 Observation/interpretation 分離 | observation_vs_interpretation 物理化 | post-hoc 性質を §1 で明示、「fresh discovery」narrative drift を構造的 prevent | ✅ confirmed |
+| §0.4 Segment split | recommendation_boundary 物理化 | post-hoc deterministic の private nature 明示、user push 不要 | ✅ confirmed |
+
+→ template の §0 checkbox 群が 4 trigger 全部を catch する fail-safe として機能、Direction A occurrence 5 を **structurally prevent**(body memory 依存しない)。memory `feedback_tool_execution_verbal_claim_separation` の operational form として確立。
+
+**反映 changes**:
+
+- VERIFIED_FINDINGS に F-099 entry 挿入(F-097 entry の前位置)、最終更新行 update(F-073〜F-099)
+- paper.md v2.6 entry 追加(v1 router characterization、v2 design 正当性 anchor、template 初 test case mention)
+- 本 retrospective に §15 として Router design space frontier mapping + template effectiveness 確認 record establish
+- memory `feedback_tool_execution_verbal_claim_separation` に operational form section 追加(F-099 lessons learned 含む)
+- memory `project_kdf_phases.md` に F-099 status + template integration 反映
+
+**6-pattern arc 不変**(F-099 は別 epistemic category):
+
+F-099 は self-refutation でも cross-domain positive replication でもない、**Router design space documentation + template operational verification** の別 category。F-093(anchor sharpening)+ F-095/F-096(infrastructure honest record)と同 level の **5th category**(router design space frontier mapping + template effectiveness anchor)に位置。
+
+**narrative implication**:
+
+- **Mem0 hybrid Router の commercial path は v2 design 一択**、v1 / v3 は研究記録 only(product candidate でない)
+- **Router design space が完全 documented**、PCT consult input として claim 範囲明確化に貢献(precision routing の AND 条件が必要 safeguard と empirically anchored)
+- **Template effectiveness が initial test case で confirmed**、今後の new finding drafting で template 強制使用、Direction A occurrence 5 の structural prevention
+- **F-100+ candidate**:fresh paid LongMemEval で v1 independent verification(本 finding の post-hoc 性質を resolve、F-099 の "post-hoc but pre-registered" 状態を independent finding に格上げ)
