@@ -161,6 +161,24 @@ empirical boundary at the cost of two specific commercial positionings.
   $0.000$ -- $0.006$ on 8B 5-Q + 3B 479-Q both), sharpening F-048
   caveat from "weak LLM degrades retrieval" to "framework compression
   itself does not preserve substrings independent of LLM size"
+- 2026-04-30 (v2.7): F-100 HDFS empirical verification — cross-domain
+  N=4 attempt FAILED on Loghub HDFS_v1 distributed file system log
+  (100,000-BlockId subsample, 2.35M edges, 26 templates, 4.90% anomaly).
+  H_R+_literal Δ=$-23.08$ pt FAIL (recurring rare benefit narrowing
+  refuted on HDFS), H_anomaly Δ=$-4.30$ pt FAIL (HDFS-native anomaly
+  preservation FAIL), Sanity inconsistent (one-shot disposal absent,
+  reinforcing F-097 small-alphabet caveat). Cross-domain durability
+  arc narrowed to **web access log family + HW kernel log family**
+  specific (NASA HTTP + Apache error log + BGL Blue Gene/L), distributed
+  file system log NOT covered. 6-pattern arc → **7-pattern arc**
+  (5 narrow + 2 positive). Pre-reg `_template_pre_reg.md` second
+  high-severity test case: §0.1 anchor constraint predicted small-
+  alphabet caveat would re-confirm → empirically borne out (sanity
+  +0 pt, identical to F-097 BGL pattern); §0.3 observation/interpretation
+  separation prevented narrative drift; protocol §5 explicit禁止
+  "literal FAIL but H_anomaly PASS as N=4" not triggered (both FAIL).
+  ONE_PAGER.md Path A SIEM PoC scope adjusted: HDFS-style distributed
+  file system log out of scope, web/HW kernel log domain remains valid
 - 2026-04-29 (v2.6): F-099 v1 router (precision-only, no length filter)
   characterization across 5 cells × 3 variants — H_v1_paid PASS_negative
   on both LongMemEval paid cells (F-053 $\Delta_{v1}=-11.60$ pt

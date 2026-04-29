@@ -1,6 +1,6 @@
-# Phase 2 Retrospective — KDF の現在地(2026-04-29、F-091〜F-099 追記)
+# Phase 2 Retrospective — KDF の現在地(2026-04-30、F-091〜F-100 追記)
 
-**期間カバレッジ**: F-073 〜 F-099(Phase 2 全体 + Phase 2.5 streaming replication + α/Lyapunov + anchor sharpening + cross-domain positive replication N=3 + Foreign baseline local replication attempt + Router design space documentation + pre-reg template `_template_pre_reg.md` operational form 確立 empirical)
+**期間カバレッジ**: F-073 〜 F-100(Phase 2 全体 + Phase 2.5 streaming replication + α/Lyapunov + anchor sharpening + cross-domain positive replication N=3 + cross-domain N=4 attempt FAILED + Foreign baseline local replication attempt + Router design space documentation + pre-reg template `_template_pre_reg.md` operational form 確立 + template second high-severity test case effectiveness empirical 確認)
 **Phase 1 末時点の anchor**: F-072(NASA HTTP streaming +3.06pt)
 **作成目的**: 公開後 reader が VERIFIED_FINDINGS.md の 70+ 件を全部読まなくても、KDF の **現在の正味 position** を一読で把握できるようにする
 
@@ -8,7 +8,7 @@
 
 ## 0. 一行でいうと
 
-> **Phase 1 の "broad applicability" 仮説は Phase 2 で empirical に narrow され、現在の KDF は「4 つの structural-niche 製品 + domain-fit predictor + 4 narrow + 2 positive epistemic anchor + F-072 anchor の 3 軸高解像 specificity + Foreign baseline N=3 + 1 honest infrastructure record」という narrow but durable(durable 側は cross-family 物理証拠あり、N=3)形に arc 完結した。**
+> **Phase 1 の "broad applicability" 仮説は Phase 2 で empirical に narrow され、現在の KDF は「4 つの structural-niche 製品 + domain-fit predictor + 5 narrow + 2 positive epistemic anchor + F-072 anchor の 3 軸高解像 specificity + Foreign baseline N=3 + 1 honest infrastructure record + cross-domain durability boundary at web+HW family(N=4 attempt FAILED for distributed file system log)」という narrow but durable(durable 側は cross-family 物理証拠 N=3 で **boundary empirically established**)形に arc 完結した。**
 
 「狭くなった」と「弱くなった」は別。Phase 2 を経て **どこで効くか / どこで効かないか** が事前判別できる framework が手に入り、4 件の self-refutation(F-070 sandwich / F-087 streaming / F-091 α=2 / F-092 Claim 31 functional)が paper の honesty-first stance を支える epistemic anchor として揃い、F-093 で F-072 anchor の真の dependency が 3 軸(domain / α / rare type)で sharpen され、**F-094 で recurring rare 軸が cross-domain N=2(NASA + Apache)で positive replication、F-097 で N=3(BGL HW kernel log family)に拡張**されたので、商用 deploy の確実性は **上がった**。失った主張のうち、研究者として最も誠実に向き合うべきは ① F-072 streaming benefit の汎用性、② bias-detector 商材 path、③ Claim 10 / Claim 31 の universal claim form の 3 件。F-093 は別 category(narrowing でなく anchor 解像度向上)、F-094 / F-097 は更に別 category(narrowing でなく durable 側の cross-domain N=3 物理証拠 = positive direction)、F-095 / F-096 は **第 4 category infrastructure honest record**(F-060 paid finding の local replication 試行が 3B environment で sub-noise floor、stronger local LLM future work)。
 
@@ -385,3 +385,59 @@ F-099 は self-refutation でも cross-domain positive replication でもない�
 - **Router design space が完全 documented**、PCT consult input として claim 範囲明確化に貢献(precision routing の AND 条件が必要 safeguard と empirically anchored)
 - **Template initial 運用 evidence が F-099 で取得**、今後の new finding drafting で template 強制使用。Direction A occurrence 5 の structural prevention 能力は **F-100+ 第 2 test case(severity 高い LLM bench / apples-to-apples 含む)で本格 verify pending**(F-099 は low-severity initial 運用、self-evident pattern のみ catch)
 - **F-100+ candidate**:fresh paid LongMemEval で v1 independent verification(本 finding の post-hoc 性質を resolve、F-099 の "post-hoc but pre-registered" 状態を independent finding に格上げ)
+
+## §16(2026-04-30 追記)F-100 反映後の追加 maintenance log — HDFS cross-domain N=4 attempt FAILED、6-pattern arc → 7-pattern (5 narrow + 2 positive) に narrow direction 拡張
+
+**新事実(observation 欄)**:F-094(Apache recurring +3.67pt)+ F-097(BGL recurring +33.33pt)で確立した cross-domain durability arc を、HDFS distributed file system log domain(Loghub HDFS_v1、100K BlockIds subsample、2.35M edges、26 templates、4.90% anomaly ratio)で N=4 拡張試行、**両 hypothesis empirically FAILED**:
+
+| variant | Δ (pt) | verdict |
+|---|---:|:---:|
+| V_one-shot literal(sanity)| +0.00 | ⚠️ inconsistent(F-097 BGL 同型 small-alphabet caveat reinforce)|
+| V_recurring literal(main literal)| **−23.08** | ❌ **FAIL**(streaming 23pt 下回る)|
+| H_anomaly(HDFS-native)| **−4.30** | ❌ **FAIL** |
+
+**narrowing implication**:
+
+1. **Cross-domain durability arc narrow**:F-094/F-097 の N=3 anchor は **web access log family + HW kernel log family specific**(NASA HTTP + Apache error + BGL Blue Gene/L)、**distributed file system log family は scope 外**と F-100 で empirically refuted。N=4 拡張は不能。
+2. **One-shot disposal mechanism narrow further**:F-097 BGL alphabet 8 で観測された不発が HDFS 26 templates で再現、**rich resource alphabet domain specific**(web log family)とさらに narrow、cross-domain anchor として 2 dataset 独立 confirmation。
+3. **HDFS anomaly preservation FAIL**:H_anomaly Δ=−4.30pt、KDF bipartite mechanism は HDFS sequential pattern based anomaly に unfit、SOC SIEM application scope narrow(ONE_PAGER.md Path A 適用範囲を web+HW kernel log に narrow)。
+
+**7-pattern arc 拡張**(narrow 5 + positive 2):
+
+| pattern | direction | F-xxx |
+|---|---|---|
+| 1 | sandwich canonical refute | F-070 |
+| 2 | streaming benefit one-shot rare narrow | F-087 |
+| 3 | α=2 NASA-recurring-rare specific | F-091 |
+| 4 | Claim 31 functional protection 非 adversarial narrow | F-092 |
+| 5 | Apache recurring-rare positive replication(web log family)| F-094 |
+| 6 | BGL recurring-rare cross-domain N=3 + sanity inconsistent narrow(HW kernel log + small alphabet caveat 起源)| F-097 |
+| **7** | **HDFS cross-domain N=4 attempt FAILED + anomaly preservation FAILED**(distributed file system log family unfit、recurring rare benefit を web+HW family specific に narrow)| **F-100** |
+
+**Template `_template_pre_reg.md` second test case effectiveness 確認(severity 高い test、F-099 low-severity に対する真の severity verify)**:
+
+F-100 は template 第 2 test case として **真の severity test**:
+- §0.1 anchor constraint deep application(trigger 5 物理化):pre-reg drafting で HDFS template alphabet=29 grep verify、F-097 BGL 同型 small-alphabet caveat の事前予測 → **実測で empirically borne out**(sanity +0pt、F-097 と identical)
+- §0.1 apples-to-apples 判定:literal F-094 protocol on small alphabet を「expected non-informative」と honest 記述 → **更に強い negative direction で empirically refined**(Δ=-23.08pt)
+- §0.2 frozen specification:threshold ±1.0pt / ±5.0pt frozen、結果見て緩和不可能、両 hypothesis FAIL も honest 記録
+- §0.3 observation/interpretation 分離:§5 Failure protocol で「literal FAIL でも H_anomaly PASS を N=4 cross-domain と表現する narrative drift 禁止」事前明記、両 hypothesis FAIL で drift trigger 不発、**protocol redundantly held**
+- §0.4 segment split:結果不振でも paper / retrospective transparent 反映で完結
+
+→ template の §0 が severity 高い test で empirical 機能、F-099 self-evident catches に加え、severity 高い場面の structural prevention も confirmed。memory `feedback_tool_execution_verbal_claim_separation` operational form は **2 test case で effectiveness 蓄積**(low-severity F-099 + high-severity F-100、両者で §0 catch 機能)。
+
+**反映 changes**:
+
+- VERIFIED_FINDINGS に F-100 entry 挿入(F-099 entry の前位置)、最終更新行 update(F-073〜F-100)
+- paper.md v2.7 entry 追加(Addendum changelog)
+- 本 retrospective に §16 として 7-pattern arc 拡張 + template second test case effectiveness 確認 record establish
+- ONE_PAGER.md Path A SIEM PoC 適用範囲を web+HW kernel log に narrow、distributed file system log scope 外を caveat 追加(F-100 honest 記録 anchor として §"honest scope" 強化)
+- memory `feedback_observation_vs_interpretation` self-application log 第 5 例 anchor 追加候補(template second test case で観測 precision 維持、severity 高い場面で §0 機能 confirmed)
+- memory `project_kdf_phases.md` に F-100 status + 7-pattern arc + template second test case effectiveness 反映
+
+**narrative implication**:
+
+- **Claim 14 streaming benefit scope** は **web access log family + HW kernel log family specific** と確定、distributed file system log は scope 外
+- F-094/F-097 N=3 anchor は narrow but durable、F-100 で boundary が **empirically established**(N=4 attempt が fail することで N=3 boundary が anchored)
+- ONE_PAGER.md Path A SIEM PoC は web/HW kernel log dataset 限定、HDFS-style logs は scope 外と honest disclosure
+- F-099(template first low-severity test case)+ F-100(template second high-severity test case)で template effectiveness が 2 stage 蓄積、**Direction A occurrence 5 の structural prevention** が initial 運用 evidence + severity test verify で 一旦完成
+- 6-pattern arc → 7-pattern arc は paper credibility 強化(narrowing direction の N=5 結束、positive direction の N=2 with specific narrow boundary)

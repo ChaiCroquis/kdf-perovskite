@@ -4032,6 +4032,100 @@ Bipartite: A = paper as citing source、B = paper as cited target (labeled rare)
 
 ---
 
+### ❌ F-100 HDFS empirical verification(cross-domain N=4 attempt)— H_R+_literal FAIL(Δ=-23.08pt)、H_anomaly FAIL(Δ=-4.30pt)、Sanity inconsistent +0pt(F-097 small alphabet caveat 強化)、recurring rare benefit を **web access log + HW kernel log family specific** に narrow、HDFS distributed file system log は scope 外(2026-04-30)
+
+**Pre-reg**: [docs/exploration/g11_hdfs_recurring_pre_reg.md](exploration/g11_hdfs_recurring_pre_reg.md)(commit 57351e6、frozen)
+**Template second test case**: [docs/exploration/_template_pre_reg.md](exploration/_template_pre_reg.md)(severity 高い、apples-to-apples 判定 + alphabet structural prerequisite check 含む第 2 test case、F-099 low-severity post-hoc deterministic に対し本 finding が **真の severity test**)
+
+**Context**: F-094(Apache recurring +3.67pt)+ F-097(BGL recurring +33.33pt + sanity inconsistent / small alphabet caveat)で確立した cross-domain durability arc を、**HDFS distributed file system log family**(Loghub HDFS_v1 dataset)に拡張試行。Pre-reg drafting で template §0.1 anchor constraint deep application を適用、HDFS template alphabet=29(BGL anomaly 8 と類似 small-alphabet structure)から **「literal F-094 protocol expected non-informative」**と §1 で事前 honest expectation 明示、**2 hypothesis 並列 frozen**(literal apples-to-apples + HDFS-native methodology)。
+
+**Setup(frozen per pre-reg §3)**:
+- Subsample: first 100,000 BlockIds(Event_traces.csv 順、F-097 BGL 80K analog scale)
+- Bipartite: BlockId ↔ EventTemplate(2,348,836 edges、100,026 nodes)
+- 2 hypothesis × 2 variants:
+  - H_R+_literal V_one-shot(sanity): rare = template freq ≤ 5
+  - H_R+_literal V_recurring(main literal): rare = template freq ≥ 1000
+  - H_anomaly: rare = anomaly BlockIds(ground truth、4,903 of 100K = 4.90%)
+- α=2.0 fixed、5 conditions C0-C4、window=500、4,697 windows、last-window mean
+
+**Result(raw measurement、observation 欄)**:
+
+| variant | rare axis | n_res | n_rare | C0 | C1 | C2 | C3 | C4 | Δ (pt) |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| V_one-shot literal(freq ≤ 5)| Template | 26 | 4 | 0.2500 | 0.2500 | 0.2500 | 0.2500 | 0.2500 | **+0.00** |
+| **V_recurring literal(freq ≥ 1000)**| Template | 26 | 13 | 0.5385 | 0.2308 | 0.3077 | 0.2308 | 0.3077 | **−23.08** |
+| **H_anomaly(rare = Anomaly BlockIds)**| Block | 100,000 | 4,903 | 0.2890 | 0.2386 | 0.2460 | 0.2386 | 0.2460 | **−4.30** |
+
+データ統計:
+- 100,000 BlockIds, 26 unique templates(原 29 のうち 3 templates が 100K subsample で freq=0 = 出現しない)
+- 2.93% anomaly ratio in subsample(4,903 anomaly / 100K)
+- V_recurring rare ratio 50%(13 of 26 templates が freq ≥ 1000)= F-097 BGL 8 templates より更に **rare 比率高**、bipartite で discrimination room 限定的
+
+**Verdict(pre-reg auto、frozen thresholds)**:
+
+| 観点 | result | verdict |
+|---|---|---|
+| H_R+_literal(Δ > +1.0pt PASS / 0-1pt PARTIAL / <0 FAIL)| Δ=−23.08pt | ❌ **FAIL**(strong negative)|
+| H_anomaly(Δ > +5.0pt PASS / 0-5pt PARTIAL / ≤0 FAIL)| Δ=−4.30pt | ❌ **FAIL** |
+| Sanity V_one-shot direction(expect negative for mechanism consistency)| Δ=+0.00pt(non-negative)| ⚠️ **inconsistent**(F-097 BGL 同型 small-alphabet caveat 再現)|
+
+**Interpretation(observation との明示分離、memory `feedback_observation_vs_interpretation` 適用)**:
+
+1. **HDFS literal protocol が strong FAIL**(Δ=−23.08pt):F-094 / F-097 で確立した recurring rare benefit が HDFS で **streaming が static を 23pt 下回る**=streaming が actively harmful。alphabet caveat 単独でなく、HDFS distributed file system log domain 自体が KDF mechanism と不整合。Pre-reg §1 expected outcome「non-informative」より更に強い negative direction。
+
+2. **HDFS-native anomaly preservation も FAIL**(Δ=−4.30pt):KDF 構造的 layering が anomaly BlockIds を top-K に保持しない。HDFS anomaly は sequential pattern based(per-block event 順)で、KDF の bipartite connection pattern based mechanism と不整合と推定。
+
+3. **Sanity inconsistent confirmed**:F-097 BGL alphabet 8 で観測された one-shot disposal mechanism 不発が HDFS 26 templates でも再現。**One-shot disposal は rich resource alphabet domain specific**(web log family)とさらに narrow、cross-domain anchor として 2 dataset(BGL + HDFS)で independently confirmed。
+
+4. **Cross-domain durability narrow**:F-094/F-097 の N=3 anchor は **web access log family**(NASA HTTP + Apache error log)+ **HW kernel log family**(BGL Blue Gene/L)に narrow stay、**distributed file system log family は scope 外**。N=4 拡張は本 finding で empirically refuted、honest narrowing として記録。
+
+**Honest record per memory `feedback_decision_framework`**:
+
+- F-094/F-097 cross-domain durability claim は web + HW family specific と narrow(本 finding で N=4 attempt FAILED)
+- 「KDF は SOC SIEM anomaly detection の direct anchor」claim は本 finding で立証されない(H_anomaly FAIL)
+- ONE_PAGER.md Path A(SIEM 統合 PoC) は **HDFS-style distributed file system log は scope 外**として caveat 追加要、Path C(公開 dataset 共同 benchmark)anchor として本 F-100 自体は honest 記録 value あり
+- Pre-reg §1 で明示した expected outcome(literal non-informative)が empirical で更に negative direction に裏付け、**事前 honest expectation の precision discipline 確認**
+
+**Pattern note(arc 構造拡張、narrowing 5 件 + positive 2 件 = 7-pattern arc)**:
+
+| pattern | direction | F-xxx |
+|---|---|---|
+| 1 | sandwich canonical refute | F-070 |
+| 2 | streaming benefit one-shot rare narrow | F-087 |
+| 3 | α=2 NASA-recurring-rare specific | F-091 |
+| 4 | Claim 31 functional protection 非 adversarial narrow | F-092 |
+| 5 | Apache recurring-rare positive replication(web log family)| F-094 |
+| 6 | BGL recurring-rare cross-domain N=3 + sanity inconsistent narrow | F-097 |
+| **7** | **HDFS cross-domain N=4 attempt FAILED、recurring rare benefit web+HW family specific narrow + anomaly preservation HDFS unfit narrow** | **F-100** |
+
+→ 6-pattern arc(4 narrow + 2 positive)→ **7-pattern arc(5 narrow + 2 positive)**。F-100 は新 self-refutation pattern として、cross-domain durability の boundary を **web + HW kernel log family** に固定する empirical anchor。
+
+**Template second test case effectiveness empirical 検証**(template `_template_pre_reg.md` 第 2 high-severity test case の正式運用結果、`feedback_observation_vs_interpretation` self-application log 第 5 例 anchor 候補):
+
+F-099(post-hoc deterministic、low-severity)に対し本 F-100 は **真の severity test case**:
+- §0.1 anchor constraint deep application:HDFS template alphabet=29 を grep verify、F-097 BGL 8 と類似 caveat を pre-reg drafting 時に予測 → **実測で empirically confirmed**(literal sanity +0pt、F-097 同型)
+- §0.1 apples-to-apples 判定:literal F-094 protocol on small alphabet を「expected non-informative」と honest 記述 → **実測で更に強い negative direction**(Δ=-23.08pt)、observation/interpretation 分離 in observation form 正確に維持
+- §0.2 frozen specification:threshold ±1.0pt / ±5.0pt frozen、結果見て緩和不可能、FAIL も honest 記録
+- §0.3 observation/interpretation 分離:§5 Failure protocol で「literal FAIL でも H_anomaly PASS を N=4 cross-domain と表現する narrative drift 禁止」事前明記、両 hypothesis FAIL で drift trigger 不発、protocol redundantly held
+- §0.4 segment split:結果不振でも paper / retrospective transparent 反映で完結、user 並行作業(知り合い企業送付 path)に影響なし
+
+→ **template の §0 が severity 高い test case で empirical 機能**、F-099 self-evident catches に加え、severity 高い場面の structural prevention も confirmed。memory `feedback_tool_execution_verbal_claim_separation` operational form の effectiveness が 2 test case で蓄積。
+
+**Artifacts**:
+- pre-reg: [g11_hdfs_recurring_pre_reg.md](exploration/g11_hdfs_recurring_pre_reg.md)(commit 57351e6)
+- script: [demos/D8_llm_memory/src/bin/phase_g11_hdfs_recurring.rs](../demos/D8_llm_memory/src/bin/phase_g11_hdfs_recurring.rs)
+- output log: [experiments/hdfs_phase2/results/g11_hdfs_recurring_output.log](../experiments/hdfs_phase2/results/g11_hdfs_recurring_output.log)
+- pattern arc 7-pattern 拡張、`docs/PHASE_2_RETROSPECTIVE.md` §16 で publish
+
+**Reproducibility pin**:
+- Loghub HDFS_v1 preprocessed(`experiments/hdfs_phase2/preprocessed/`)、Event_traces.csv + anomaly_label.csv
+- Subsample: first 100,000 BlockIds(deterministic order)
+- α=2.0 fixed(`MasterSpecParams::default()`)
+- HW: i7-13700F 16C24T、16GB RAM、Win11 Pro(CPU only、no GPU)
+- Wall-clock: ~3 hours(2.35M edges × 4,697 windows × 5 conditions × 3 blocks)— pre-reg estimate ~10-30 min was **off by 6-18x**(observation precision lesson:scaling estimate は edge count と window count の積算で computed、subsample 100K BlockIds × ~24 events/block = 2.35M edges、F-097 BGL 80K edges から 30x scale)
+
+---
+
 ### ✅ F-099 v1 router(precision-only, no length filter)characterization across 5 cells — H_v1_paid PASS_negative(LongMemEval paid -11.60/-13.00pt p<10⁻⁷)、H_v1_local REPRODUCED、Sanity 4/4 match、**v2 の length≥100 component の necessity** が間接 logic で anchored(precision component の necessity は本 finding では立証されない、v3 vs v2 比較で precision filter は length filter と redundant の可能性示唆)、template `_template_pre_reg.md` 初 test case(2026-04-29)
 
 **Pre-reg**: [docs/exploration/g10_v1_router_characterization_pre_reg.md](exploration/g10_v1_router_characterization_pre_reg.md)(commit 5cbd21d、frozen)
@@ -5141,4 +5235,4 @@ F-040 で全 50 Claim に per-claim 直接 unit test が整備済み。加えて
 ---
 
 **検証責任者:** プロジェクト実行担当(Claude Opus 4.7, 独立検証エージェント経由)
-**最終更新:** 2026-04-29(Phase 2 + Phase 2.5 + α/Lyapunov + anchor sharpening + cross-domain positive replication N=3 + Foreign baseline local replication attempt + Router design space documentation 完走: F-073〜F-099 追加(F-099 で template `_template_pre_reg.md` が operational form として initial test case でも effectiveness confirmed)、scope narrowing + anchor 解像度向上 + cross-domain durability + infrastructure honest 記録 が empirically 確定。**Direct SOTA 勝負 path は 3/3 LOSS で撤回**(F-073/074/075)、**streaming benefit は temporally recurring rare に narrow**(F-087)、**bias-detector predictor は N=21 systematic test で 45.5% < 70% で撤回**(F-090)、**Claim 10 (α=2 「発明の核心」) は NASA-recurring-rare specific に narrow**(F-091)、**Claim 31 functional rare protection は非 adversarial settings に narrow**(F-092)、**F-072 anchor は実質 404-pattern driven、3 軸 narrowing で解像**(F-093)、**Apache recurring-rare で +3.67pt positive replication、cross-domain N=2 で arc 完結**(F-094)、**F-095 local replication infrastructure-infeasible (8B + batch=4 で wall-clock 33-36h)、F-096 で qwen2.5-3b + ingest batching optimization で feasible 化したが 3B environment が sub-noise floor で inconclusive、stronger local LLM が future work**、**F-097 BGL HW kernel log で recurring-rare +33.33pt PASS、cross-domain N=3 (NASA + Apache + BGL) で recurring-rare 軸 durable、ただし one-shot disposal は web log family specific と判明**。残った位置は narrow but durable で 4 grounded products + F-086 γ domain-fit predictor + **6-pattern (4 narrow + 2 positive) self-refutation epistemic anchor (F-070/F-087/F-091/F-092 + F-094/F-097)** + F-093 anchor sharpening category + **F-095/F-096 infrastructure honest 記録 chain**(Direction A occurrence 4 record + trigger 5 deep application refinement)。詳細単一文書要約は public [PHASE_2_RETROSPECTIVE.md](PHASE_2_RETROSPECTIVE.md)。Claim 1-50 全 50 項は引き続き unit test backed、機構レベルは Phase X で realistic benchmark backed、4 self-refutation finding は機構支持・specific application robustness narrowing で機構自体は不変、F-094/F-097 で cross-domain recurring-rare 軸の positive replication N=3 が同 mechanism を支持、F-096 inconclusive は F-060 paid finding を refute せず infrastructure threshold を anchor 化、F-097 sanity inconsistent は one-shot disposal mechanism を web log family specific に narrow.)
+**最終更新:** 2026-04-30(Phase 2 + Phase 2.5 + α/Lyapunov + anchor sharpening + cross-domain positive replication N=3 + cross-domain N=4 attempt FAILED + Foreign baseline local replication attempt + Router design space documentation + HDFS empirical verification 完走: F-073〜F-100 追加(F-100 で cross-domain durability arc を web+HW family specific に narrow)(F-099 で template `_template_pre_reg.md` が operational form として initial test case でも effectiveness confirmed)、scope narrowing + anchor 解像度向上 + cross-domain durability + infrastructure honest 記録 が empirically 確定。**Direct SOTA 勝負 path は 3/3 LOSS で撤回**(F-073/074/075)、**streaming benefit は temporally recurring rare に narrow**(F-087)、**bias-detector predictor は N=21 systematic test で 45.5% < 70% で撤回**(F-090)、**Claim 10 (α=2 「発明の核心」) は NASA-recurring-rare specific に narrow**(F-091)、**Claim 31 functional rare protection は非 adversarial settings に narrow**(F-092)、**F-072 anchor は実質 404-pattern driven、3 軸 narrowing で解像**(F-093)、**Apache recurring-rare で +3.67pt positive replication、cross-domain N=2 で arc 完結**(F-094)、**F-095 local replication infrastructure-infeasible (8B + batch=4 で wall-clock 33-36h)、F-096 で qwen2.5-3b + ingest batching optimization で feasible 化したが 3B environment が sub-noise floor で inconclusive、stronger local LLM が future work**、**F-097 BGL HW kernel log で recurring-rare +33.33pt PASS、cross-domain N=3 (NASA + Apache + BGL) で recurring-rare 軸 durable、ただし one-shot disposal は web log family specific と判明**。残った位置は narrow but durable で 4 grounded products + F-086 γ domain-fit predictor + **6-pattern (4 narrow + 2 positive) self-refutation epistemic anchor (F-070/F-087/F-091/F-092 + F-094/F-097)** + F-093 anchor sharpening category + **F-095/F-096 infrastructure honest 記録 chain**(Direction A occurrence 4 record + trigger 5 deep application refinement)。詳細単一文書要約は public [PHASE_2_RETROSPECTIVE.md](PHASE_2_RETROSPECTIVE.md)。Claim 1-50 全 50 項は引き続き unit test backed、機構レベルは Phase X で realistic benchmark backed、4 self-refutation finding は機構支持・specific application robustness narrowing で機構自体は不変、F-094/F-097 で cross-domain recurring-rare 軸の positive replication N=3 が同 mechanism を支持、F-096 inconclusive は F-060 paid finding を refute せず infrastructure threshold を anchor 化、F-097 sanity inconsistent は one-shot disposal mechanism を web log family specific に narrow.)
