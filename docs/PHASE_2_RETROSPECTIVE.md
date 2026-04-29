@@ -49,6 +49,20 @@
 
 加えて、**F-086 γ domain-fit predictor**(hub-peripheral / hub-biased / peer-network の事前判別 framework)は本質的に新しい知識資産として残った。これは bias-detector の sister tool ではなく、**γ-check correlation rate** という別 framework の predictor で、F-090 撤回の影響を受けない。
 
+### Foreign baseline anchor (Mem0 family, N=3 cells、Phase 2 開始前に establish 済)
+
+KDF vs Mem0 family の foreign baseline 比較は **N=3 empirical setting** で Phase 2 開始前(2026-04-18 〜 2026-04-19)に確立済:
+
+| F-xxx | setting | result | implication |
+|---|---|---|---|
+| **F-048** | Local Mem0-style proxy(Qwen2.5-0.5B + BGE)、無料 | KDF 0.8210 vs Mem0-style 0.5083(**KDF +31.27pt**)| Local / budget / privacy 制約下では KDF retrieval が decisively 優位 |
+| **F-053** | Paid Mem0 framework(gpt-4o-mini)、LongMemEval 500 Q | Mem0 0.672 vs KDF 0.434(**Mem0 +23.8pt**, p<10⁻¹⁶、Mem0 wins 5/6 categories)| Standard paid LLM-memory workload では Mem0 alone が強い |
+| **F-060** | KDF + Mem0 hybrid Router(precision-query 分岐)、無料 post-hoc | **Router > Mem0 alone +10〜23pt LoCoMo、never worse on LongMemEval** | Hybrid deployment で **strictly better than Mem0 alone**(4 cells × 2 models 横断)|
+
+→ KDF と Mem0 family の関係は **setting-dependent**:Local では KDF 優位、Paid では Mem0 alone が優位、Hybrid では KDF + Mem0 Router 戦略で strictly better。これは KDF を「Mem0 replacement」でなく「Mem0 complementary layer」として position する empirical 根拠で、F-060 Router implementation が validated commercial path。
+
+**Cat 5 残り 5 baseline**(Letta / Zep / GraphRAG / Anthropic memory / OpenAI memory / LangChain)の cross-replication は **paid-budget multi-session sprint** に deferred。本 retrospective 時点で foreign baseline anchor は Mem0 family の N=3 cells で empirically anchored、PCT 判定 input としては「Mem0 family N=3 setting-dependent evidence + 残り 5 baseline deferred 状態」を組み合わせて読む。
+
 ---
 
 ## 4. 何が narrow になったか
@@ -188,7 +202,7 @@ KDF の position を 3 つの否定形 + 3 つの肯定形 で記述する:
 | **Phase 1 deferred 6 candidates** | parked | Power grid / BGP / SO low-answer / Code silent pivot / Slack broker / EHR |
 | **F-088 HPC / F-089 Linux streaming** | 別 sprint へ deferred | N=2 で narrowing 確定済、再 inventive 余地 low |
 | **Cross-domain transfer**(Domain A 調整 → Domain B 評価) | 未測定 | 商業 deploy の transferability test |
-| **最新 baseline 比較** | 未測定 | Letta / Zep / GraphRAG / Anthropic memory tool との位置関係 |
+| **Cat 5 残り 5 baseline 比較** | Mem0 family は F-048 / F-053 / F-060 で **N=3 anchored**(§3 Foreign baseline anchor 参照)、残り 5 baseline は paid-budget 必要で deferred | Letta / Zep / GraphRAG / Anthropic memory / OpenAI memory / LangChain との位置関係 |
 
 ---
 

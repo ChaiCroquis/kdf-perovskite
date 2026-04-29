@@ -688,6 +688,40 @@ beyond access logs remains future work. See
 [`docs/PHASE_2_RETROSPECTIVE.md`](../PHASE_2_RETROSPECTIVE.md) for
 the single-document retrospective.
 
+**Foreign baseline anchor (Mem0 family, N=3 empirical cells)**:
+
+KDF vs. the Mem0 family of LLM-memory systems is empirically anchored
+across three operational settings, all completed prior to the F-094
+arc completion:
+
+1. **F-048 (2026-04-18, local LLM proxy, zero cost)**: Local
+   Mem0-style pipeline (Qwen2.5-0.5B fact extraction + BGE-small
+   embedding) on LongMemEval first-100 questions yielded recall
+   $0.5083$ vs. KDF $0.8210$ (**KDF $+31.27$ pt**). Under local /
+   budget / privacy constrained environments, KDF retrieval is
+   decisively superior to local Mem0-style approaches.
+2. **F-053 (2026-04-18, paid Mem0 framework with gpt-4o-mini)**:
+   Real KDF vs. paid Mem0 on LongMemEval 500 Q — Mem0 $0.672$ vs.
+   KDF $0.434$ (**Mem0 $+23.8$ pt**, $p < 10^{-16}$, Mem0 wins
+   significantly in 5 of 6 categories). On standard paid LLM-memory
+   workloads, Mem0 is the stronger standalone system.
+3. **F-060 (2026-04-19, KDF + Mem0 Router, zero added cost, detailed
+   below)**: KDF + Mem0 hybrid Router (precision-query regex +
+   conversation length $\ge 100$ turns) is **strictly better than Mem0
+   alone across 4 cells × 2 models** ($+10$ to $+23$ pt on LoCoMo
+   temporal; $\pm 0$ pt on LongMemEval; never worse).
+
+These three cells establish the Mem0-family foreign baseline at $N=3$.
+The position is **setting-dependent**: KDF favored in local / budget
+environments (F-048), Mem0 favored as standalone in standard paid
+LLM-memory workloads (F-053), and the **KDF + Mem0 hybrid Router** is
+strictly better than Mem0 alone in hybrid deployments (F-060) —
+placing KDF as a **Mem0 complementary layer**, not a replacement, with
+the Router implementation as the validated commercial path. The
+remaining Cat-5 baselines (Letta / Zep / GraphRAG / Anthropic memory /
+OpenAI memory / LangChain) are deferred to a paid-budget multi-session
+sprint.
+
 **F-060 — Empirical validation of a complementary architecture via the Ext-1 Precision-Query Router (2026-04-19, zero added cost)**:
 
 Applying the following routing logic post-hoc to the existing data of F-053 / 057 / 058 / 059:
