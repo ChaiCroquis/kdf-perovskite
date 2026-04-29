@@ -70,6 +70,10 @@ See the [日本語版](#日本語版) section below for the full Japanese docume
 
 ### Citation
 
+**For general citation, use the concept DOI** (`10.5281/zenodo.19651034`) which always resolves to the latest version. v1-specific citation (`10.5281/zenodo.19651035`) freezes a snapshot before Phase 2 narrowing — useful only if you specifically want to cite the v1 state.
+
+**General citation (concept DOI, recommended):**
+
 ```bibtex
 @misc{kuroki2026kdf,
   author       = {Kuroki, Yasuhiro},
@@ -78,10 +82,26 @@ See the [日本語版](#日本語版) section below for the full Japanese docume
                    Self-Refutation of Canonical Values}},
   year         = {2026},
   publisher    = {Zenodo},
-  version      = {v0.3},
+  doi          = {10.5281/zenodo.19651034},
+  url          = {https://doi.org/10.5281/zenodo.19651034},
+  note         = {Preprint, latest version. Patent: JP 2026-027032 (filed 2026-02-24).}
+}
+```
+
+**Version-specific citation (v1 only, frozen pre-Phase-2 state):**
+
+```bibtex
+@misc{kuroki2026kdf-v1,
+  author       = {Kuroki, Yasuhiro},
+  title        = {{KDF: A Deterministic Architecture for Finite-Resource
+                   Information Preservation---Cross-Domain Evidence and
+                   Self-Refutation of Canonical Values}},
+  year         = {2026},
+  publisher    = {Zenodo},
+  version      = {v0.3 (v1)},
   doi          = {10.5281/zenodo.19651035},
   url          = {https://doi.org/10.5281/zenodo.19651035},
-  note         = {Preprint. Patent: JP 2026-027032 (filed 2026-02-24).}
+  note         = {Preprint v1, anchored on F-072. Phase 2 narrowing not reflected. Patent: JP 2026-027032.}
 }
 ```
 
@@ -101,7 +121,7 @@ GitHub's "Cite this repository" button also provides citation output via [CITATI
 | Python call-graph API preservation (high in-degree) | ❌ | F-064 |
 | General semantic retrieval (BEIR SciFact) | ❌ | F-045 |
 
-A zero-dependency Rust crate [`crates/bias-detector/`](crates/bias-detector/) computes this predictor a priori on any input graph (bias_score = 0.3 · I₁ + 0.7 · I₄), correctly predicting applicability on 4 of 5 benchmarks in F-030 / F-036.
+A zero-dependency Rust crate [`crates/bias-detector/`](crates/bias-detector/) computes this predictor a priori on any input graph (bias_score = 0.3 · I₁ + 0.7 · I₄), correctly predicting applicability on 4 of 5 benchmarks in F-030 / F-036. **[Update 2026-04-29]** F-090 systematic test on N=21 datasets gave 5/11 = 45.5% certain prediction accuracy, well below the 70% threshold; the **bias-detector commercial predictor path is withdrawn**. The F-086 γ domain-fit framework (hub-peripheral / hub-biased / peer-network distinction) replaces it as the working predictor — see [`docs/PHASE_2_RETROSPECTIVE.md`](docs/PHASE_2_RETROSPECTIVE.md). The crate remains as code for reference.
 
 ### Further reading
 
@@ -123,6 +143,10 @@ A zero-dependency Rust crate [`crates/bias-detector/`](crates/bias-detector/) co
 
 ### 引用(Citation)
 
+**一般引用には concept DOI(`10.5281/zenodo.19651034`)を推奨**:常に latest version に解決される。v1 specific DOI(`10.5281/zenodo.19651035`)は Phase 2 narrowing 反映前の snapshot を固定参照する場合のみ使用。
+
+**一般引用(concept DOI、推奨):**
+
 ```bibtex
 @misc{kuroki2026kdf,
   author       = {Kuroki, Yasuhiro},
@@ -131,10 +155,26 @@ A zero-dependency Rust crate [`crates/bias-detector/`](crates/bias-detector/) co
                    Self-Refutation of Canonical Values}},
   year         = {2026},
   publisher    = {Zenodo},
-  version      = {v0.3},
+  doi          = {10.5281/zenodo.19651034},
+  url          = {https://doi.org/10.5281/zenodo.19651034},
+  note         = {Preprint, latest version. Patent: JP 2026-027032 (filed 2026-02-24).}
+}
+```
+
+**Version-specific 引用(v1 のみ、Phase 2 narrowing 反映前 frozen snapshot):**
+
+```bibtex
+@misc{kuroki2026kdf-v1,
+  author       = {Kuroki, Yasuhiro},
+  title        = {{KDF: A Deterministic Architecture for Finite-Resource
+                   Information Preservation---Cross-Domain Evidence and
+                   Self-Refutation of Canonical Values}},
+  year         = {2026},
+  publisher    = {Zenodo},
+  version      = {v0.3 (v1)},
   doi          = {10.5281/zenodo.19651035},
   url          = {https://doi.org/10.5281/zenodo.19651035},
-  note         = {Preprint. Patent: JP 2026-027032 (filed 2026-02-24).}
+  note         = {Preprint v1, anchored on F-072. Phase 2 narrowing not reflected. Patent: JP 2026-027032.}
 }
 ```
 
