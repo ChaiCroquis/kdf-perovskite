@@ -21,6 +21,81 @@ However, we also transparently report refutations of our own prior claims. The s
 
 ---
 
+## Version 2 Addendum (2026-04-29) — Phase 2 Retrospective
+
+This is **version 2** of the paper. Version 1 was deposited on Zenodo
+(DOI: [10.5281/zenodo.19651035](https://doi.org/10.5281/zenodo.19651035))
+on 2026-04-19, anchored on F-072 NASA HTTP streaming. Phase 2 + Phase 2.5
+(2026-04-20 -- 2026-04-29) added 18 systematic findings (F-073 -- F-090)
+that **sharpen** rather than overturn v1 claims. We summarize the
+substantive changes here; the v1 body below is unmodified except for
+short `[v2: ...]` caveats inline at the relevant claims, and a Phase 2 /
+Phase 2.5 subsection appended to §5 Empirical Evaluation. The
+comprehensive single-document retrospective lives at
+[`docs/PHASE_2_RETROSPECTIVE.md`](../PHASE_2_RETROSPECTIVE.md).
+
+**Substantive narrowing**:
+
+- **F-087 (2026-04-29) — streaming benefit narrows to temporally
+  recurring rare.** Apache error log replication of the F-072 streaming
+  protocol with a frequency-based rare definition (one-shot
+  reconnaissance probes, freq $\le 10$) yielded $-13.04$ pt vs. C0
+  static (sign reversal from F-072's $+3.06$ pt). The Claim 14 streaming
+  benefit is empirically valid only when rare events recur over time
+  (e.g., NASA HTTP 4xx/5xx persistent failure modes). For one-shot rare
+  events, decay washes out the signal and ActivationScore amplifies
+  common-path dominance, inverting the desired ordering.
+
+**Substantive withdrawals**:
+
+- **Direct SOTA-beating positioning (F-073 / F-074 / F-075).** Phase 2
+  Top 3 candidates (Wikipedia orphan / BGL anomaly / Citation
+  interdisciplinary bridge) all produced LOSS results
+  ($-4.07$ / $-12.92$ / complete loss respectively). KDF is empirically
+  not a SOTA-beating direct competitor; it is a structural-niche
+  complement, consistent with the "decisive predictor" framework
+  already articulated in §6.1. Paper's narrow scope claim is
+  *strengthened* by these negatives.
+- **`bias-detector` byproduct as commercial applicability predictor
+  (F-090).** Systematic test on N=21 datasets gave 5/11 = 45.5% certain
+  prediction accuracy, well below the 70% pre-registered threshold. The
+  v1 §6.1 / Abstract reference to "Applicability is predictable a
+  priori via a zero-dependency bias-detector metric" is **withdrawn**.
+  The F-086 γ domain-fit framework (separate from `bias-detector`,
+  using γ-check correlation rate) replaces it as the working predictor;
+  see §5 Phase 2/2.5 subsection.
+
+**Strengthening (v1 anchors confirmed under stress)**:
+
+- **Mem0 + KDF Router** cross-model robustness reconfirmed
+  (F-060: gpt-4o-mini + gpt-4.1-mini, $+10$ -- $+23$ pt date/time
+  literal recall).
+- **MovieLens niche genre surfacing** validated across six genres
+  (F-082 + F-085 Task 1: γ-check $100\%$ Film-Noir / IMAX / Western /
+  Musical / War / Documentary).
+- **Domain-fit predictor sharpened**: F-086 γ refines v1's "decisive
+  predictor" with hub-peripheral / hub-biased / peer-network
+  distinction, validated across N=5 meta-families (3 PASS / 2 REJECT).
+
+**v2 grounded position**: Four product candidates with empirical anchors
+(Obsidian / MovieLens niche / Mem0 hybrid / Git Core preservation) plus
+the F-086 γ predictor. The v1 narrative arc (broad cross-domain hypothesis
+→ decisive predictor → narrowed scope) is preserved; v2 adds a sharper
+empirical boundary at the cost of two specific commercial positionings.
+
+**v2 changelog (machine-extractable)**:
+
+- 2026-04-29: streaming benefit (Claim 14) narrowed to temporally
+  recurring rare per F-087 Apache replication failure
+- 2026-04-29: bias-detector commercial path withdrawn per F-090
+  systematic test (45.5% < 70% threshold)
+- 2026-04-29: Phase 2 / Phase 2.5 subsection added to §5 with
+  F-073 -- F-090 raw findings
+- v1 body otherwise unmodified; inline `[v2: ...]` markers indicate
+  caveat insertion points
+
+---
+
 ## 1. Introduction
 
 ### 1.1 Problem
@@ -324,9 +399,9 @@ What this structural correspondence suggests is the following — **directions f
 | P3 Large-scale log observability (static baseline) | NASA HTTP log, 50k real records | Recall $= 0.237$ (keep $10\%$, $4xx/5xx$ retention) | Random $= 0.102$ (**$\times 2.3$**), without labels |
 | P7 ML reproducibility meta (by-product) | 5 benchmarks × 5 scenarios | 4/5 exact predictions + 1 via alternate route | Released independently as the `bias-detector` crate |
 | **P8 Distributed-execution bit-exactness (Claim 17)** | **LoCoMo 10 real graph (600+ nodes, 400+ edges)** | **max edge-weight diff $= 0.000 \text{e}0$** | `apply_edge_decay` (global) and `apply_edge_decay_local` (distributed) are completely bit-exact, F-069 |
-| **P11 NASA streaming: Claim 14 decay benefit** | **NASA HTTP log 50k real records, replayed in time order (500 rec / 100 window)** | **C1 decay rare_recall $= 0.4898$ at keep $30\%$ (C0 static $0.4592$ → $+3.06$ pt)** | **First empirical anchor for the narrowed thesis that "streaming is the true use case", F-072** |
+| **P11 NASA streaming: Claim 14 decay benefit** | **NASA HTTP log 50k real records, replayed in time order (500 rec / 100 window)** | **C1 decay rare_recall $= 0.4898$ at keep $30\%$ (C0 static $0.4592$ → $+3.06$ pt)** | **First empirical anchor for the streaming-benefit thesis [v2: scoped to *temporally recurring rare* per F-087; see §5.x Phase 2/2.5 subsection], F-072** |
 
-As additional verification in Phase X Step 1, all three mechanisms of Claim 1—metabolic control, rarity protection, and integrity discovery—are now empirically backed on realistic benchmarks (integrity discovery via F-068: $100\%$ on Gentner classics, $100\%$ on cross-domain git↔paper, $0\%$ false positives on the negative control). In Phase X Step 5 (F-072), Claim 14 exponential decay is confirmed to yield a $+3.06$-point benefit in a realistic streaming scenario, giving **empirical anchor to the narrowed thesis that "streaming is the true use case"**.
+As additional verification in Phase X Step 1, all three mechanisms of Claim 1—metabolic control, rarity protection, and integrity discovery—are now empirically backed on realistic benchmarks (integrity discovery via F-068: $100\%$ on Gentner classics, $100\%$ on cross-domain git↔paper, $0\%$ false positives on the negative control). In Phase X Step 5 (F-072), Claim 14 exponential decay is confirmed to yield a $+3.06$-point benefit in a realistic streaming scenario, giving **empirical anchor to the narrowed thesis that "streaming is the true use case"**. **[v2]** F-087 Apache error log replication ($-13.04$ pt vs. C0 static, sign reversal) further restricts this anchor to **temporally recurring rare events** (e.g., the persistent failure pattern of NASA HTTP 4xx/5xx). For one-shot rare events (e.g., reconnaissance probes), streaming with decay is actively harmful — see §5 Phase 2/2.5 subsection.
 
 ---
 
@@ -400,8 +475,8 @@ The implementation code is available under PolyForm Noncommercial 1.0.0 (researc
 
 - **The "domain-invariant architecture" hypothesis itself is untested.** The ten-domain correspondence is merely a qualitative observation; a formal theorem of "necessary convergence" has not been proved. §6.1's hypothesis should be read **as a hypothesis, not a conclusion**.
 - **Canonical values $(\theta_L, \theta_U) = (0.70, 0.80)$ are refuted across four benchmarks** (F-041 Hopfield / F-068 analogy / F-070 Part A synthetic / F-070 Part B LoCoMo streaming). The sandwich mechanism itself is supported, but universality of specific values is not claimed (§4.2 / §5.2 P10).
-- **Claim 5 / 14 time-evaluation components and exponential decay are task-structure-dependent**: redundant on static query tasks (F-069 LoCoMo); $+3.06$-pt benefit on streaming scenarios (F-072 NASA 50 k records, time-ordered replay). When structural rarity already subsumes temporal rarity, the time signals are redundant; when stale traffic must be discarded under continuous operation, they are effective.
-- **Claim 25 ActivationScore depends on the temporal distribution of rare events**: $100\%$ rescue for temporally clustered rare events (F-027 Mode E drift scenario); hurts or neutralizes on evenly distributed rare events (F-072 NASA; F-069 LoCoMo) due to recency bias. At application time, discrimination of the rare-event temporal pattern is required.
+- **Claim 5 / 14 time-evaluation components and exponential decay are task-structure-dependent**: redundant on static query tasks (F-069 LoCoMo); $+3.06$-pt benefit on streaming scenarios (F-072 NASA 50 k records, time-ordered replay). When structural rarity already subsumes temporal rarity, the time signals are redundant; when stale traffic must be discarded under continuous operation, they are effective. **[v2]** F-087 Apache error log replication ($-13.04$ pt) further narrows the streaming benefit to *temporally recurring rare events* (persistent failure modes); for *one-shot rare events* (e.g., reconnaissance probes), decay actively erodes recall and ActivationScore amplifies common-path dominance.
+- **Claim 25 ActivationScore depends on the temporal distribution of rare events**: $100\%$ rescue for temporally clustered rare events (F-027 Mode E drift scenario); hurts or neutralizes on evenly distributed rare events (F-072 NASA; F-069 LoCoMo) due to recency bias. At application time, discrimination of the rare-event temporal pattern is required. **[v2]** F-087 Apache error log replication quantifies this further: with one-shot rare items (freq $\le 10$ resource paths), full streaming (decay + activation + meta α) reaches recall $0.000$ vs. C0 static $0.4348$ ($-43.48$ pt). ActivationScore *inverts* the desired ordering when rare items lack temporal recurrence.
 - **The ten-domain correspondences are at the level of structural similarity.** Proof as mathematical isomorphism (structure-preserving bijection) has not been carried out for any of the disciplines.
 - **The §4.3 Markov correspondence is a motivating analogy.** Strict CTMC equivalence does not hold (non-stationary generator, weights are not probability mass, etc.).
 - **Empirical evidence covers only five domains with six cases** (P1 / P2 / P3 / P7 / P8 = Claim 17 bit-exact; P11 = NASA streaming; P3 and P11 are the static and streaming scenarios of the same NASA HTTP-log domain). Generalization claims beyond these five domains are **beyond the scope of this paper**.
@@ -499,12 +574,45 @@ After F-068 brought all three mechanisms of Claim 1 to empirically-backed status
 
 | Finding | Task | Result | Implication |
 |---|---|---|---|
-| **F-069** | Claim 5 / 14 / 17 on LoCoMo temporal 321 Q | **Mixed**: C17 distributed-execution bit-exact pass; C5 / C14 inferior to KDF_static on static tasks (all time-aware conditions have $\Delta \le 0$) | Time signals are subsumed by structural rareness and redundant on static tasks; streaming is the true use case (verified in F-072) |
+| **F-069** | Claim 5 / 14 / 17 on LoCoMo temporal 321 Q | **Mixed**: C17 distributed-execution bit-exact pass; C5 / C14 inferior to KDF_static on static tasks (all time-aware conditions have $\Delta \le 0$) | Time signals are subsumed by structural rareness and redundant on static tasks; streaming benefit is empirical for *temporally recurring rare* (F-072 NASA $+3.06$ pt) but absent / inverted for *one-shot rare* **[v2: F-087 Apache $-13.04$ pt]** |
 | **F-070** | Claim 36–41 T_wait + Claim 47–48 sandwich, realistic | **Mixed**: mechanism [True] / canonical values [False]. Four-benchmark refutation of $(0.70, 0.80)$, F1 $0.000$ vs. F1$((0.70, 1.00)) = 1.000$; LoCoMo streaming $100\%$ RARE demoted under canonical | The 2-threshold *mechanism* is maintained as novel; specific canonical values require domain-specific calibration |
-| **F-071** | Claim 20–32 dynamic control on LoCoMo streaming (lightweight) | **Mechanism [True] / no selection benefit**: Claim 21 $5:3:1$ integer tick exact; MetaController $\alpha$-bound clamp working; TransitionController ceiling-effected (F-031 confirmed) | Mechanism-only validation; the true value shows on NASA-type streaming (verified in F-072) |
-| **F-072** | Claim 14 / 25 / 27–32 on NASA HTTP 50 k streaming replay | **[True] Claim 14 $+3.06$ pt** over static baseline (C1 decay $0.4898$ vs. C0 $0.4592$); [Warning] Claim 25 activation neutralizes on evenly distributed rare; Claim 27–32 are selection-neutral (as predicted) | **The paper narrowing "streaming is the true use case" is empirically validated.** The first positive evidence for Claim 14's value proposition. ActivationScore requires discrimination of the rare-event temporal pattern |
+| **F-071** | Claim 20–32 dynamic control on LoCoMo streaming (lightweight) | **Mechanism [True] / no selection benefit**: Claim 21 $5:3:1$ integer tick exact; MetaController $\alpha$-bound clamp working; TransitionController ceiling-effected (F-031 confirmed) | Mechanism-only validation; the streaming value is anchored on NASA-type *recurring rare* (F-072) but does not generalize to *one-shot rare* **[v2: F-087]** |
+| **F-072** | Claim 14 / 25 / 27–32 on NASA HTTP 50 k streaming replay | **[True] Claim 14 $+3.06$ pt** over static baseline (C1 decay $0.4898$ vs. C0 $0.4592$); [Warning] Claim 25 activation neutralizes on evenly distributed rare; Claim 27–32 are selection-neutral (as predicted) | **The paper narrowing "streaming is the true use case" is empirically validated.** The first positive evidence for Claim 14's value proposition. ActivationScore requires discrimination of the rare-event temporal pattern. **[v2]** F-087 Apache replication ($-13.04$ pt) further narrows this anchor to *temporally recurring rare events*; for one-shot rare, streaming with decay is actively harmful (sign reversal) |
 
 These Phase X findings both strengthen paper credibility by "self-refuting our own canonical values on four benchmarks" and, via F-072, provide a **positive empirical anchor after the narrowing**. Two follow-up directions are explicitly indicated as future work: "domain-calibrated parameter auto-tuning", and "conditional use of Claim 25 activation based on the rare-event temporal pattern".
+
+**Phase 2 / Phase 2.5 — Scope refinement after v1 release (2026-04-20 -- 2026-04-29)**:
+
+Following Zenodo v1 publication, we systematically tested the v1 claims
+against new domains. The 18 findings (F-073 -- F-090) **sharpen** rather
+than overturn the v1 narrative: they confirm that the "decisive
+predictor" framework articulated in §6.1 (does structural rareness
+correlate with task importance?) is the right level of abstraction, and
+they delineate three concrete narrowings.
+
+| Finding | Task | Result | Implication |
+|---|---|---|---|
+| **F-073** | Wikipedia orphan article preservation (simplewiki, $\rho=0.20$) | KDF $-4.07$ pt vs. Random | scale-free orphan pool with KDF Rare layer protecting deg=1 nodes is **wrong direction** for orphan importance; predictable scope violation |
+| **F-074** | BGL supercomputer anomaly templates ($\rho=0.20$) | KDF $-12.92$ pt | anomaly templates are **hub-like**, KDF Rare layer protects opposite; predictable scope violation |
+| **F-075** | Citation interdisciplinary bridge detection ($\rho=0.20$) | KDF complete loss (recall $0\%$) | bridges occupy **Core-like** structural position; KDF Rare layer cannot capture; predictable scope violation |
+| **F-076 / F-077** | Git archival cross-repo expansion (N=3 $\to$ N=9 OSS repos) | merge-rate threshold pattern decisively confirmed; vscode-style high-merge-rate repos remain exceptions | F-062 / F-065 **strengthens** as a Tier-A product on OSS-style repos with merge rate $< 10\%$ |
+| **F-082** + **F-085 Task 1** | MovieLens niche genres (6 genres × bipartite, k=1 default) | γ-check $100\%$ across all 6 genres (Film-Noir / IMAX / Western / Musical / War / Documentary) | Niche content surfacing **strengthens** as a Tier-A product, genre-agnostic robustness |
+| **F-085 Task 4** | Reddit community anomaly title replication | replication failure | Reddit community anomaly product candidate **withdrawn** |
+| **F-084** | Biological PPI + OncoKB cancer gene ($N=1077$) | γ-check $74\% < 95\%$ Strong threshold; cancer genes are hub-biased (TP53/BRCA1/MYC) | Biological domain reject under hub-biased label; scope boundary refined |
+| **F-086 α** | Real cgb-kdf on Git commit bipartite (flask, prettier) | merges land in **Core layer**, not Rare | Git archival product **reframed** as Core preservation, not Rare identification (framework correction) |
+| **F-086 β** | ogbn_arxiv academic citation meta-family | reject (peer-network structure, citing papers are themselves low-deg) | Academic citation domain reject; F-075 generalizes |
+| **F-086 γ** | Domain-fit predictor sweep (N=5 meta-families) | 3 PASS / 2 REJECT; hub-peripheral / hub-biased / peer-network distinction validated | **F-086 γ replaces `bias-detector` as the working predictor** (γ-check correlation rate framework) |
+| **F-087** | Apache error log streaming replication (LogHub Apache.log, freq $\le 10$ rare) | streaming $-13.04$ pt vs. C0 static; full streaming reaches recall $0.000$ | **Streaming benefit (F-072) narrows to temporally recurring rare**; one-shot rare actively harmed by decay + activation |
+| **F-090** | `bias-detector` predictor on N=21 datasets, certain prediction $= 11$ | accuracy $5/11 = 45.5\% \ll 70\%$ pre-registered threshold | `bias-detector` commercial path **withdrawn**; v1 §6.1 reference is updated; F-086 γ remains the working predictor |
+
+The combined picture: KDF's empirically validated core is now **four
+product candidates** (Obsidian / MovieLens niche / Mem0 hybrid Router /
+Git Core preservation) plus the F-086 γ domain-fit framework. The v1
+"narrow but durable" theme is preserved; v2 sharpens the empirical
+boundary at the cost of two specific commercial positionings (direct
+SOTA-beating positioning, and `bias-detector` as commercial predictor).
+See [`docs/PHASE_2_RETROSPECTIVE.md`](../PHASE_2_RETROSPECTIVE.md) for
+the single-document retrospective.
 
 **F-060 — Empirical validation of a complementary architecture via the Ext-1 Precision-Query Router (2026-04-19, zero added cost)**:
 
