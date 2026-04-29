@@ -122,15 +122,30 @@ empirical boundary at the cost of two specific commercial positionings.
   F-073 -- F-093 raw findings (12 → 15 rows)
 - 2026-04-29 (v2.1): F-093 NASA F-072 anchor robustness to rare code
   subset — anchor sharpening (not self-refutation): rare = 4xx/5xx is
-  실質 404-pattern driven on this dataset (5xx response absent), V1/V2/V4
+  実質 404-pattern driven on this dataset (5xx response absent), V1/V2/V4
   identical $+3.06$ pt confirms KDF captures rare *resource pattern*,
   not rare *code set*. Generalization to 5xx-containing logs is future
   work
-- v1 body otherwise unmodified; inline `[v2: ...]` / `[v2.1: ...]`
-  markers indicate caveat insertion points
-- **4 self-refutation patterns now anchor the paper's
-  honesty-first epistemic stance** (F-070 / F-087 / F-091 / F-092):
-  mechanism supported, specific application robustness narrowed
+- 2026-04-29 (v2.2): F-094 Apache recurring-rare positive replication
+  of F-072 streaming benefit — H_R+ PASS ($\Delta_{\text{recurring}} =
+  +3.67$ pt $> +1.0$ pt threshold) on Apache same dataset with rare def
+  flipped from one-shot (freq $\le 10$, F-087 reference) to recurring
+  (freq $\ge 5$). Sanity F-087 reproduce $-13.04$ pt $\pm 0.0$ pt
+  (preprocessing / build env consistent). F-072 anchor's true axis
+  (recurring rare structure, hypothesized via F-093 structural reading)
+  is empirically replicated cross-domain (N=2: NASA $+3.06$ pt + Apache
+  recurring $+3.67$ pt). 4-pattern self-refutation arc (F-070 / F-087 /
+  F-091 / F-092, narrowing direction) is supplemented with **1 positive
+  replication (F-094)** for arc completion: 5 patterns total = 4 narrow
+  + 1 positive. Scope of Claim 14 streaming benefit: recurring rare
+  structure $\times \alpha=2.0 \times $ NASA-Apache-homotype log dataset
+- v1 body otherwise unmodified; inline `[v2: ...]` / `[v2.1: ...]` /
+  `[v2.2: ...]` markers indicate caveat insertion points
+- **4 self-refutation patterns + 1 positive replication anchor the
+  paper's honesty-first epistemic stance** (F-070 / F-087 / F-091 /
+  F-092 narrowing direction; F-094 positive direction): mechanism
+  supported, specific application robustness narrowed but cross-domain
+  durable on the recurring-rare axis
 - **F-093 adds anchor sharpening category** (distinct from
   self-refutation): empirical anchor's true scope identified at higher
   resolution by dataset structural investigation
@@ -440,7 +455,7 @@ What this structural correspondence suggests is the following — **directions f
 | P3 Large-scale log observability (static baseline) | NASA HTTP log, 50k real records | Recall $= 0.237$ (keep $10\%$, $4xx/5xx$ retention) | Random $= 0.102$ (**$\times 2.3$**), without labels |
 | P7 ML reproducibility meta (by-product) | 5 benchmarks × 5 scenarios | 4/5 exact predictions + 1 via alternate route | Released independently as the `bias-detector` crate |
 | **P8 Distributed-execution bit-exactness (Claim 17)** | **LoCoMo 10 real graph (600+ nodes, 400+ edges)** | **max edge-weight diff $= 0.000 \text{e}0$** | `apply_edge_decay` (global) and `apply_edge_decay_local` (distributed) are completely bit-exact, F-069 |
-| **P11 NASA streaming: Claim 14 decay benefit** | **NASA HTTP log 50k real records, replayed in time order (500 rec / 100 window)** | **C1 decay rare_recall $= 0.4898$ at keep $30\%$ (C0 static $0.4592$ → $+3.06$ pt)** | **First empirical anchor for the streaming-benefit thesis [v2: scoped to *temporally recurring rare* per F-087; see §5.x Phase 2/2.5 subsection] [v2.1: F-093 で本 dataset の rare = 4xx/5xx は実質 404-pattern driven、5xx response は本 dataset に不在のため generalization 未測定], F-072** |
+| **P11 NASA streaming: Claim 14 decay benefit** | **NASA HTTP log 50k real records, replayed in time order (500 rec / 100 window)** | **C1 decay rare_recall $= 0.4898$ at keep $30\%$ (C0 static $0.4592$ → $+3.06$ pt)** | **First empirical anchor for the streaming-benefit thesis [v2: scoped to *temporally recurring rare* per F-087; see §5.x Phase 2/2.5 subsection] [v2.1: F-093 で本 dataset の rare = 4xx/5xx は実質 404-pattern driven、5xx response は本 dataset に不在のため generalization 未測定] [v2.2: F-094 で Apache 別 dataset を recurring rare 定義 (freq $\ge 5$) で再 test、$+3.67$ pt 再現、cross-domain N=2 で recurring-rare 軸が durable], F-072** |
 
 As additional verification in Phase X Step 1, all three mechanisms of Claim 1—metabolic control, rarity protection, and integrity discovery—are now empirically backed on realistic benchmarks (integrity discovery via F-068: $100\%$ on Gentner classics, $100\%$ on cross-domain git↔paper, $0\%$ false positives on the negative control). In Phase X Step 5 (F-072), Claim 14 exponential decay is confirmed to yield a $+3.06$-point benefit in a realistic streaming scenario, giving **empirical anchor to the narrowed thesis that "streaming is the true use case"**. **[v2]** F-087 Apache error log replication ($-13.04$ pt vs. C0 static, sign reversal) further restricts this anchor to **temporally recurring rare events** (e.g., the persistent failure pattern of NASA HTTP 4xx/5xx). For one-shot rare events (e.g., reconnaissance probes), streaming with decay is actively harmful — see §5 Phase 2/2.5 subsection.
 
@@ -648,6 +663,7 @@ they delineate three concrete narrowings.
 | **F-091** | Claim 10 ($\alpha_{\text{core}}=2.0$, "core of the invention") cross-domain robustness; $\alpha \in \{0.5, 1.0, 2.0, 3.0, 4.0\}$ sweep on NASA + Apache streaming + MovieLens null control | NASA: $\alpha=2.0$ optimal (diff $0.00$ pt vs best); Apache: $\alpha=4.0$ optimal, $\alpha=2.0$ diff $-17.39$ pt; MovieLens null PASS | **H_α PARTIAL (1/2)**: Claim 10 mechanism supported, but canonical $\alpha=2.0$ is NASA-recurring-rare-specific; one-shot rare requires domain-specific $\alpha$ calibration. Sister to F-070 (sandwich canonical refute) |
 | **F-092** | Claim 31 Lyapunov stability under real-data adversarial burst perturbation (NASA HTTP w50 + 1000 rare-target events) | Boundedness PASS ($\alpha_{\text{edge}} \in [1.0, 2.5]$ all 100 windows); Recovery PASS (diff $0.0043$ at w55); Functional FAIL (recall_perturbed $/$ recall_baseline $= 0.000 / 0.4592$) | **H_L PARTIAL (2/3)**: Controller mechanism robust, but adversarial degree inflation demotes natural rare resources from Rare to Core layer. **4th self-refutation pattern** (F-070 / F-087 / F-091 sister); production deploy needs upstream rate-limit / provenance defense layer |
 | **F-093** | NASA F-072 anchor robustness to rare code subset; 5 variants × 5 conditions = 25 runs at $\alpha_{\text{core}}=2.0$ canonical | V1 (4xx+5xx) $\Delta = +3.06$ pt; V2 (4xx only) and V4 (404 only) identical $+3.06$ pt; V3 (5xx only) and V5 (500 only) trivial (n_rare $= 0$, NASA log has zero 5xx responses) | **H_R PASS (3/5) + anchor sharpening category** (distinct from self-refutation): F-072 anchor is *substantively* "rare = 404 page-not-found pattern driven" on this dataset; KDF captures rare resource pattern, not rare code set. F-072 anchor specificity now sharpened on 3 axes (domain via F-087, $\alpha$ via F-091, rare type via F-093). Generalization to 5xx-containing logs is future work |
+| **F-094** | Apache recurring-rare positive replication of F-072 streaming benefit; same Apache dataset (LogHub Apache.log, 31,062 records) as F-087 with rare def flipped to recurring (freq $\ge 5$); 2 rare defs × 5 conditions = 10 runs at $\alpha_{\text{core}}=2.0$ canonical | Sanity (V_one-shot, F-087 reproduce): $\Delta = -13.04$ pt $\pm 0.0$ pt (preprocessing / build env consistent); Main (V_recurring): $\Delta = +3.67$ pt $> +1.0$ pt threshold | **H_R+ PASS** + **positive direction completion of the self-refutation arc**: F-072 anchor's true axis (recurring rare structure, hypothesized via F-093 structural reading) is empirically replicated cross-domain (NASA $+3.06$ + Apache recurring $+3.67$). 5 patterns now (4 narrow + 1 positive); scope of Claim 14 streaming benefit narrow but durable on recurring-rare axis $\times \alpha=2.0 \times $ NASA-Apache-homotype log dataset |
 
 The combined picture: KDF's empirically validated core is now **four
 product candidates** (Obsidian / MovieLens niche / Mem0 hybrid Router /
@@ -660,8 +676,15 @@ domain-conditional or scope-conditional form via the **four-finding
 self-refutation pattern** F-070 / F-087 / F-091 / F-092). **F-093 (v2.1)
 adds an "anchor sharpening" category distinct from self-refutation**:
 the F-072 anchor is now resolved at higher resolution as
-"NASA-recurring-rare $\times \alpha=2.0 \times $ 404-pattern driven", with
-generalization to 5xx-containing logs identified as future work. See
+"NASA-recurring-rare $\times \alpha=2.0 \times $ 404-pattern driven".
+**F-094 (v2.2) completes the arc on the positive direction**: the
+recurring-rare axis hypothesized via F-093 structural reading is
+empirically replicated cross-domain ($+3.67$ pt on Apache same dataset
+with rare def flipped to freq $\ge 5$, sanity F-087 reproduce $\pm 0.0$
+pt). Five patterns total (4 narrow + 1 positive); Claim 14 streaming
+benefit is now empirically supported on N=2 datasets (NASA + Apache)
+when restricted to recurring rare. Generalization to log domains
+beyond access logs remains future work. See
 [`docs/PHASE_2_RETROSPECTIVE.md`](../PHASE_2_RETROSPECTIVE.md) for
 the single-document retrospective.
 

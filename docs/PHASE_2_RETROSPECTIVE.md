@@ -1,6 +1,6 @@
-# Phase 2 Retrospective — KDF の現在地(2026-04-29、F-091/F-092/F-093 追記)
+# Phase 2 Retrospective — KDF の現在地(2026-04-29、F-091/F-092/F-093/F-094 追記)
 
-**期間カバレッジ**: F-073 〜 F-093(Phase 2 全体 + Phase 2.5 streaming replication + α/Lyapunov + anchor sharpening empirical)
+**期間カバレッジ**: F-073 〜 F-094(Phase 2 全体 + Phase 2.5 streaming replication + α/Lyapunov + anchor sharpening + cross-domain positive replication empirical)
 **Phase 1 末時点の anchor**: F-072(NASA HTTP streaming +3.06pt)
 **作成目的**: 公開後 reader が VERIFIED_FINDINGS.md の 70+ 件を全部読まなくても、KDF の **現在の正味 position** を一読で把握できるようにする
 
@@ -8,9 +8,9 @@
 
 ## 0. 一行でいうと
 
-> **Phase 1 の "broad applicability" 仮説は Phase 2 で empirical に narrow され、現在の KDF は「4 つの structural-niche 製品 + domain-fit predictor + 4-pattern self-refutation epistemic anchor + F-072 anchor の 3 軸高解像 specificity」という narrow but durable + sharp resolution 形に収束した。**
+> **Phase 1 の "broad applicability" 仮説は Phase 2 で empirical に narrow され、現在の KDF は「4 つの structural-niche 製品 + domain-fit predictor + 4 narrow + 1 positive epistemic anchor + F-072 anchor の 3 軸高解像 specificity」という narrow but durable(durable 側は cross-domain 物理証拠あり)形に arc 完結した。**
 
-「狭くなった」と「弱くなった」は別。Phase 2 を経て **どこで効くか / どこで効かないか** が事前判別できる framework が手に入り、4 件の self-refutation(F-070 sandwich / F-087 streaming / F-091 α=2 / F-092 Claim 31 functional)が paper の honesty-first stance を支える epistemic anchor として揃い、F-093 で F-072 anchor の真の dependency が 3 軸(domain / α / rare type)で sharpen されたので、商用 deploy の確実性は **上がった**。失った主張のうち、研究者として最も誠実に向き合うべきは ① F-072 streaming benefit の汎用性、② bias-detector 商材 path、③ Claim 10 / Claim 31 の universal claim form の 3 件。F-093 は別 category(narrowing でなく anchor 解像度向上)。
+「狭くなった」と「弱くなった」は別。Phase 2 を経て **どこで効くか / どこで効かないか** が事前判別できる framework が手に入り、4 件の self-refutation(F-070 sandwich / F-087 streaming / F-091 α=2 / F-092 Claim 31 functional)が paper の honesty-first stance を支える epistemic anchor として揃い、F-093 で F-072 anchor の真の dependency が 3 軸(domain / α / rare type)で sharpen され、**F-094 で recurring rare 軸が cross-domain N=2(NASA + Apache)で positive replication された**ので、商用 deploy の確実性は **上がった**。失った主張のうち、研究者として最も誠実に向き合うべきは ① F-072 streaming benefit の汎用性、② bias-detector 商材 path、③ Claim 10 / Claim 31 の universal claim form の 3 件。F-093 は別 category(narrowing でなく anchor 解像度向上)、F-094 は更に別 category(narrowing でなく durable 側の cross-domain 物理証拠 = positive direction)。
 
 ---
 
@@ -117,6 +117,34 @@ F-093 は self-refutation 4-pattern とは **質的に異なる発見**で、F-0
 
 これは narrowing でなく **anchor の解像度向上**:paper §6.4 限界節の strengthening でなく §5 P11 row の caveat 強化に属し、外部 reader が anchor の真の scope を misread しない構造を作る。Sister でなく独立 category として記録。
 
+### F-094: 第 3 category(positive replication、durable 側の cross-domain 物理証拠)
+
+F-094 は self-refutation 4-pattern とも anchor sharpening(F-093)とも **質的に異なる発見**で、**durable 側に物理証拠を物理的に追加した**。F-072 anchor の真の axis(F-093 で structural reading により抽出した「recurring rare 構造」)を、Apache 同 dataset(F-087 と同 file、31,062 records)で **rare def を flip**(one-shot freq ≤ 10 → recurring freq ≥ 5)した時に benefit が再現するかを pre-reg + replication template で test:
+
+| variant | rare def | n_rare | Δ (pt) | verdict |
+|---|---|---:|---:|:---:|
+| V_one-shot(F-087 reproduce sanity) | freq ≤ 10 | 23 | **−13.04**(F-087 と完全一致 ±0.0pt) | ✅ Sanity PASS |
+| V_recurring(F-094 main) | freq ≥ 5 | 109 | **+3.67**(> +1.0pt threshold) | ✅ **PASS** |
+
+**Cross-domain anchor table(post F-094)**:
+
+| dataset | rare def | α | Δ_streaming (pt) | source |
+|---|---|---:|---:|---|
+| NASA HTTP | 4xx/5xx 8 codes(404-pattern driven by F-093)| 2.0 | **+3.06** | F-072 anchor |
+| Apache | one-shot freq ≤ 10 | 2.0 | −13.04 | F-087 |
+| Apache | one-shot freq ≤ 10 | 4.0 | +4.35(副産物 evidence)| F-091 |
+| **Apache** | **recurring freq ≥ 5** | **2.0** | **+3.67** | **F-094 本** |
+
+→ F-072 anchor の真の axis(recurring rare 構造)が **NASA + Apache の 2 dataset で empirical 支持**。narrative arc の structure:
+
+- **4 narrowing patterns**(F-070 / F-087 / F-091 / F-092):mechanism ✓ / specific application robustness narrowed
+- **1 anchor sharpening**(F-093):F-072 anchor の真の dependency 3 軸解像
+- **1 positive replication**(F-094):durable 側 cross-domain 物理証拠
+
+これら 6 finding(4 narrow + 1 sharpening + 1 positive)で arc 完結。Claim 14 streaming benefit の scope:**recurring rare 構造 × α=2.0 × NASA-Apache homotype log dataset で empirical durable**、log domains beyond access logs / one-shot rare / α 別値 / 別 anchor dataset 構造への generalization は future work。
+
+これは narrowing arc が「scope が縮み続ける研究」と外部 reader に misread されるリスクへの **structural 答え**:durable 側に物理証拠が複数 dataset で backed されている narrative。Sister でなく **第 3 独立 category** として記録。pre-reg + self-replication template が誠実性 framework の operational 実装として偶然でなく設計通り機能した実証(memory `feedback_pre_reg_self_replication_template`)。
+
 ---
 
 ## 5. 何を撤回したか
@@ -203,3 +231,13 @@ KDF の position を 3 つの否定形 + 3 つの肯定形 で記述する:
 - paper.md §5.1 P11 row に `[v2.1: F-093 で実質 404-pattern driven]` caveat 追加、v2 Addendum changelog に F-093 entry 追加(commit 別)、§5 Phase 2/2.5 table に F-093 row 追加(14 → 15 rows)、combined picture に "anchor sharpening category" 明記
 - VERIFIED_FINDINGS tail を 2026-04-29 + F-073-F-093 form に更新
 - memory project_kdf_phases.md に F-093 + anchor sharpening category 反映
+
+## §12(2026-04-29 追記)F-094 反映後の追加 maintenance log
+
+- F-094 Apache recurring-rare positive replication 結果を §4 末尾に「**positive replication category**(narrative arc の durable 側 cross-domain 物理証拠)」として追加(narrowing でも sharpening でもない第 3 category)
+- §0「一行でいうと」を「4 narrow + 1 positive epistemic anchor」「durable 側 cross-domain 物理証拠あり」に拡張、F-094 を arc 完結 anchor として位置づけ
+- paper.md v2.2:§5.1 P11 row に `[v2.2: F-094 で Apache 別 dataset を recurring rare 定義 (freq ≥ 5) で再 test、+3.67pt 再現、cross-domain N=2 で recurring-rare 軸が durable]` caveat 追加、v2 Addendum changelog に F-094 entry 追加(commit 別)、§5 Phase 2/2.5 table に F-094 row 追加(15 → 16 rows)、combined picture に "F-094 (v2.2) completes the arc on the positive direction" 明記、F-093 commit に紛れていた typo「실질 → 実質」も併せ修正
+- VERIFIED_FINDINGS に F-094 entry 挿入(F-093 entry の前)+ 最終更新行 update(F-073〜F-094、5-pattern (4 narrow + 1 positive) anchor + anchor sharpening category)
+- public sync の副次的 bug fix:VERIFIED_FINDINGS で「(旧) F-044 Mem0 entry + 第 33-35 部」が public 側で MIDDLE と END に重複していた状態を、dev-side の clean state で overwrite し duplicate 解消(意図せずだが結果として整合性回復)
+- memory project_kdf_phases.md に F-094 + 5-pattern anchor 反映
+- pre-reg + self-replication template が誠実性 framework の operational 実装として偶然でなく設計通り機能した実証として記録(F-087 sanity reproduce ±0.0pt は preprocessing/build env consistent の independent verification としても効いている、memory `feedback_pre_reg_self_replication_template` 適用)

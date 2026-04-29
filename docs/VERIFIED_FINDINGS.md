@@ -3051,100 +3051,6 @@ paper v0.2 の narrowing 主張に **肯定面の empirical anchor を供給** �
 
 ---
 
-### 📋 (旧) F-044 Mem0 Python 直接対戦は script 準備済、実行は out-of-session
-
-Route A Q1(Mem0 直接対戦)の Python benchmark script を作成した:
-- [`demos/D8_llm_memory/scripts/bench_mem0_vs_kdf.py`](../demos/D8_llm_memory/scripts/bench_mem0_vs_kdf.py)
-- 要件: `pip install mem0ai` + OpenAI API key(または Ollama local LLM)
-- 推定コスト: $0.10-1.00(100 questions × gpt-4o-mini)
-- 所要時間: 20-30 分(LLM API rate limit 依存)
-
-**予想される結果**(F-042, F-043, および Mem0 公開数値 93.4% から):
-- Mem0 retrieval recall: 0.80-0.90 範囲(KDF 0.821 と同等 or 上回る可能性。ただし Q2 で KDF が dense embedding に勝ったので、Mem0 retrieval が期待ほど良くない可能性も)
-- Mem0 full accuracy(LLM answer generation + judge): 90-95%(公開値)
-- KDF estimated full accuracy: 75-80%(recall 0.821 × LLM reading ≈ 0.95)
-- cost: Mem0 ~$0.002/q, KDF $0
-
-**発明者側での実行が推奨される**:
-```bash
-cd /path/to/kdf-perovskite
-pip install mem0ai openai
-export OPENAI_API_KEY=sk-...
-python demos/D8_llm_memory/scripts/bench_mem0_vs_kdf.py --n 100 --model gpt-4o-mini
-```
-
-結果が出次第、F-044 を VERIFIED 化、および paper / positioning doc を update。
-
----
-
-## 第 33 部: Solvability 総合マップ
-
-| # | 知見 | Verdict | 実装状態 |
-|:-:|---|:---:|---|
-| F-024 | D6 graph-only 不可能 | ✅ 精密化 | `multimodal.rs` 実装済 |
-| F-025 | 合成↔実で符号逆転 | ✅ 事前予測可能 | `bias_score` メトリック実装済 |
-| F-026 | 実測 O(n^1.75) | ✅ 真の O(n) 達成 | `classifier_fast.rs` 実装済 |
-| F-027 | 動的制御 TC 部分のみ発動 | ⚠️ 条件依存で不必要 | 別条件での検証は未着手 |
-| F-028 | LLM memory 合成のみ | ✅ 実データ実証 | LongMemEval 100/500 評価済 |
-
-**5 件中 4 件は「どうにかなる」、1 件は「現条件では不必要(失敗ではない)」。**
-
-## 第 34 部: 全検証累計(Phase 0 〜 S-Z)
-
-| カテゴリ | Phase 0-R | Phase S-Z | Phase α-ι+A | X Step 1 | X Step 2 | X Step 4 | **X Step 5 後** | Δ |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| 検証済み F-xxx | 28 | 34 | 68 | 69 | 70 | 71 | **72** (+F-072 NASA streaming) | +1 |
-| cgb-kdf tests | 353 | ~362 | ~365 | ~365 | ~365 | ~365 | **~365** | 0 |
-| Workspace tests | — | — | 449 | 449 | 449 | 449 | **449 pass** | 0 |
-| Phase verification binary | 6 | 11 | 12 | 13 | 14 | 15 | **16** (+ phase_x4_nasa_streaming) | +1 |
-| 実データ評価件数 | 2 | 3 | 4 | 4 | 4 | 4 | **5** (+ NASA streaming 経時再生) | +1 |
-| Claim realistic benchmark 範囲 | — | — | Claim 1 3 柱 | +C5/14/17 | +C36-41/47-48 | +C20-32 | **+C14/25/27-32 streaming validation** | +1 |
-| Canonical 新モジュール | — | 2 | 3 | 3 | 3 | 3 | **3** | 0 |
-| 独立検証エージェント | 10 | 11 | 12 | 12 | 12 | 12 | **12** | 0 |
-| **cgb-kdf 適合率** | 54% | 88% | 92% | 92% | 92% | 92% | **92% (46/50)** | 0 |
-| Canonical parameter 反証件数 | 0 | 0 | 1 | 1 | 2 | 2 | **2** | 0 |
-| **Positive streaming validation** | — | — | — | — | — | — | **1 (F-072 +3.06pt)** | +1 |
-
----
-
-## 第 35 部: Patent Claim 1-50 Empirical Coverage Summary(Phase X 完走時点)
-
-F-040 で全 50 Claim に per-claim 直接 unit test が整備済み。加えて Phase X(Step 1/2/4)で主要 claim group を realistic benchmark に格上げ:
-
-| Claim Range | 実装モジュール | Realistic Benchmark | 状態 |
-|---|---|---|---|
-| **Claim 1** 3 手段統合 | [`lib.rs`](../crates/cgb-kdf/src/lib.rs), [`decay.rs`](../crates/cgb-kdf/src/framework/decay.rs), [`classifier.rs`](../crates/cgb-kdf/src/framework/classifier.rs), [`analogy.rs`](../crates/cgb-kdf/src/analogy.rs) | F-068 analogy + F-052 decay + F-012 希少保護 | ✅ 3 柱全て |
-| Claim 2-4 基本データ構造 | `classifier.rs` | F-040 unit test | ✅ unit |
-| **Claim 5** 時間評価成分 | `decay.rs::compute_evaluation_value` | F-069(static task で冗長、機構は稼働) | ⚠️ 機構 ✅ / 応用 ❌ |
-| Claim 6-9 減衰関数 | `decay.rs::lambda` | F-002 unit(analytic solution 一致) | ✅ unit |
-| Claim 10 α=2 | `decay.rs::MasterSpecParams` | F-037 direct test | ✅ unit |
-| Claim 11-13 確率剪定 | `decay.rs::probabilistic_prune` | F-007 proptest | ✅ unit |
-| **Claim 14** 指数減衰 | `decay.rs::apply_edge_decay` | F-002 analytic + F-069 LoCoMo(static で冗長) | ⚠️ 機構 ✅ / 応用 ❌ |
-| Claim 15 bit-exact | — | F-005 determinism test | ✅ unit |
-| Claim 16 Rare 保護 | `classifier.rs` | F-012 Obsidian orphan | ✅ realistic |
-| **Claim 17** 分散実行 | `decay.rs::apply_edge_decay_local` | F-037 unit + **F-069 LoCoMo bit-exact(max diff 0.0)** | ✅ realistic |
-| Claim 18-19 Rare 維持 | `classifier.rs`, `rev12.rs` | F-012 + F-040 | ✅ realistic |
-| **Claim 20-22** 階層領域 5:3:1 | [`region.rs`](../crates/cgb-kdf/src/framework/region.rs) | F-071 integer tick 正確、realistic streaming で稼働 | ✅ 機構 |
-| **Claim 23-26** 昇格関数 / 遷移制御 / 活性化 / 意味的重要度 | [`transition.rs`](../crates/cgb-kdf/src/framework/transition.rs) | F-027 Mode E rescue(synthetic)+ F-071 LoCoMo(ceiling-effected) | ✅ 機構 / F-031 ceiling |
-| **Claim 27-32** Meta 制御 / δk⁴ / 緊急介入 | [`meta_control.rs`](../crates/cgb-kdf/src/framework/meta_control.rs) | F-004 proptest 16× + F-027 rescue + F-071 bound clamp 動作 | ✅ 機構 |
-| Claim 33 複合孤立度指標 | `classifier.rs`, `multimodal.rs` | F-024 D6 精密化 + F-037 direct | ✅ realistic |
-| Claim 34-35 データ形式 | — | F-040 unit | ✅ unit |
-| **Claim 36-41** 二段階審査 T_wait | [`rev12.rs`](../crates/cgb-kdf/src/framework/rev12.rs) | F-040 unit + **F-070 Part B LoCoMo**(機構稼働、canonical で 100% demote) | ✅ 機構 / ❌ canonical |
-| Claim 42-43 Rare → Core 昇格 | `rev12.rs` | F-040 | ✅ unit |
-| Claim 44 7:2:1 重み | `analogy.rs` | F-040 + F-068 | ✅ realistic |
-| Claim 45 0.40:0.35:0.25 合成 | `analogy.rs` | F-040 | ✅ unit |
-| Claim 46 32-dim fingerprint | `fingerprint.rs` | F-040 + F-068 | ✅ realistic |
-| **Claim 47-48** sandwich θ_L/θ_U | `rev12.rs`, `analogy.rs` | **F-041 Hopfield + F-068 + F-070 Part A/B の 4-benchmark 横断**(機構 ✅ / canonical (0.70, 0.80) 反証) | ✅ 機構 / ❌ canonical |
-| Claim 49-50 library entry / program form | `lib.rs` | F-040 | ✅ unit |
-
-**Summary**:
-- **全 50 Claim が少なくとも F-040 per-claim unit test で backed**
-- **主要 claim group(Claim 1, 5, 14, 16-19, 20-32, 36-48)は realistic benchmark でも backed**
-- **Canonical 具体値の反証は 2 箇所**(Claim 47-48 sandwich、Claim 36-41 T_wait with canonical sandwich)、いずれも mechanism は支持し canonical value のみ反証
-- **自 claim の reality-based 反証を自ら示す姿勢は paper credibility の強化資産**(Phase X の一貫テーマ)
-
----
-
 ### ❌ F-073 Phase 2 #1 Wikipedia orphan article preservation: KDF は scale-free orphan pool で Random 以下、TopDegree に完敗(honest negative + bias-detector 正予測)(2026-04-20)
 
 **Context**: KDF 生存領域探索 Phase 2 Top 3 候補 #1。Pre-registration: [`docs/exploration/phase2_wikipedia_prereg.md`](exploration/phase2_wikipedia_prereg.md) v1.0(commit 6a6d1e4 + 改訂 ac0d568/4119aa2)。[`docs/exploration_protocol.md`](exploration_protocol.md) §3 Phase 2 の pre-registered criteria に従う。
@@ -4126,6 +4032,88 @@ Bipartite: A = paper as citing source、B = paper as cited target (labeled rare)
 
 ---
 
+### ✅ F-094 Apache recurring-rare positive replication of F-072 streaming benefit — H_R+ PASS (Δ_recurring = +3.67pt)、F-087 sanity reproduce ±0.0pt、4-pattern self-refutation arc に positive direction 補完(2026-04-29)
+
+**Context**: F-093 で F-072 NASA HTTP +3.06pt anchor の真の specificity が 3 軸(NASA × α=2.0 × 404-pattern driven、recurring 構造)に解像された。F-087 Apache REPLICATION FAILED は **one-shot rare**(freq ≤ 10 reconnaissance probes、同一 resource 1 回登場)で測定され、−13.04pt sign reversal となった ── これは F-072 の真の anchor 軸(recurring 構造)と orthogonal な rare 定義。本 finding は F-087 と direct symmetric contrast で、Apache 同 dataset を **recurring rare** 定義(freq ≥ 5、persistent failure mode)で再 test し、F-072 anchor が cross-domain で recurring rare 構造一般に benefit が出るかを確認。Pre-reg: [docs/exploration/g5_apache_recurring_pre_reg.md](exploration/g5_apache_recurring_pre_reg.md)(commit 0201e44、frozen)。
+
+**Setup**: Apache error log(F-087 と同 file `experiments/streaming_phase_2_5/data/Apache.log`、31,062 valid records、α_core=2.0 canonical 固定、F-091 と orthogonal axis)。
+
+**Variants(2 rare defs × 5 conditions = 10 runs)**:
+- V_one-shot(sanity): rare = resource freq ≤ 10(F-087 reproduce)
+- V_recurring(main): rare = resource freq ≥ 5(F-094 main)
+
+**Result(raw measurement、observation 欄)**:
+
+| variant | n_rare | C0 | C1 | C2 | C3 | C4 | Δ (pt) |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| V_one-shot (freq ≤ 10) | 23 | 0.4348 | 0.3043 | 0.0000 | 0.3043 | 0.0000 | **−13.04** |
+| V_recurring (freq ≥ 5) | 109 | 0.2936 | 0.3211 | **0.3303** | 0.3211 | **0.3303** | **+3.67** |
+
+**Verdict(pre-reg auto、frozen thresholds)**:
+
+| 観点 | result | verdict |
+|---|---|:---:|
+| Sanity F-087 reproduce(−18 ≤ Δ ≤ −8) | Δ_one-shot = −13.04pt(F-087 と完全一致 ±0.0pt) | ✅ Sanity PASS |
+| Main H_R+(Δ > +1.0pt) | Δ_recurring = +3.67pt | ✅ **PASS** |
+
+**Cross-domain anchor table(post F-094)**:
+
+| dataset | rare def | α | Δ_streaming (pt) | source |
+|---|---|---:|---:|---|
+| NASA HTTP | 4xx/5xx 8 codes(404-pattern driven by F-093)| 2.0 | **+3.06** | F-072 anchor |
+| NASA HTTP | 4xx subset / 404 only | 2.0 | +3.06 (V1/V2/V4) | F-093 |
+| Apache | one-shot freq ≤ 10 | 2.0 | −13.04 | F-087 |
+| Apache | one-shot freq ≤ 10 | 4.0 | +4.35(副産物 evidence)| F-091 |
+| **Apache** | **recurring freq ≥ 5** | **2.0** | **+3.67** | **F-094 本** |
+
+**Interpretation(framework-consistent reading、observation と物理分離)**:
+
+- F-072 anchor の真の axis = **recurring rare 構造**(F-093 で 404-pattern as recurring と structural reading で extract した hypothesis)
+- F-094 で Apache 別 dataset の recurring rare def(同一 resource を 5 回以上見る persistent failure mode)で同型 +pt benefit(+3.67pt、NASA +3.06pt と magnitude 整合)を empirical 再現
+- 既存 4-pattern self-refutation arc(F-070 / F-087 / F-091 / F-092、すべて narrowing 方向)に **positive direction 補完**として "narrow but durable" arc が完結
+- F-091 副産物(Apache α=4.0 で +4.35pt)と本 finding(Apache α=2.0 + recurring def で +3.67pt)は orthogonal axis、redundant でなく independent confirmation
+
+**Substantive observations(structural reading、framework-consistent reading で empirical discovery でない)**:
+
+1. V_one-shot で C2/C4(activation 含む)が 0.0000 collapse:F-087 と同 pattern、activation が one-shot rare と相性悪い ── activation boost が同一 resource 再出現を前提とする mechanism のため、1 回しか出ない rare に対して accumulating signal が立たず Top-30% から漏れる
+2. V_recurring で C2/C4(activation 含む)が C1/C3(activation なし)を strictly +0.92pt 上回る:recurring rare では activation が positive contribution、resource が複数回登場するたび activation が累積し Top selection に entry
+3. V_recurring の rare ratio = 92.37%(109/118 resources):rare が多数派になっており、KDF static C0 が Random baseline をわずかに下回る(0.2936 < 0.3046)、ただし streaming 5 conditions すべてで C0 を上回り(+2.75〜+3.67pt)mechanism は recurring rare に対し正方向に機能
+
+**Pattern relation(narrative arc 上の position)**:
+
+- **F-070** sandwich canonical refute(narrowing direction)
+- **F-087** Apache one-shot streaming sign reversal(narrowing direction)
+- **F-091** Claim 10 α=2 NASA-specific narrow(narrowing direction)
+- **F-092** Claim 31 functional non-adversarial narrow(narrowing direction)
+- **F-094** Apache recurring positive replication(**positive direction**)← 本 finding
+
+5 patterns(4 narrow + 1 positive)で arc 完結。F-072 anchor は narrow but durable:scope = recurring rare 構造 × α=2.0 NASA 同型 dataset(本 finding で **2 dataset = NASA + Apache** に拡張)。
+
+**Patent narrative implication**:
+
+- Claim 14 streaming benefit は **temporally recurring rare に対する applicability** が cross-domain (N=2: NASA + Apache) で empirical 支持
+- 「one-shot rare では sign reversal、recurring rare では benefit」の dual pattern が empirical 確立、scope clarity は narrow but durable
+- Patent claim 自体への影響なし(mechanism unchanged、scope narrowing のみ)
+- paper §5 P11 / Addendum changelog に positive replication 反映候補
+
+**Meta-check(memory framework 適用)**:
+
+- ✅ pre-reg threshold +1.0pt frozen で strict 判定、PASS verdict は明白(Δ=+3.67 ≫ +1.0)
+- ✅ post-hoc narrowing なし:V_recurring N=5 frozen で N=3/N=10 等 sweep 追加 not run、threshold +1.0pt 緩和なし
+- ✅ sanity F-087 reproduce 完全一致(Δ_one-shot = −13.04pt with 0.00 difference)、preprocessing/build env の drift がないことを auto check
+- ✅ observation vs interpretation 物理分離:Result table = raw measurement、Interpretation 欄 = framework-consistent reading、cross-domain anchor table = data join のみ
+- ✅ "narrow but durable arc 完結" は narrative arc 上の interpretation、framework-consistent re-description であって empirical discovery でない(memory `feedback_observation_vs_interpretation` 適用)
+- ✅ 結果が PASS だったが narrative protection なし、もし FAIL なら pre-reg §7 通り「F-072 anchor は NASA-specific に更に narrow」と記録予定だった
+
+**Artifacts**:
+
+- [demos/D8_llm_memory/src/bin/phase_g5_apache_recurring.rs](../demos/D8_llm_memory/src/bin/phase_g5_apache_recurring.rs) — F-094 binary
+- 実行 log: 上記 Result table embedded、再現は `cargo run --release -p demo-d8-llm-memory --bin phase_g5_apache_recurring`
+- Pre-reg: [docs/exploration/g5_apache_recurring_pre_reg.md](exploration/g5_apache_recurring_pre_reg.md)(commit 0201e44)
+- 関連 finding: F-072(NASA anchor +3.06pt、本 finding が cross-domain 再現)、F-087(Apache one-shot −13.04pt、direct symmetric contrast)、F-091(α 軸 narrowing、orthogonal axis、Apache α=4.0 +4.35pt 副産物)、F-093(F-072 anchor specificity 解像、本 finding は positive direction 補完)、F-070(sandwich canonical refute、self-refutation arc の sister pattern)
+
+---
+
 ### ⚠️ F-093 NASA F-072 anchor robustness to rare code subset — H_R PASS (3/5)、ただし substantively は **F-072 anchor が "rare = 404 page-not-found pattern" driven** であることが判明、真の rare type は 1 code に narrow(2026-04-29)
 
 **Context**: F-072 anchor (+3.06pt streaming benefit) は rare = HTTP 4xx/5xx 8 codes 固定で測定された。本 anchor が rare def 選択に robust か、subset-specific artifact かを 5 variants で empirical 確認。F-072 が F-087/F-091/F-092 narrowing narrative の根 anchor のため、本 robustness 確認は narrative 全体の epistemic foundation 確認。Pre-reg: [docs/exploration/g4_nasa_rare_subset_pre_reg.md](exploration/g4_nasa_rare_subset_pre_reg.md)(commit 4518b01、frozen)。
@@ -4806,6 +4794,5 @@ F-040 で全 50 Claim に per-claim 直接 unit test が整備済み。加えて
 
 ---
 
-
 **検証責任者:** プロジェクト実行担当(Claude Opus 4.7, 独立検証エージェント経由)
-**最終更新:** 2026-04-29(Phase 2 + Phase 2.5 + α/Lyapunov + anchor sharpening empirical 完走: F-073〜F-093 追加、scope narrowing + anchor 解像度向上 が empirically 確定。**Direct SOTA 勝負 path は 3/3 LOSS で撤回**(F-073/074/075)、**streaming benefit は temporally recurring rare に narrow**(F-087)、**bias-detector predictor は N=21 systematic test で 45.5% < 70% で撤回**(F-090)、**Claim 10 (α=2 「発明の核心」) は NASA-recurring-rare specific に narrow**(F-091)、**Claim 31 functional rare protection は非 adversarial settings に narrow**(F-092)、**F-072 anchor は実質 404-pattern driven、3 軸 narrowing で解像**(F-093)。残った位置は narrow but durable で 4 grounded products + F-086 γ domain-fit predictor + 4-pattern self-refutation epistemic anchor (F-070/F-087/F-091/F-092) + F-093 anchor sharpening category。詳細単一文書要約は [PHASE_2_RETROSPECTIVE.md](PHASE_2_RETROSPECTIVE.md)。Claim 1-50 全 50 項は引き続き unit test backed、機構レベルは Phase X で realistic benchmark backed、4 self-refutation finding は機構支持・specific application robustness narrowing で機構自体は不変。)
+**最終更新:** 2026-04-29(Phase 2 + Phase 2.5 + α/Lyapunov + anchor sharpening + cross-domain positive replication empirical 完走: F-073〜F-094 追加、scope narrowing + anchor 解像度向上 + positive replication が empirically 確定。**Direct SOTA 勝負 path は 3/3 LOSS で撤回**(F-073/074/075)、**streaming benefit は temporally recurring rare に narrow**(F-087)、**bias-detector predictor は N=21 systematic test で 45.5% < 70% で撤回**(F-090)、**Claim 10 (α=2 「発明の核心」) は NASA-recurring-rare specific に narrow**(F-091)、**Claim 31 functional rare protection は非 adversarial settings に narrow**(F-092)、**F-072 anchor は実質 404-pattern driven、3 軸 narrowing で解像**(F-093)、**Apache recurring-rare で +3.67pt positive replication、cross-domain N=2 で arc 完結**(F-094)。残った位置は narrow but durable で 4 grounded products + F-086 γ domain-fit predictor + **5-pattern (4 narrow + 1 positive) self-refutation epistemic anchor (F-070/F-087/F-091/F-092 + F-094)** + F-093 anchor sharpening category。詳細単一文書要約は public [PHASE_2_RETROSPECTIVE.md](PHASE_2_RETROSPECTIVE.md)。Claim 1-50 全 50 項は引き続き unit test backed、機構レベルは Phase X で realistic benchmark backed、4 self-refutation finding は機構支持・specific application robustness narrowing で機構自体は不変、F-094 で cross-domain recurring-rare 軸の positive replication が同 mechanism を支持。)
