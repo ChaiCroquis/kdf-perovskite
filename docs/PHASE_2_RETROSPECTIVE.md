@@ -1,4 +1,4 @@
-# Phase 2 Retrospective — KDF の現在地(2026-04-29、F-091/F-092/F-093/F-094 追記)
+# Phase 2 Retrospective — KDF の現在地(2026-04-29、F-091〜F-096 追記)
 
 **期間カバレッジ**: F-073 〜 F-094(Phase 2 全体 + Phase 2.5 streaming replication + α/Lyapunov + anchor sharpening + cross-domain positive replication empirical)
 **Phase 1 末時点の anchor**: F-072(NASA HTTP streaming +3.06pt)
@@ -254,4 +254,42 @@ KDF の position を 3 つの否定形 + 3 つの肯定形 で記述する:
 - VERIFIED_FINDINGS に F-094 entry 挿入(F-093 entry の前)+ 最終更新行 update(F-073〜F-094、5-pattern (4 narrow + 1 positive) anchor + anchor sharpening category)
 - public sync の副次的 bug fix:VERIFIED_FINDINGS で「(旧) F-044 Mem0 entry + 第 33-35 部」が public 側で MIDDLE と END に重複していた状態を、dev-side の clean state で overwrite し duplicate 解消(意図せずだが結果として整合性回復)
 - memory project_kdf_phases.md に F-094 + 5-pattern anchor 反映
+
+## §13(2026-04-29 追記)F-095 / F-096 反映後の追加 maintenance log — Foreign baseline anchor の local replication 試行 = infrastructure honest record category
+
+**新 category 確立**:**Infrastructure honest record category**(self-refutation でも anchor sharpening でも positive replication でもない第 4 category)。F-060(paid Mem0 + KDF Router で LoCoMo +9.7-22.4pt)を **完全 local 環境で replicate 試行** したが、test environment infrastructure 不備で **inconclusive** に終わった honest 記録。F-060 paid finding は本 chain で **refute されてもいない、support もされていない**。
+
+**F-095(g7 attempt)— infrastructure-infeasible at 5Q stop**:
+
+- 設定: llama3.1:8b-instruct-q4_K_M(Ollama)+ Mem0 framework default ingest batching(batch=4)+ HuggingFace BGE-small + Qdrant local
+- 実行 5Q checkpoint で eta=803.9 min(13.4h LongMemEval のみ、合計 ~33-36h 連続実行)判明、infrastructure-infeasible で stop
+- 原因: Mem0 framework `mem.add()` は per add 内部で 2 LLM call(fact extraction + ADD/UPDATE/DELETE/NONE 判定)、22-turn Q で 6 add × 2 = 12 LLM call/Q × 8B Q4 GPU per-call ~10s = ~3 min/Q。Pre-reg drafting で per-add LLM call multiplicity を grep / source-read せず undercount(参照した F-057 paid anchor の per-call latency ~100ms vs local 8B ~10s で 50-100x 違うことを caveat 化せず = anchor の表面引用)
+- 私の Direction A 型失敗 4回目として記録、`feedback_tool_execution_verbal_claim_separation` memory に occurrence 4 + trigger 5 deep application(anchor の constraint = latency / call multiplicity を caveat 化)refinement 追記、本 occurrence 内で self-correct し F-096 へ移行
+
+**F-096(g8 attempt)— qwen2.5:3b で wall-clock 圧縮、ただし sub-noise floor で inconclusive**:
+
+- 設定変更: LLM swap to qwen2.5:3b-instruct-q4_K_M、ingest batching 最適化(LongMemEval は single mem.add(all_msgs) per Q、LoCoMo は batch_size=50 per conv)、wall-clock ~33h → **~2.5h に圧縮**、LongMemEval n=479 + LoCoMo n=321 完走
+- H_R primary verdict: **mechanical PARTIAL**(Δ_router = +0.62pt、p=0.5)、ただし LoCoMo Mem0 alone = **0/321 正解**、KDF alone = 2/321 正解で **両者 sub-noise floor**(意味のある相対差を測れる土俵に達していない)
+- Sanity 2 baseline shift: 全 cell で **|Δ| = 20〜64pt**(local 0.000-0.157 vs paid F-053/F-057 baseline 0.206-0.672)、frozen 5pt threshold 大幅超過、qwen2.5-3b が paid gpt-4o-mini 比で **answer-gen + judge 両方 threshold 以下**と判明
+- F-060 paid finding は **intact**(本 chain は test environment infrastructure 不備、F-060 を refute せず)、「local-only Mem0 hybrid Router を第 5 grounded product 候補」claim は **PASS criterion 未達 + sub-noise floor で本 chain では立証 不可**
+- 「local replication は **stronger local LLM (7B+) が必要**」が actionable conclusion、F-098 候補
+
+**Descriptive contribution**(framework cross-LLM-size 不変性の anchor 化):
+
+- `mem0_recall_substring`(turn 生 substring と retrieved Mem0 facts の overlap)が F-095 8B 5Q + F-096 3B 479Q **両方で 0.000-0.006** 測定
+- F-048 旧解釈「**weak LLM が Mem0 風 retrieval を悪化**」は LLM size 効果を仮定していたが、F-095/F-096 で 8B / 3B どちらでも recall ~0 と判明 → **「Mem0 framework の batched fact compression 戦略そのものが 99%+ substring を保存しない」**(LLM size の問題でなく framework の問題)に sharpen
+- F-048 hand-rolled per-turn extraction(1 turn → 1 fact、生 substring 保持)と Mem0 framework batched compression の **methodology 差** が apples-to-apples 不能と判明、F-095 で frozen していた H_LLM hypothesis(F-048 + 0.10 PASS)は ill-formed として撤回(F-096 では H_LLM dropped、recall は descriptive のみ)
+
+**Exploratory observation**(F-097 候補):
+
+- LongMemEval v1(precision-only、length filter 無)で Δ_router = **+6.26pt、p=1.86 × 10⁻⁹**(highly significant)観測。pre-reg primary は v2(precision + length≥100)のため LoCoMo cell が判定対象で、本 v1 観測は **exploratory として並記**
+- 短 context での precision-query routing benefit を独立 pre-reg(F-097 候補)で frozen 化して formal finding にする path、既存データ流用で追加 wall-clock 不要
+
+**反映 changes**:
+
+- VERIFIED_FINDINGS に F-095(historical record)+ F-096(verdict)entries 挿入(F-094 entry の前)、最終更新行 update(F-073〜F-096、5-pattern (4 narrow + 1 positive) anchor + anchor sharpening category + **infrastructure honest record category**)
+- paper.md v2.4:§5 Foreign baseline anchor section に "Attempted local replication of F-060 (F-095 / F-096)" paragraph 追加(F-060 intact 明記、stronger local LLM future work で frame、descriptive cross-LLM-size finding を F-048 caveat sharpen として記述)、Addendum changelog に v2.3(Foreign baseline anchor v2.3 retroactive log)+ v2.4(F-095/F-096)entries 追加
+- 本 retrospective に §13 として infrastructure honest record category を establish、F-095/F-096 chain を arc に追加(narrowing / sharpening / positive / **honest infrastructure** の 4 category 体系)
+- memory `feedback_tool_execution_verbal_claim_separation` に occurrence 4 + trigger 5 deep application refinement 追記(私の self-correction protocol の operational 強化)
+- memory `project_kdf_phases.md` に F-095 / F-096 status + future work(F-097 / F-098 候補)+ remaining tasks 反映
 - pre-reg + self-replication template が誠実性 framework の operational 実装として偶然でなく設計通り機能した実証として記録(F-087 sanity reproduce ±0.0pt は preprocessing/build env consistent の independent verification としても効いている、memory `feedback_pre_reg_self_replication_template` 適用)

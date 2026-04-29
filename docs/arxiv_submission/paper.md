@@ -139,8 +139,31 @@ empirical boundary at the cost of two specific commercial positionings.
   replication (F-094)** for arc completion: 5 patterns total = 4 narrow
   + 1 positive. Scope of Claim 14 streaming benefit: recurring rare
   structure $\times \alpha=2.0 \times $ NASA-Apache-homotype log dataset
+- 2026-04-29 (v2.3): Foreign baseline anchor (Mem0 family, N=3 empirical
+  cells: F-048 local proxy / F-053 paid alone / F-060 paid hybrid Router)
+  added to §5 — setting-dependent position formalized, KDF as Mem0
+  complementary layer
+- 2026-04-29 (v2.4): F-095 / F-096 attempted local replication of F-060
+  documented as honest infrastructure record. F-095 (`llama3.1:8b`,
+  default batching) infrastructure-infeasible at 5-Q checkpoint
+  ($\sim 33$ -- $36$ h extrapolated wall-clock); F-096 (`qwen2.5:3b`
+  with single-add / batch=50 ingest optimization, $\sim 2.5$ h
+  wall-clock, LongMemEval $n=479$ + LoCoMo $n=321$ both completed)
+  inconclusive due to sub-noise floor (LoCoMo Mem0 alone $0/321$, KDF
+  alone $2/321$, $\Delta_{\text{router}} = +0.62$ pt mechanical PARTIAL,
+  $p = 0.5$). Sanity 2 local-vs-paid baseline shift $-20$ -- $-64$ pt
+  across cells indicates qwen2.5-3b is below the threshold for valid
+  H_R measurement on these benchmarks. F-095 / F-096 do **not refute
+  F-060** — they anchor the local-LLM infrastructure threshold; valid
+  local replication requires $7$B+ local LLM, left as future work.
+  Descriptive cross-LLM-size finding: Mem0 framework batched fact
+  compression destroys $\sim 99\%$ of raw turn substrings (recall
+  $0.000$ -- $0.006$ on 8B 5-Q + 3B 479-Q both), sharpening F-048
+  caveat from "weak LLM degrades retrieval" to "framework compression
+  itself does not preserve substrings independent of LLM size"
 - v1 body otherwise unmodified; inline `[v2: ...]` / `[v2.1: ...]` /
-  `[v2.2: ...]` markers indicate caveat insertion points
+  `[v2.2: ...]` / `[v2.3: ...]` / `[v2.4: ...]` markers indicate caveat
+  insertion points
 - **4 self-refutation patterns + 1 positive replication anchor the
   paper's honesty-first epistemic stance** (F-070 / F-087 / F-091 /
   F-092 narrowing direction; F-094 positive direction): mechanism
@@ -721,6 +744,35 @@ the Router implementation as the validated commercial path. The
 remaining Cat-5 baselines (Letta / Zep / GraphRAG / Anthropic memory /
 OpenAI memory / LangChain) are deferred to a paid-budget multi-session
 sprint.
+
+**Attempted local replication of F-060 (F-095 / F-096, 2026-04-29, infrastructure honest record)**:
+A 4th cell aimed to replicate F-060's hybrid Router benefit in a fully
+local environment (Ollama-served LLM + HuggingFace BGE embedder + Qdrant
+local store, zero API cost). Two attempts:
+F-095 (`llama3.1:8b-instruct-q4_K_M`, default ingest batching) was stopped
+at the 5-question checkpoint due to wall-clock infeasibility (extrapolated
+$\sim 33$ -- $36$ hours for the full LongMemEval + LoCoMo suite); the
+root cause was Mem0 framework's two-LLM-call-per-`add()` cost
+multiplied by small ingestion batches. F-096 (`qwen2.5:3b-instruct-q4_K_M`
+with single-add ingest for LongMemEval and batch=50 for LoCoMo) reduced
+wall-clock to $\sim 2.5$ hours and completed both benchmarks (LongMemEval
+$n=479$, LoCoMo $n=321$), but the result is **methodologically inconclusive**:
+LoCoMo Mem0 alone scored $0/321$ correct and KDF alone scored $2/321$
+under the local 3B answer-generator and judge — a sub-noise floor that
+prevents meaningful $\Delta_{\text{router}}$ measurement (mechanical
+verdict: H_R PARTIAL with $\Delta = +0.62$ pt, $p = 0.5$). Sanity 2
+local-vs-paid baseline shifts of $-20$ to $-64$ pt across all four cells
+indicate that qwen2.5-3b is below the threshold to substitute for paid
+gpt-4o-mini on these benchmarks. F-095 / F-096 do **not refute F-060** —
+they record an infrastructure threshold instead. A valid local replication
+will require a stronger local LLM ($7$B+ class) and is left as
+future work. A descriptive cross-LLM-size finding does emerge: the Mem0
+framework's batched fact compression destroys $\sim 99\%$ of raw turn
+substrings (`mem0_recall_substring` $= 0.000$ -- $0.006$ across F-095
+8B and F-096 3B), in contrast to F-048's hand-rolled per-turn extraction
+(recall $= 0.508$); this sharpens F-048's "weak LLM degrades retrieval"
+caveat into "framework compression strategy itself does not preserve
+substrings, independent of LLM size".
 
 **F-060 — Empirical validation of a complementary architecture via the Ext-1 Precision-Query Router (2026-04-19, zero added cost)**:
 

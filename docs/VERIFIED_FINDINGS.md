@@ -4032,6 +4032,151 @@ Bipartite: A = paper as citing source、B = paper as cited target (labeled rare)
 
 ---
 
+### ⚠️ F-096 Local-only Mem0 + KDF Router (qwen2.5-3b) — H_R PARTIAL (Δ=+0.62pt, p=0.5)、ただし Mem0=0/321 KDF=2/321 sub-noise floor、3B environment が valid signal 取れず、F-060 paid finding の local replication は inconclusive、stronger local LLM 必要(2026-04-29)
+
+**Pre-reg**: [docs/exploration/g8_local_qwen3b_pre_reg.md](exploration/g8_local_qwen3b_pre_reg.md)(commit 683a845、frozen)
+**Supersedes**: F-095(infrastructure-infeasible at 5Q、g7)
+
+**Context**: F-060 paid Mem0 + KDF Router(LoCoMo +9.7-22.4pt benefit)の local replication 試行。F-095(8B + batch=4)が wall-clock 33-36h infeasible で stop した後、(a) LLM swap to qwen2.5-3b、(b) ingest batching optimization(LongMemEval single-add per Q、LoCoMo batch=50 per conv)で wall-clock ~2.5-3.5h に圧縮。H_LLM hypothesis は F-095 5Q observation で apples-to-apples 不能と判明し撤回(Mem0 framework 圧縮 vs F-048 hand-rolled per-turn extraction が異 metric)、H_R primary のみ frozen。
+
+**Setup(frozen)**:
+- LLM: `qwen2.5:3b-instruct-q4_K_M`(Ollama)
+- Embedder: `BAAI/bge-small-en-v1.5`(HuggingFace local、F-048 と同)
+- Vector store: Qdrant local
+- Judge: 同 qwen2.5-3b で fixed temperature=0.0(KDF / Mem0 両 answer を local LLM で re-judge、within-run consistency 維持)
+- Benchmarks: LongMemEval 500Q full(n=479 valid、21Q は no answer_idx 等で skip)+ LoCoMo temporal 321Q full
+- Router: F-060 ext1_precision_router.py v2(precision + length≥100、不変流用)
+
+**Wall-clock**: ~2.5h(LongMemEval ~75 min、LoCoMo ~58 min、evaluate 秒)
+
+**Result(raw measurement、observation 欄、H_R primary frozen judgment 対象)**:
+
+H_R primary(LoCoMo v2 router):
+
+| metric | value |
+|---|---:|
+| Mem0 alone accuracy | **0.0000**(0/321) |
+| Router(v2) accuracy | **0.0062**(2/321) |
+| KDF alone accuracy | **0.0062**(2/321) |
+| Δ_router (router − mem0_alone) | **+0.0062 (+0.62pt)** |
+| McNemar exact p | 0.5 |
+| paired contingency | both_ok=0, router_only=2, mem0_only=0, both_wrong=319 |
+
+Sanity 1(LongMemEval v2 router gain):
+
+| metric | value | expected | signal? |
+|---|---:|---:|---|
+| Δ_router | **+0.0000** | ~0(F-060 finding 通り) | ✅ no signal |
+
+Sanity 2(local-vs-paid baseline shift):
+
+| cell | local | paid(F-053/F-057)| shift |
+|---|---:|---:|---:|
+| LongMemEval Mem0 alone | 0.0271 | 0.6720 | **−64.5pt** |
+| LongMemEval KDF alone | 0.1566 | 0.4340 | **−27.7pt** |
+| LoCoMo Mem0 alone | 0.0000 | 0.2056 | **−20.6pt** |
+| LoCoMo KDF alone | 0.0062 | 0.3115 | **−30.5pt** |
+
+→ 全 cell で |shift| ≥ 20pt、frozen 5pt threshold 大幅超過、**strong shift signal**
+
+descriptive — Mem0 framework substring recall(H_LLM dropped、no threshold):
+
+| scope | mem0_recall_substring | F-048 hand-rolled ref |
+|---|---:|---:|
+| LongMemEval first-20Q | 0.0000 | 0.508 |
+| LongMemEval first-100Q | 0.0000 | — |
+| LongMemEval full(n=479)| 0.0063 | — |
+
+→ Mem0 framework の batched fact compression は F-048 の per-turn extraction と異なり、生 substring を 99%+ destroy する挙動が cross-LLM-size で安定(F-095 8B 5Q + F-096 3B 479Q 両方で confirmed)。
+
+LongMemEval v1(precision-only、length filter 無、pre-reg primary でなく exploratory):
+
+| metric | value |
+|---|---:|
+| n_routed_to_kdf | 304/479(63.5%)|
+| Mem0 alone | 0.0271 |
+| Router(v1)| 0.0898 |
+| KDF alone | 0.1566 |
+| Δ_router | **+0.0626 (+6.26pt)** |
+| McNemar p | **1.86 × 10⁻⁹** ★★ |
+| paired contingency | both_ok=13, router_only=30, mem0_only=0, both_wrong=436 |
+
+→ 短 context(LongMemEval、conv ≤ 100 turns)で v1(length filter 無)では router gain +6.26pt p=10⁻⁹ highly significant。pre-reg primary は v2(length≥100 必須)のため LoCoMo cell が判定対象、本 v1 は exploratory として並記、別 finding(F-097 候補)で v1 spec frozen で再 test 必要。
+
+**Verdict(pre-reg auto、frozen thresholds)**:
+
+| 観点 | result | verdict |
+|---|---|---|
+| H_R primary(LoCoMo v2 router、Δ > +5.0pt PASS / 0-5pt PARTIAL / ≤0 FAIL)| Δ=+0.62pt | ⚠️ **PARTIAL**(mechanical verdict)|
+| Sanity 1(LongMemEval v2 router gain ≈ 0)| Δ=0.0000 | ✅ no drift signal |
+| Sanity 2(baseline shift |Δ| < 5pt threshold)| 全 cell |Δ| ≥ 20pt | 🚨 **strong shift signal** |
+
+**Interpretation(observation との明示分離、memory `feedback_observation_vs_interpretation` 適用)**:
+
+H_R PARTIAL 判定は pre-reg threshold に従う mechanical verdict だが、underlying data は **methodologically inconclusive**:
+
+1. **Sub-noise floor**: LoCoMo Mem0 alone = 0/321、KDF alone = 2/321 — 両者ほぼゼロ近傍に floor 張り付き。+0.62pt の gain は 2 sample ずれに相当、p=0.5 で no statistical signal。
+2. **Sanity 2 huge shift**: 全 cell で local-paid 差が 20-64pt、qwen2.5-3b は paid gpt-4o-mini 比で **answer-gen + judge 両方が threshold 以下**。
+3. **F-060 paid finding は intact**: paid environment(gpt-4o-mini)で確立した +9.7-22.4pt benefit は F-053/F-057/F-058/F-059 で robust、F-096 の sub-noise local 結果は paid finding を refute しない(test environment infrastructure 不備)。
+4. **Future work direction**: 7B+ 級の local LLM(qwen2.5-7b、llama3.1-8b 等)+ ingest batching optimization で valid local H_R measurement 可能性。本 F-096 は infrastructure threshold を empirical anchor 化。
+
+**Honest record per memory `feedback_decision_framework`**:
+
+- F-060 paid finding の local-deployment claim は本 finding で test できず(refute されてもいない、support もされていない、infrastructure 不備で inconclusive)
+- 「local-only Mem0 hybrid Router を第 5 grounded product 候補」は本 finding で claim 不可(H_R PASS criterion 未達 + sub-noise floor)
+- F-095 + F-096 の chain は **infrastructure attempt の honest 記録**、negative result narrative tweak なし
+- 「local replication 検証は stronger local LLM が必要」が actionable conclusion
+
+**Descriptive contribution**:
+- Mem0 framework batch fact compression vs F-048 hand-rolled per-turn extraction の cross-LLM-size 不変性(recall=0.000 in 8B + 3B both)を empirically anchor、F-048 「weak LLM が retrieval を悪化」の caveat を **「framework compression 自体が substring 保存しない」** に sharpen
+- LongMemEval v1 precision router(短 context)で exploratory +6.26pt p=10⁻⁹(本 finding pre-reg primary でないため separate finding 候補、別 axis、F-097 候補)
+
+**Pattern note (memory `feedback_tool_execution_verbal_claim_separation` occurrence 4 を機に追加)**:
+F-095 → F-096 chain は trigger 5(budget / wall-clock estimate 前 grep verify)の deep application 不足 → 自己訂正 + protocol refinement の cycle を実 finding として記録。anchor の表面引用(F-057 paid 70 min を比例計算)vs anchor constraint 適用(per-call latency 50-100x 違いの caveat)の区別が pre-reg drafting で必要。
+
+**Artifacts**:
+- pre-reg: [g8_local_qwen3b_pre_reg.md](exploration/g8_local_qwen3b_pre_reg.md)(commit 683a845)
+- script: [demos/D8_llm_memory/scripts/phase_g8_local_qwen3b.py](../demos/D8_llm_memory/scripts/phase_g8_local_qwen3b.py)
+- LongMemEval result: `demos/D8_llm_memory/out/g8_local_longmemeval_results.json`(n=479)
+- LoCoMo result: `demos/D8_llm_memory/out/g8_local_locomo_results.json`(n=321)
+- Verdict JSON: `demos/D8_llm_memory/out/g8_local_router_verdict.json`
+- F-095 historical record: [g7 pre-reg with superseded banner](exploration/g7_mem0_latest_local_pre_reg.md) + 5Q checkpoint(local-only)
+
+**Reproducibility pin**:
+- `mem0ai==2.0.0`、`ollama` python 0.6.1、Ollama daemon 0.21.2
+- `qwen2.5:3b-instruct-q4_K_M`(Ollama)
+- `BAAI/bge-small-en-v1.5`(HuggingFace)
+- Python 3.13.9、Qdrant local
+- HW: RTX 3060 Ti 8GB VRAM, i7-13700F 16C24T, 16GB RAM, Win11 Pro
+
+---
+
+### 🚫 F-095 Local-only Mem0 + KDF Router (llama3.1:8b, batch=4) — infrastructure-infeasible at 5Q、wall-clock 33-36h、F-096 supersedes(2026-04-29)
+
+**Pre-reg**: [docs/exploration/g7_mem0_latest_local_pre_reg.md](exploration/g7_mem0_latest_local_pre_reg.md)(commit 54f92f4、frozen)
+**Status**: 🚫 **Infrastructure-infeasible**、F-096 supersedes(g7 attempt = honest 記録)
+
+**Context**: F-060 paid Mem0 + KDF Router benefit(LoCoMo +9.7-22.4pt)を完全 local 環境(Ollama 8B + HuggingFace BGE + Qdrant local、無料制約)で replicate する H_R primary 設計、H_LLM secondary に F-048 baseline + 0.10 PASS。Pre-reg drafting 時の wall-clock estimate 2.5-3.5h(F-057 paid 70min anchor の表面 application)。
+
+**Execution observation**: 5Q checkpoint で eta=803.9 min(13.4h LongMemEval のみ、合計 ~33-36h 連続実行)判明、infrastructure-infeasible で stop。
+
+**Root cause**: Mem0 framework `mem.add()` は per add 内部で 2 LLM call(fact extraction + ADD/UPDATE/DELETE/NONE 判定)、batch=4 では 22-turn Q で 6 add × 2 = 12 LLM call/Q × 8B Q4 GPU per-call ~10s = ~3 min/Q。pre-reg drafting で per-add LLM call multiplicity を grep / source-read せず undercount(F-057 paid anchor の per-call latency ~100ms vs local 8B ~10s で 50-100x 違いを caveat 化せず = anchor の表面引用)。
+
+**Direction A occurrence 4 record**: memory `feedback_tool_execution_verbal_claim_separation` に occurrence 4 として追記、trigger 5 deep application(anchor の constraint = latency / call multiplicity を caveat 化)を refinement として追加、本 occurrence 内で self-correct し F-096 へ移行。
+
+**5Q descriptive observation**(historical record):
+- mem0_recall_substring=0.000 全 5Q(F-048 0.508 比 大幅 低下)
+- Mem0 framework の batched fact compression が F-048 hand-rolled per-turn extraction と apples-to-apples 不能と判明 → F-096 で H_LLM 撤回(ill-formed hypothesis)
+
+**Supersede**: [F-096](#-f-096-local-only-mem0--kdf-router-qwen25-3b--h_r-partial-δ062pt-p05) — qwen2.5-3b + ingest batching optimization で feasible 化、本 axis の verdict は F-096 参照。
+
+**Artifacts**:
+- pre-reg: [g7_mem0_latest_local_pre_reg.md](exploration/g7_mem0_latest_local_pre_reg.md)(superseded banner 追記済)
+- 5Q checkpoint: `demos/D8_llm_memory/out/g7_local_longmemeval_results.checkpoint.json`(local-only、historical)
+- script: [demos/D8_llm_memory/scripts/phase_g7_local_mem0.py](../demos/D8_llm_memory/scripts/phase_g7_local_mem0.py)(historical、F-096 で phase_g8 が new artifact)
+
+---
+
 ### ✅ F-094 Apache recurring-rare positive replication of F-072 streaming benefit — H_R+ PASS (Δ_recurring = +3.67pt)、F-087 sanity reproduce ±0.0pt、4-pattern self-refutation arc に positive direction 補完(2026-04-29)
 
 **Context**: F-093 で F-072 NASA HTTP +3.06pt anchor の真の specificity が 3 軸(NASA × α=2.0 × 404-pattern driven、recurring 構造)に解像された。F-087 Apache REPLICATION FAILED は **one-shot rare**(freq ≤ 10 reconnaissance probes、同一 resource 1 回登場)で測定され、−13.04pt sign reversal となった ── これは F-072 の真の anchor 軸(recurring 構造)と orthogonal な rare 定義。本 finding は F-087 と direct symmetric contrast で、Apache 同 dataset を **recurring rare** 定義(freq ≥ 5、persistent failure mode)で再 test し、F-072 anchor が cross-domain で recurring rare 構造一般に benefit が出るかを確認。Pre-reg: [docs/exploration/g5_apache_recurring_pre_reg.md](exploration/g5_apache_recurring_pre_reg.md)(commit 0201e44、frozen)。
@@ -4795,4 +4940,4 @@ F-040 で全 50 Claim に per-claim 直接 unit test が整備済み。加えて
 ---
 
 **検証責任者:** プロジェクト実行担当(Claude Opus 4.7, 独立検証エージェント経由)
-**最終更新:** 2026-04-29(Phase 2 + Phase 2.5 + α/Lyapunov + anchor sharpening + cross-domain positive replication empirical 完走: F-073〜F-094 追加、scope narrowing + anchor 解像度向上 + positive replication が empirically 確定。**Direct SOTA 勝負 path は 3/3 LOSS で撤回**(F-073/074/075)、**streaming benefit は temporally recurring rare に narrow**(F-087)、**bias-detector predictor は N=21 systematic test で 45.5% < 70% で撤回**(F-090)、**Claim 10 (α=2 「発明の核心」) は NASA-recurring-rare specific に narrow**(F-091)、**Claim 31 functional rare protection は非 adversarial settings に narrow**(F-092)、**F-072 anchor は実質 404-pattern driven、3 軸 narrowing で解像**(F-093)、**Apache recurring-rare で +3.67pt positive replication、cross-domain N=2 で arc 完結**(F-094)。残った位置は narrow but durable で 4 grounded products + F-086 γ domain-fit predictor + **5-pattern (4 narrow + 1 positive) self-refutation epistemic anchor (F-070/F-087/F-091/F-092 + F-094)** + F-093 anchor sharpening category。詳細単一文書要約は public [PHASE_2_RETROSPECTIVE.md](PHASE_2_RETROSPECTIVE.md)。Claim 1-50 全 50 項は引き続き unit test backed、機構レベルは Phase X で realistic benchmark backed、4 self-refutation finding は機構支持・specific application robustness narrowing で機構自体は不変、F-094 で cross-domain recurring-rare 軸の positive replication が同 mechanism を支持。)
+**最終更新:** 2026-04-29(Phase 2 + Phase 2.5 + α/Lyapunov + anchor sharpening + cross-domain positive replication + Foreign baseline local replication attempt 完走: F-073〜F-096 追加、scope narrowing + anchor 解像度向上 + positive replication + infrastructure honest 記録 が empirically 確定。**Direct SOTA 勝負 path は 3/3 LOSS で撤回**(F-073/074/075)、**streaming benefit は temporally recurring rare に narrow**(F-087)、**bias-detector predictor は N=21 systematic test で 45.5% < 70% で撤回**(F-090)、**Claim 10 (α=2 「発明の核心」) は NASA-recurring-rare specific に narrow**(F-091)、**Claim 31 functional rare protection は非 adversarial settings に narrow**(F-092)、**F-072 anchor は実質 404-pattern driven、3 軸 narrowing で解像**(F-093)、**Apache recurring-rare で +3.67pt positive replication、cross-domain N=2 で arc 完結**(F-094)、**F-095 local replication infrastructure-infeasible (8B + batch=4 で wall-clock 33-36h)、F-096 で qwen2.5-3b + ingest batching optimization で feasible 化したが 3B environment が sub-noise floor (Mem0=0/321、KDF=2/321) で valid signal 取れず inconclusive、stronger local LLM が future work**。残った位置は narrow but durable で 4 grounded products + F-086 γ domain-fit predictor + **5-pattern (4 narrow + 1 positive) self-refutation epistemic anchor (F-070/F-087/F-091/F-092 + F-094)** + F-093 anchor sharpening category + **F-095/F-096 infrastructure honest 記録 chain**(Direction A occurrence 4 record + trigger 5 deep application refinement)。詳細単一文書要約は public [PHASE_2_RETROSPECTIVE.md](PHASE_2_RETROSPECTIVE.md)。Claim 1-50 全 50 項は引き続き unit test backed、機構レベルは Phase X で realistic benchmark backed、4 self-refutation finding は機構支持・specific application robustness narrowing で機構自体は不変、F-094 で cross-domain recurring-rare 軸の positive replication が同 mechanism を支持、F-096 inconclusive は F-060 paid finding を refute せず infrastructure threshold を anchor 化。)
