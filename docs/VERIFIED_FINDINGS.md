@@ -3145,5 +3145,1459 @@ F-040 で全 50 Claim に per-claim 直接 unit test が整備済み。加えて
 
 ---
 
+### ❌ F-073 Phase 2 #1 Wikipedia orphan article preservation: KDF は scale-free orphan pool で Random 以下、TopDegree に完敗(honest negative + bias-detector 正予測)(2026-04-20)
+
+**Context**: KDF 生存領域探索 Phase 2 Top 3 候補 #1。Pre-registration: [`docs/exploration/phase2_wikipedia_prereg.md`](exploration/phase2_wikipedia_prereg.md) v1.0(commit 6a6d1e4 + 改訂 ac0d568/4119aa2)。[`docs/exploration_protocol.md`](exploration_protocol.md) §3 Phase 2 の pre-registered criteria に従う。
+
+**Task**: Wikipedia orphan article (in-deg ≤ 3) pool から top-20% を保護対象に選択、T₀→T₀+90d(2026-01-01 → 2026-04-01)の活性 orphan 集合 A_future に対する recall を評価。**A_future 定義(事前固定)**: (a) views top 20% OR (b) ≥1 human edit(bot / IP / revert 除外)。
+
+**Data**:
+- simplewiki 20260101 dump(pagelinks + page + linktarget + redirect、計 ~136 MB compressed)
+- **278,423** main-NS 非 redirect articles、**11,918,288** unique main→main edges
+- **Orphan pool (in-deg ≤ 3): 118,885** articles(想定 30-80K 超)
+- **5,000 層別 random subsample**(seed=42、§9 dataset 縮小許容範囲内)
+- Pageviews / edits は Wikimedia REST API + Action API(hourly dump 100+ GB を回避、§9 実装 source 変更許容)
+
+**結果** — ρ=0.20 primary:
+
+| Method | Recall | vs Random |
+|---|---:|---:|
+| **KDF**(Layer priority + in-deg asc)| **15.93%** | **−4.07pt** |
+| Random(30 seed 平均)| 20.00% ± 0.70% | baseline |
+| TopDegree (in-deg) | 27.24% | **+7.24pt** |
+| TopDegree (total-deg) | 28.78% | **+8.78pt** |
+
+**Pre-registered verdict: LOSS**(z = −31.77、p > 0.9999 one-sided、Decisive threshold +10pt 未達)。
+
+全 budget で同傾向:
+| ρ | KDF | Random | Diff | TopDeg(total) |
+|---:|---:|---:|---:|---:|
+| 0.10 | 7.06% | 9.86% ± 0.49% | −2.81pt | 16.92% (+7.06pt) |
+| **0.20** | **15.93%** | 20.00% ± 0.70% | **−4.07pt LOSS** | 28.78% (+8.78pt) |
+| 0.30 | 26.88% | 30.03% ± 1.13% | −3.15pt | 42.44% (+12.41pt) |
+
+**Bias-detector probe(F-046 対応、pre-reg §3.4)**:
+- I1 (deg==1 ratio) = **0.023**、I4 (rare-at-deg1 rate) = **0.011**
+- **bias_score = 0.014 [LOW]**
+- **予測「KDF 非適」が actual LOSS と一致**
+- F-030 / F-036 の synthetic + real 5 benchmark に **N=6 の正予測 precedent を追加**、bias-detector の cross-task credibility を F-046 MISS 懸念から部分 recovery
+
+**Subsample layer 分布**:
+- Edge: 4,832(96.6%)/ Rare: 126(2.5%)/ Garbage: 39(0.8%)/ Core: 3(0.1%)
+
+**A_future 構成**(n = 1,105 / 5,000 = 22.1%):
+- Views top 20%: 1,000 / Has human edit: 217 / Overlap: 112
+
+**Interpretation**:
+
+1. **Wikipedia article graph は典型 scale-free、orphan pool 内部でも high in-degree が将来活性と正相関**。在野数 in-deg 3 の記事は in-deg 0 記事より views / edits を得やすい。
+2. **KDF の Rare layer(total degree == 1)は global structural rareness を捕捉するが、本 task の importance gradient と逆方向**。Layer-first + in-deg-asc の選別は "最も孤立した" orphan を先取りするが、そうした orphan は文字通り活性を持たない。
+3. **F-061(BA/WS scale-free で KDF < TopDegree)の直接拡張**。合成 scale-free だけでなく real-world Wikipedia graph でも同じ敗北構造が再現。
+
+**Selection predictor meta-refinement**([`docs/extension_ideas.md`](extension_ideas.md) §新提案時セルフチェックへの追加):
+
+- 現行 Q1「Target graph で重要 node は高 degree?」は **global graph 性質** を見ていた
+- 本 F-073 で浮上: **task-metric-aware(filter 後 pool 内での importance gradient)の解釈が必要**
+- Phase 1 triage([`docs/exploration/phase1_triage.md`](exploration/phase1_triage.md) §2 #1)では Q1=No と判定したが、**orphan pool 内部では Q1=Yes**(in-deg 3 > in-deg 0 で活性 gradient あり)
+- **補足 rule**:「filter 適用後の pool でも Q1 を再検証」
+
+**決定**:
+- Wikipedia orphan article preservation **→ Tier 4 送り**、本候補 drop
+- Phase 2 継続: 残 2 候補(#3 Citation interdisciplinary bridge / #6 Scientific instrument log anomaly)に注力
+- [`docs/exploration/phase1_triage.md`](exploration/phase1_triage.md) §6 **Revisit trigger 1(Top 3 のいずれか Phase 2 完了時点)**が発動、Category A/B/C の再読を実施した結果:新規 trigger 発動なし(Category A redef は Top 3 全完了後まで保留、Category B は新 access なし、Category C 2nd wave は Phase 2 残 2 結果次第)
+
+**Preprocessing thesis([`docs/kdf_preprocessing_layer_thesis.md`](kdf_preprocessing_layer_thesis.md))への含意**:
+- 本 F-073 は「Without KDF 0% → With KDF Y%」pattern に該当せず(問題サイズは直接解ける、KDF なしでも Random / TopDegree で高 recall)
+- 即ち preprocessing layer thesis の **支持 / 反証のどちらにも decisive でない**、中立
+- Phase 2 の残 2 候補(Citation bridge / Scientific log)の方が thesis 適合性が高い可能性
+
+**Artifacts**:
+- Pre-reg: [`docs/exploration/phase2_wikipedia_prereg.md`](exploration/phase2_wikipedia_prereg.md)
+- Parser: [`experiments/wikipedia_phase2/parse_mysql_dump.py`](../experiments/wikipedia_phase2/parse_mysql_dump.py)
+- Graph builder: [`experiments/wikipedia_phase2/build_graph.py`](../experiments/wikipedia_phase2/build_graph.py)
+- Activity fetch: [`experiments/wikipedia_phase2/fetch_activity.py`](../experiments/wikipedia_phase2/fetch_activity.py)
+- KDF run: [`crates/cgb-kdf/examples/phase2_wikipedia_orphan.rs`](../crates/cgb-kdf/examples/phase2_wikipedia_orphan.rs)
+- Evaluation: [`experiments/wikipedia_phase2/evaluate.py`](../experiments/wikipedia_phase2/evaluate.py)
+- Results: `experiments/wikipedia_phase2/results/evaluation.{json,tsv}`
+- Cost: **$0**(public dumps + local compute + REST API 10 worker 並列、rate limit 内)
+- 所要: 合計 ~30 分(data download + parse + KDF run + fetch 5K + eval)
+
+**pre-reg compliance**: §9 bounds 遵守
+- Primary metric(recall of A_future at ρ=0.20)不変 ✅
+- Win / Partial / Loss threshold 不変 ✅
+- Honest stop trigger 不変(本実験は deterministic 単独 run なので適用対象外)✅
+- 許容変更: subsample 5K(§9 dataset 縮小)、pageviews/edits を REST API(§9 実装修正)
+- 禁止事項違反: なし ✅
+
+---
+
+### ❌ F-074 Phase 2 #6 BGL supercomputer log anomaly preservation: static KDF は LOSS、bias-detector 予測外し(F-072 streaming 版との対比で含意あり)(2026-04-20)
+
+**Context**: KDF 生存領域探索 Phase 2 Top 3 候補 #6。Pre-registration: [`docs/exploration/phase2_scientific_log_prereg.md`](exploration/phase2_scientific_log_prereg.md) v2.0(commit 8db34f1、F-073 の Q1 task-metric refinement を反映)。F-072 NASA HTTP streaming(+3.06pt)の bipartite + rare recall framework を supercomputer log に generalize。
+
+**Task**: BGL bipartite graph(physical_node ∪ normalized_content)で content 側から top-20% を保護選択、anomaly-flagged line に現れた content の recall を測定。
+
+**Data**:
+- LogHub v1.0 BGL(Zenodo 8196385、BGL.zip 57.5 MB / BGL.log 709 MB)
+- 300,000 line **連続 subsample**(時系列先頭から、§9 許容)
+- 解析結果: 29,770 physical nodes / 2,399 content templates / 45,714 edges / **79,641 anomaly lines (26.5%)**
+- Anomaly label 分布: **KERNDTLB 77,342(97%)**、APPREAD 2,164、KERNRTSP 127、KERNMC 8
+- **V_rare: 8 content templates のみ**(normalization 後の unique anomaly templates)
+
+**結果** (ρ=0.20 primary):
+
+| Method | Recall @ ρ=0.20 | vs Random |
+|---|---:|---:|
+| **KDF**(Layer priority + degree asc) | **12.5%** (1/8) | **−12.92pt** |
+| Random(30 seeds)| 25.42% ± 14.25% | baseline |
+| **TopDegree (desc)** | **37.5%** (3/8) | +12.08pt |
+| BottomDegree (asc)| 12.5% (1/8) | (KDF と同値 = layer free 版) |
+
+**Pre-registered verdict: LOSS**(z=−4.97、p>0.9999 one-sided)
+
+全 budget:
+| ρ | KDF | Random | Diff | TopDeg (desc) |
+|---:|---:|---:|---:|---:|
+| 0.10 | 0.0% | 10.83% ± 10.07% | −10.83pt | 37.5% |
+| **0.20** | **12.5%** | 25.42% ± 14.25% | **−12.92pt LOSS** | 37.5% |
+| 0.30 | 37.5% | 35.42% ± 16.16% | +2.08pt | 37.5% |
+
+(全 budget で TopDeg = 37.5% = 3/8、恒常的に上限。KDF/BotDeg/Random は 0.30 で TopDeg に追い付く)
+
+**Bias-detector probe(pre-reg §3.4)— 予測外し**:
+- I1 = 0.339(deg==1 content ratio)、I4 = 0.500(rare-at-deg1 率)
+- **bias_score = 0.452 [MODERATE]** → 予測「KDF 適性あり」
+- **Actual: LOSS** → **予測外し**
+- **F-046 cross-task untrusted 懸念が再燃**。F-073 で N=6 正予測を積んだが F-074 で MISS、**cumulative N=6/7 正予測率に低下**
+- **I4 高値は rare set size (8) が small なため偶発的 spike** の可能性 — small N での predictor noise
+
+**Content-side Layer 分布**:
+- Core: 7 / Edge: 1,579 / **Rare: 811 (34%)** / Garbage: 2
+- KDF Rare layer size = 811 だが **V_rare(8 target)は layer 全域に分散**、Rare layer preference が逆に misdirect
+
+**決定的洞察**:
+
+1. **BGL anomaly は "拡散型 hardware 障害"**:KERNDTLB(97% of anomalies)は多数の physical node で同時多発 → content template の **degree が高い**
+2. **KDF の "rare = 低 degree を protect" 仮定は本 task で逆向き**:高頻度で多 node に広がる error template が真の ground truth、low-degree content は anomaly と無関係
+3. **TopDegree (desc) 勝利の意味**:"popular content に anomaly が偏在" = hardware failure が system-wide に影響する BGL では "anomaly = 広く観測される event"
+4. **F-073 Wikipedia との共通 pattern**:両方とも「rare (低 degree) ≠ important」の domain、KDF 原則と逆方向
+5. **Q1 task-metric-aware check の限界**:F-073 後 pre-reg v2.0 で Q1 事前チェックを強化したが、anomaly 分布(type concentration)は graph structure だけでは判定不能 → **Q1 check に "anomaly distribution check" を追加すべき**
+
+**F-072 NASA streaming との比較**(重要な nuance):
+
+| 条件 | F-072 NASA HTTP | F-074 BGL |
+|---|---|---|
+| Framework | bipartite + rare recall | **同じ** |
+| Rare target size | 98 resources (3.26%) | 8 contents (0.33%) |
+| Rare 分布 | 多様な 4xx/5xx コード | **KERNDTLB 97% dominance** |
+| Decay / Streaming | ✅ 実装 | ❌ **静的のみ** |
+| Result | C1 (+Claim 14 decay) +3.06pt ✅ | LOSS −12.92pt ❌ |
+
+**仮説 (未検証)**:
+- BGL でも **streaming + Claim 14 decay を適用** すれば frequent pattern の edge weight が減衰 → rare anomaly が相対的に浮上 → F-072 と同じ benefit が得られる可能性
+- 今回の pre-reg v2.0 §4 では NodeClassifier::classify (static) を指定しており、streaming は含まれない
+- **Phase 3 or follow-up** で streaming 版を別 pre-reg として実施する余地
+
+**決定**:
+- **BGL static KDF → Tier 4 送り、本 pre-reg は LOSS 確定**
+- **BGL streaming(F-072 framework 完全継承版)は別 candidate として parking**(Deferred Category C 追加検討)
+- Phase 2 継続: **最後の 1 候補 #3 Citation interdisciplinary bridge** へ注力
+- Deferred list([`docs/exploration/phase1_triage.md`](exploration/phase1_triage.md) §6)再読:
+  - Category A(#2, #7 redef)→ Top 3 全完了後まで保留
+  - Category B(#4, #5)→ 新 access なし
+  - Category C(Power grid, BGP)→ Phase 2 残 1 次第
+  - **追加 parking 候補**: BGL streaming 版(F-072 framework 完全継承、Claim 14 decay 適用)
+
+**Selection predictor meta-refinement(累積)**:
+- F-073 で追加: filter 後 pool でも Q1 再検証
+- F-074 で追加: **Q1 に "anomaly / rare event 分布の concentration check" を追加**
+  - 具体的には、rare set size と type diversity を事前計測
+  - 1-2 event type が >80% を占めるなら、その event type は"広く観測される" = 高 degree = KDF 非適
+  - 「rare type が地理的・時間的に集中 → localized → low degree → KDF 適」vs「rare type が広く分散 → widespread → high degree → KDF 非適」の 2 分岐
+- [`docs/extension_ideas.md`](extension_ideas.md) §新提案時セルフチェックに追加検討
+
+**Preprocessing thesis([`docs/kdf_preprocessing_layer_thesis.md`](kdf_preprocessing_layer_thesis.md))への含意**:
+- F-074 も F-073 同様「Without KDF 0%」pattern に該当せず(問題サイズ 300K lines、Random で既に 25% recall)
+- 2/2 中立 — thesis を支持も反証もしない
+
+**Artifacts**:
+- Pre-reg: [`docs/exploration/phase2_scientific_log_prereg.md`](exploration/phase2_scientific_log_prereg.md) v2.0
+- Parser: [`experiments/bgl_phase2/parse_bgl.py`](../experiments/bgl_phase2/parse_bgl.py)
+- KDF run: [`crates/cgb-kdf/examples/phase2_bgl_anomaly.rs`](../crates/cgb-kdf/examples/phase2_bgl_anomaly.rs)
+- Evaluation: [`experiments/bgl_phase2/evaluate.py`](../experiments/bgl_phase2/evaluate.py)
+- Results: `experiments/bgl_phase2/results/evaluation.{json,tsv}`
+- Cost: **$0**(public dataset + local compute、API 不要)
+- 所要: **~15 分**(download 1 min + extract + parse 2 min + KDF run 0.1s + evaluate < 1s)
+
+**pre-reg compliance**: §9 bounds 遵守
+- Primary metric(recall of V_rare at ρ=0.20)不変 ✅
+- Win / Partial / Loss threshold 不変 ✅
+- V_rare 定義(anomaly-flagged line に現れる content)不変 ✅
+- Graph 構築 spec(bipartite Node ↔ normalized content)不変 ✅
+- 許容変更: 300K 連続 subsample(§9 dataset 縮小)
+- **Streaming を実装していないのは pre-reg §4 が NodeClassifier::classify (static) を指定していた為、§9 禁止事項違反はないが pre-reg 設計が F-072 framework 完全継承ではなかった**(streaming は別 pre-reg が望ましい)
+
+---
+
+### ❌❌❌ F-075 Phase 2 #3 Citation interdisciplinary bridge detection: KDF 完敗 (recall 0%)、Phase 2 Top 3 の 3/3 LOSS 確定 — scope narrowing が decisively 完成 (2026-04-20)
+
+**Context**: KDF 生存領域探索 Phase 2 Top 3 候補 #3(最終)。Pre-registration: [`docs/exploration/phase2_citation_bridge_prereg.md`](exploration/phase2_citation_bridge_prereg.md) v2.0(commit 5ed89ad)。Burt's Structural Holes 概念の operational 定義で KDF の bridge detection 性能を検証。
+
+**Task**: OGB ogbn-arxiv citation graph で、**≥3 異なる arxiv primary category から citation を受ける論文**(V_bridge)を identify。Budget 20% 選択時の V_bridge recall を評価。
+
+**Data**:
+- OGB ogbn-arxiv(Stanford SNAP、arxiv.zip 80 MB compressed)
+- **169,343 papers / 1,166,243 directed citation edges / 40 CS sub-categories**
+- **V_bridge = 20,891 papers(12.34% of 169K)**
+- Bridge span 分布: 3 category(10,267)、4(4,890)、5(2,298)、... 最大 12+
+- Full dataset(subsample なし)
+
+**結果**(ρ=0.20 primary):
+
+| Method | Recall @ ρ=0.20 | vs Random |
+|---|---:|---:|
+| **KDF**(Layer priority + deg asc) | **0.00%** (0 / 20,891) | **−20.04pt** |
+| Random(30 seeds)| 20.04% ± 0.27% | baseline |
+| **TopDegree (total)** | 58.00% | +37.96pt |
+| **TopInDegree** | **81.48%** (17,023 / 20,891) | **+61.44pt** |
+
+**Pre-registered verdict: LOSS**(z = −406.68、p → 0、Phase 2 中最大の diff magnitude)
+
+全 budget:
+| ρ | KDF | Random | Diff | TopInDeg |
+|---:|---:|---:|---:|---:|
+| 0.10 | 0.00% | 10.04% ± 0.19% | −10.04pt | 52.97% |
+| **0.20** | **0.00%** | 20.04% ± 0.27% | **−20.04pt LOSS** | **81.48%** |
+| 0.30 | 0.98% | 30.04% ± 0.27% | −29.06pt | **96.55%** |
+
+**V_bridge の Layer 分布(decisive observation)**:
+- Core: **2,248**(10.8%)
+- Edge: **18,643**(89.2%)
+- **Rare: 0(ゼロ)**
+- Garbage: 0
+
+**→ KDF の Rare layer(20,604 papers、default classifier)には bridge が 1 件も存在しない**。KDF の標準 selection 戦略(Rare priority + degree asc)は bridge detection と**完全 orthogonal**。
+
+**Bias-detector probe(F-046 対応、予測回復)**:
+- I1 = 0.1206(deg==1 ratio)
+- **I4 = 0.0000**(V_bridge で deg==1 は 1 件も無い)
+- **bias_score = 0.036 [LOW]** → 予測「KDF 非適」
+- **Actual: 決定的 LOSS** → **予測一致**
+- **cumulative predictor accuracy: N=7/8 = 87.5%**(F-074 BGL の MISS からの recovery、F-046 cross-task credibility 再 anchoring)
+
+**決定的洞察**:
+
+1. **Bridge は構造的に "中-高 degree" + 多 category connectivity**(Burt's Structural Holes の core 特徴)
+   - Bridge definition では in-degree ≥3(複数 citation 必要)、実測平均 in-deg は 90+
+   - 低 in-degree(≤2)の paper は絶対 bridge になれない(definition 排除)
+   - **KDF の Rare layer(total degree == 1)は bridge 候補から decisive に排除される構造**
+
+2. **TopInDegree の圧倒的勝利(81.48% @ ρ=0.20)は task definition に起因**:
+   - Bridge は被 citation で定義、citation 多 → category 多 → bridge 確率高
+   - 純 definition-induced correlation、non-trivial な「knowledge」ではない
+   - → これが強 baseline だが "interesting selector" ではない(trivial)
+
+3. **KDF の standard NodeClassifier は Burt's Structural Holes mechanism を capture しない**:
+   - Classifier は **total degree のみ** を使う
+   - Bridge detection には **neighborhood の category diversity** が必要(KDF が見ていない feature)
+   - Theoretical alignment(KDF の「構造的 rareness 保護」思想と Burt の「broker position」の類似)は metaphorical、mathematical equivalence ではない
+   - **論文 §7 で書かれていた Burt alignment は過大主張だった**可能性、narrowing 必要
+
+**F-073 / F-074 との pattern 統合 — 3/3 LOSS の共通構造**:
+
+| 実験 | Task | 真の important signal | KDF の Rare 優先との関係 |
+|---|---|---|---|
+| F-073 Wikipedia | orphan 保護 | 高 in-degree orphan(in-deg 3 > 0)| **逆方向** |
+| F-074 BGL | anomaly 保存 | 高 degree content(広範 hardware failure)| **逆方向** |
+| F-075 Citation | bridge 検出 | 中-高 degree(citation diverse)| **Rare layer に bridge ゼロ** |
+
+**Common 結論**: **KDF の "protect low degree" mechanism は、"low degree ≠ important" のあらゆる real-world task で逆向きに働く**。KDF native fit は:
+- F-062 / F-065 git merge(merge = 高 degree but task が保存で、Rare ではない selection)
+- F-072 NASA streaming(rare 4xx/5xx が実際 low frequency、且つ streaming decay で frequent が deweight される)
+- F-057 / F-058 LoCoMo temporal date/time(literal verbatim 保持、graph structure 不問)
+
+に限定される。
+
+**Phase 2 Top 3 完全 narrowing 総括**:
+
+- F-073 Wikipedia orphan preservation ❌ LOSS −4.07pt
+- F-074 BGL static anomaly ❌ LOSS −12.92pt
+- F-075 Citation bridge detection ❌ LOSS −20.04pt
+- **3/3 LOSS pattern 確定、decisive scope narrowing 完成**
+
+**Deferred list revisit trigger 2(Top 3 全完了時点)発動**:
+
+[`docs/exploration/phase1_triage.md`](exploration/phase1_triage.md) §6 再読:
+
+- **Category A(#2 / #7 redef)**: 3/3 LOSS を受けて、redef 適性を再評価
+  - #2 SO/GitHub low-answer:rarity と importance の correlation 弱い可能性 → **redef 後も期待低**、parking 継続妥当
+  - #7 Code silent pivot:F-062 と overlap、独立 value が薄い → **parking 継続**、少なくとも現時点で前倒し必要性なし
+- **Category B(#4, #5)**: access 状況不変
+- **Category C(Power grid, BGP)**: **3/3 LOSS で 2nd wave trigger 発動条件満たす**
+  - ただし「同じ LOSS pattern を踏む可能性」も高い(Power grid も scale-free だと high-degree が important、BGP も同様)
+  - 2nd wave に進むより **Phase 4 preprocessing thesis pivot の判断を優先** すべき
+- **追加 parking(F-074 由来)**: BGL streaming 版 — Phase 3 or preprocessing thesis 実証用途に保留
+
+**Preprocessing thesis([`docs/kdf_preprocessing_layer_thesis.md`](kdf_preprocessing_layer_thesis.md))への含意 — decisive**:
+
+- 3/3 LOSS は preprocessing thesis への pivot を decisively support する evidence
+- "direct SOTA 勝負" path は Phase 2 で empirically 破綻
+- 残る path:
+  - **"Without KDF 0% → With KDF Y%"** demo(thesis main validation)
+  - Narrow niche(F-062 git archival / F-072 streaming / F-057-58 temporal)での deep dive
+  - Bias-detector を independent applicability-predictor tool として独立商材化
+- 論文 v0.4 の構成 pivot 判断を Phase 4 で実施、material が集まった
+
+**Artifacts**:
+- Pre-reg: [`docs/exploration/phase2_citation_bridge_prereg.md`](exploration/phase2_citation_bridge_prereg.md) v2.0
+- Parser: [`experiments/citation_phase2/parse_arxiv.py`](../experiments/citation_phase2/parse_arxiv.py)
+- KDF run: [`crates/cgb-kdf/examples/phase2_citation_bridge.rs`](../crates/cgb-kdf/examples/phase2_citation_bridge.rs)
+- Evaluation: [`experiments/citation_phase2/evaluate.py`](../experiments/citation_phase2/evaluate.py)
+- Results: `experiments/citation_phase2/results/evaluation.{json,tsv}`
+- Cost: **$0**(public OGB benchmark + local compute)
+- 所要: **~10 分**(download 40s + parse 30s + KDF 0.3s + eval 2s)
+
+**pre-reg compliance**: §9 bounds 遵守
+- Primary metric(V_bridge recall at ρ=0.20)不変 ✅
+- Win / Partial / Loss threshold 不変 ✅
+- V_bridge 定義(≥3 citing categories)不変 ✅
+- Graph 構築 spec(directed citation、primary category)不変 ✅
+- KDF methodology(NodeClassifier standard、streaming なし)不変 ✅
+- 許容変更:なし(full dataset 使用、§9.2 K threshold 緩和 trigger 不発動)
+- 禁止事項違反:なし ✅
+
+---
+
+### ✨ F-076 Phase 2.5 Git archival cross-repo expansion: 4 repo 追加で F-065 merge-rate threshold pattern が decisively 再確認(N=3 → N=6+1 linear)(2026-04-20)
+
+**Context**: KDF 生存領域探索 Phase 2.5(positive replication sprint)の Priority 2。F-062(tokio)と F-065(tokio + pytest + lodash、N=3)の git archival findings の robustness を、**4 つの異なる言語 / scale / workflow の repo** で追加実証。User 指示 2026-04-20「positive findings の無料範囲で N を増やす」を受けた。
+
+**Pre-registration 成功基準**(phase_2_5_plan.md §2 Priority 2):
+- KDF merge recall ≥ **90%** at keep=0.30 → replication 成功
+
+**検証 4 repo**(既存 F-065 の 3 repo に加え):
+
+| Repo | 言語 | Commits | Tags | Merges | **Merge 率** | PR-merges |
+|---|:-:|---:|---:|---:|---:|---:|
+| facebook/react | JS/TS | 34,252 | 160 | 4,986 | **14.6%** | 49.9% |
+| rust-lang/cargo | Rust | 22,930 | 117 | 7,444 | **32.4%** | 5.2% |
+| django/django | Python | 52,088 | 505 | 656 | **1.3%** | 1.2% |
+| postgres/postgres | C | 101,520 | 678 | **0** | **0.0%** | 0.0% |
+
+**結果 — Merge recall @ 30% keep**:
+
+| Repo | Merge 率 | **KDF** | Random | TopDegree | KDF vs Random | Replication |
+|---|---:|---:|---:|---:|---:|:-:|
+| django | 1.3% | **99.39%** | 31.86% | 99.39% | **+67.53pt** | ✅ **成功** |
+| react | 14.6% | 65.74% | 30.65% | 99.32% | +35.09pt | ⚠️ partial(<90% threshold) |
+| cargo | 32.4% | 61.79% | 30.82% | 91.15% | +30.97pt | ⚠️ partial(<90% threshold) |
+| postgres | 0.0% | N/A(merges 無し)| — | — | — | 🟰 N/A(linear rebase workflow) |
+
+**結果 — Tag recall @ 30% keep**:
+
+| Repo | KDF | Random | TTL | TopDegree |
+|---|---:|---:|---:|---:|
+| django | **65.35%** | 31.88% | 60.20% | 55.64% |
+| react | 25.62% | 24.38% | 13.75% | 20.00% |
+| cargo | **45.30%** | 31.62% | 23.08% | 41.88% |
+| postgres | 28.76% | 30.38% | 25.96% | 26.99% |
+
+**Combined with F-062 / F-065** — **N=6 functional repos + 1 linear**:
+
+| Repo | Merge 率 | KDF merge recall | 判定 |
+|---|---:|---:|:-:|
+| lodash(F-065)| 2.3% | **100.00%** | ✅ |
+| django(F-076)| 1.3% | **99.39%** | ✅ |
+| tokio(F-062)| 3.9% | **99.45%** | ✅ |
+| react(F-076)| 14.6% | 65.74% | ⚠️ |
+| pytest(F-065)| 26.4% | 59.37% | ⚠️ |
+| cargo(F-076)| 32.4% | 61.79% | ⚠️ |
+| postgres(F-076)| 0.0% | N/A | 🟰 |
+
+**決定的 pattern(N=6 で強 robust)**:
+
+```
+Merge rate < 5%     → KDF ≥ 99% merge recall  (3/3: lodash, django, tokio)
+Merge rate 10-35%   → KDF 60-66% merge recall  (3/3: react, pytest, cargo)
+Merge rate == 0%    → N/A (linear rebase workflow)
+```
+
+**F-065 の threshold 仮説が N=6 で確認**:
+- Low-merge(< 5%)repos → KDF は Rare layer で merge 捕捉、ほぼ完全 recall
+- High-merge(> 10%)repos → merges が "structural rare" でなく "backbone"、KDF 不利
+- Merge rate は KDF applicability の **decisive predictor**
+
+**Postgres(新 insight、N=1 null case)**:
+- **完全 linear rebase workflow**、merge commit 皆無
+- Tag recall で KDF/Random/TopDegree すべて budget ratio 近辺(28-30%)に収束
+- → **KDF の value は merge structure に依存**、linear history では差が出ない
+- Commercial 含意: GitHub enterprise の linear-history advocate 層には KDF pitch が刺さらない
+
+**成功判定**:
+- **1/4 full success**(django、pre-reg 基準 ≥90% pass)
+- 2/4 partial(react / cargo、Random には勝つが ≥90% threshold 未達)
+- 1/4 N/A(postgres、merge 不在)
+- **Positive claim の robustness**:merge rate < 5% という条件で consistent(N=3 → N=3+3=6)、**narrow だが decisive に validated**
+
+**F-062 / F-065 narrative への追補**:
+
+1. **"Small-medium repo" claim の精密化**:
+   - F-062: "小-中 repo" と曖昧だった → **F-076 で "merge rate < 5%" と operational 化可能**
+   - Enterprise pilot 時は事前に `git log --merges | wc -l` 比で KDF 適性を pre-declare できる
+
+2. **Commercial pitch 修正候補**:
+   - 旧:「Git commit archival に KDF」
+   - 新:「**Linear-history repo / low-merge workflow repo に KDF**」
+   - 対象: squash-merge default repo(GitHub デフォルト)、squash-and-rebase workflow
+   - 対象外: Gerrit / Changeset / rebase-merge policy(low-merge なので KDF 競合 TopDegree)
+
+3. **Bias-detector との統合**:
+   - git repo で `merge_rate = n_merges / n_commits` を事前計算可能
+   - ユーザーが `merge_rate > 0.10` を入力したら KDF の代わりに TopDegree を推奨
+   - → **applicability advisor tool** としての commercial path が明確化
+
+**Preprocessing thesis 関連性**:
+- Django の +67.53pt(Random 比)は「Without deterministic structural selector でこの recall は出ない」を示す
+- 但し TopDegree でも同等 recall 可能なので "Without KDF, unsolvable" ではない
+- → preprocessing thesis の decisive support evidence にはならず、**"deterministic auditable archival tool" positioning** が適切
+
+**Artifacts**:
+- Script: [`benchmarks/classical_revival/b1_git_commit_pruning.py`](../benchmarks/classical_revival/b1_git_commit_pruning.py)(既存、parameterize 済)
+- Results: `benchmarks/classical_revival/out/b1_{react,cargo,django,postgres}_results.json`
+- Repos: bare clones in `%TEMP%/b1_repos/{react,cargo,django,postgres}.git`(`git clone --bare --filter=blob:none`)
+- Cost: **$0**(GitHub public + local compute)
+- 所要: **~30 分**(clone 15 min + B1 実行 15 min)
+
+**Pre-reg compliance**: phase_2_5_plan.md §2 Priority 2 基準
+- Primary metric(merge recall @ keep=0.30)不変 ✅
+- 成功閾値(≥ 90%)不変 ✅
+- Methodology(既存 B1 script 流用、non-modified)✅
+
+---
+
+### ✨ F-077 Phase 2.5 Git archival 拡張 3 repos: vscode 例外発見、N=9 に拡大し merge-rate threshold pattern を refine(2026-04-20)
+
+**Context**: F-076 の replication sprint 継続、追加 3 repo(vscode / kubernetes / node)で mega-scale / enterprise / 高 merge rate の diversity を確保。
+
+**新 3 repo**:
+
+| Repo | 言語 | Commits | Tags | Merges | Merge 率 | PR-merges |
+|---|:-:|---:|---:|---:|---:|---:|
+| nodejs/node | JS/C++ | 102,470 | 931 | 393 | **0.38%** | 0.04% |
+| microsoft/vscode | TS | 172,278 | 350 | 18,334 | **10.6%** | 29.1% |
+| kubernetes/kubernetes | Go | 157,214 | 1,209 | 64,360 | **40.9%** | 41.0% |
+
+**結果 — Merge recall @ 30% keep**:
+
+| Repo | Merge 率 | **KDF** | Random | TopDegree | Replication |
+|---|---:|---:|---:|---:|:-:|
+| node | 0.38% | **99.75%** | 32.32% | 99.75% | ✅ **full success** |
+| vscode | 10.6% | **99.37%** | 30.09% | 99.44% | ✅ **full success(予想外)** |
+| kubernetes | 40.9% | 38.71% | 29.78% | 71.59% | ⚠️ major partial |
+
+**N=10 total aggregate(F-062 + F-065 + F-076 + F-077)**:
+
+| Repo | Merge 率 | KDF merge recall | 判定 | 由来 |
+|---|---:|---:|:-:|:-:|
+| **node** | **0.38%** | **99.75%** | ✅ full | F-077 |
+| django | 1.3% | 99.39% | ✅ full | F-076 |
+| lodash | 2.3% | 100.00% | ✅ full | F-065 |
+| tokio | 3.9% | 99.45% | ✅ full | F-062 |
+| **vscode** | **10.6%** | **99.37%** | ✅ full | F-077 |
+| react | 14.6% | 65.74% | ⚠️ partial | F-076 |
+| pytest | 26.4% | 59.37% | ⚠️ partial | F-065 |
+| cargo | 32.4% | 61.79% | ⚠️ partial | F-076 |
+| kubernetes | 40.9% | 38.71% | ⚠️ major partial | F-077 |
+| postgres | 0.0% | N/A | 🟰 null (linear) | F-076 |
+
+**Pattern refinement — "merge rate < 5%" threshold は単純すぎた**:
+
+F-065 / F-076 で「merge rate > 10% → KDF 不適」と言っていたが、**vscode(10.6%)で KDF 99.37% 成功** により単純 threshold 仮説は棄却。
+
+**新 hypothesis — "merge rate + commit/merge ratio" 複合指標**:
+
+| Repo | commits / merges | KDF recall | 判定 |
+|---|---:|---:|:-:|
+| node | 260.7 | 99.75% | ✅ |
+| django | 79.4 | 99.39% | ✅ |
+| lodash | 44.2 | 100.00% | ✅ |
+| tokio | 26.0 | 99.45% | ✅ |
+| vscode | **9.4** | 99.37% | ✅ **outlier — full success despite low ratio** |
+| react | 6.9 | 65.74% | ⚠️ |
+| pytest | 3.8 | 59.37% | ⚠️ |
+| cargo | 3.1 | 61.79% | ⚠️ |
+| kubernetes | **2.4** | 38.71% | ⚠️ |
+
+Commits/merges ratio は 9.4(vscode)で境界、React の 6.9 より高いのに vscode が勝つ。即ち **ratio 単独でも説明不十分**。
+
+**仮説 candidates(未検証、follow-up 課題)**:
+
+1. **vscode の "squash-merge" workflow**:GitHub default で PR-merge が 50K (29%)、actual merge commits (18K) はそれ以外の special merges(feature branch 統合等)に偏在 → KDF の Rare/Core layer に入りやすい?
+2. **Commit volume absolute**:vscode 172K vs react 34K、budget 絶対量が大きく KDF の selection が高 degree merge を絶対取れる余裕?
+3. **Repository age / history shape**:vscode は long-term 単一 product、react は複数 major rewrite → graph topology が異なる?
+
+→ いずれも未検証、**"merge rate < 5%" は KDF 成功の十分条件、> 10% でも条件次第で成功**という nuance が入った。
+
+**決定的な実用 insight**:
+
+- **Preserved: 6/10 repo で KDF decisive full success**(≥99% merge recall at keep 30%)
+- KDF が decisive に負けるのは N=3(pytest / cargo / kubernetes)、いずれも merge rate > 25%
+- **中間領域(10-20% merge rate)は repo 特性依存**、事前予測は現 simple threshold では不可能
+- **Bias-detector 的 advisor tool を作るなら** merge rate に加えて secondary feature(commit volume、PR-merge ratio、tag density 等)が必要
+
+**Commercial 方針修正**:
+
+- 旧「small-medium repo 向け / merge rate < 5% 向け」(過度に narrow)
+- **新「merge rate < 10% repo は confidently KDF、10-20% は A/B test、> 25% は TopDegree 推奨」**
+- Enterprise pilot では事前に `git log --oneline | wc -l` と `git log --merges | wc -l` から merge rate を計測、pilot scope を決定
+
+**成功判定 summary**:
+- Full success (≥99%): **5/10(lodash, django, tokio, node, vscode)**
+- Partial (60-70%): 2/10(react, cargo)
+- Major partial (<60%): 2/10(pytest, kubernetes)
+- N/A: 1/10(postgres)
+
+**5/10 = 50% の real-world repos で KDF が decisive に commercial value を持つ** — Phase 2 の 3/3 LOSS と対照的、**narrow niche の安定性を強く支持**。
+
+**Preprocessing thesis への含意**:
+- Vscode(172K commits 級の enterprise monorepo)で成功は **scale 的に preprocessing 候補**:全件 LLM 分析は不可能、KDF で decisive に絞り込める
+- Node も 100K+ で成功 — 同様 scale 引数成立
+- "Without KDF 0% → With KDF Y%" は **人間 reviewer の時間制約下で成立**(100K commit を直読は不可能、KDF 30% で merge 99% 拾えれば自然な preprocessing)
+
+**Artifacts**:
+- Script: 同一 [`benchmarks/classical_revival/b1_git_commit_pruning.py`](../benchmarks/classical_revival/b1_git_commit_pruning.py)
+- Results: `benchmarks/classical_revival/out/b1_{node,vscode,kubernetes}_results.json`
+- Cost: **$0**(GitHub public + local compute、clone + 解析 total 20 min)
+- Pre-reg compliance: Phase 2.5 plan §2 Priority 2、成功閾値 ≥90% 不変
+
+**Phase 2.5 Priority 2 完了**:
+- N=4 → N=10(+7 new repos in Phase 2.5)、**positive replication の robustness 大幅強化**
+- 次 step: Priority 1(streaming log replication)or Phase 4(meta 成果化)判断材料
+
+---
+
+### ✨ F-078 Router v2 feasibility predictor: A19「MI 閾値」仮説を empirical に棄却、deg_skew 1 特徴量で 90% 精度の a priori 適性判定を確立(2026-04-21)
+
+**Context**: Loop exploration で 20 件の algorithm 候補を生成→三層 triage(OK 4 / Cond 5 / NG 11)した後、user 指示により theoretical reasoning から empirical verification へ切替。A19(情報理論下界仮説)を planted-bridge graph で検証、続いて pure graph-structural proxy の natural ceiling を exhaust まで調査。
+
+**実験 1: A19 (I(C;E) 閾値仮説) の検証と棄却**
+
+- Planted-bridge model($n=350, $4 communities, $p_{\text{intra}} \in [0.02, 0.60]$, bridge_deg ∈ [4, 60])× 5 seeds、合計 150 configurations
+- Logistic regression で "KDF gap > 0.10" を予測:
+
+| Predictor | 5-fold CV accuracy |
+|---|---:|
+| MI(C;E) only (A19 original claim) | **72.0%** |
+| rarity_ratio (bridge_deg / mean_comm_deg) only | **98.7%** |
+| MI + rarity_ratio | 98.7% |
+
+- 係数:`log(rarity) = -3.79`、`MI = +0.24` → **MI の寄与は rarity_ratio の 1/16**
+- 150 config 中 **49 件 (33%) で "MI 高いのに KDF 負け"**(F-067 "rare↔importance 相関" 違反 case)
+- **Verdict**: A19 の「MI 閾値で KDF 適性が決まる」仮説は empirical に誤り。rarity_ratio が dominant。
+
+**実験 2: Pure graph-structural proxy の探索**
+
+rarity_ratio は oracle(bridge labels 必要)のため a priori 使用不可 — chicken-and-egg 問題。純 graph 構造から rarity_ratio を近似する proxy を 4 round で exhaust 検証:
+
+| Round | Method | CV accuracy |
+|:-:|---|---:|
+| 1 | Logistic on 7 basic features(deg_cv, skew, assortativity, clustering …) | 88.7% |
+| 2 | + spectral gap / triangle density / clustering variance(10 feats) | 88.7% |
+| 3 | RandomForest / GradientBoost | 71.3% / 80.0%(overfit) |
+| **単純 baseline** | **Logistic on deg_skew alone (1 feature)** | **90.0%** |
+| **Oracle** | Logistic on rarity_ratio with labels | **97.3%** |
+| 4 | + bimodality-specific (GMM 2-comp, low-outlier-mass) | 90.0%(改善 0.0) |
+
+- **Natural ceiling は 90.0%**。label 無しの structural information が尽きる地点。oracle との gap 7% は empirically irreducible without labels。
+- `deg_skew` vs KDF gap の Spearman r = **-0.90**(8 features 中 最強)
+- 機構解釈:負の skew = degree 分布の left-tail extended = low-degree minority が存在 = KDF の broker 選別が有効
+
+**Router v2 design(実用 50 行規模)**:
+
+```python
+def kdf_feasibility(G):
+    from scipy.stats import skew
+    degs = [d for _, d in G.degree()]
+    s = skew(degs)
+    if s < -0.1:
+        return "KDF recommended (90% confidence)"
+    elif s < 0.1:
+        return "borderline - pilot recommended"
+    else:
+        return "KDF not recommended (scale-free / density domain)"
+```
+
+**Error 解析(GBT による 30 件)**:
+- Borderline(|gap - 0.10| < 0.10): 5/30 — unavoidable
+- Systematic: 25/30、主に p_intra=0.12, bridge_deg=4 の強 KDF-win cases で deg_skew ≈ 0(bimodality が skew に表れない)
+- Bimodality-specific feature(GMM, low-outlier-mass)追加で 0 改善 → class imbalance 72% で saturate
+
+**Scope / limits**:
+- **検証済(synthetic)**: Planted-bridge (4 communities, 50〜200 nodes, 150 configs)、**naive KDF(低 degree 先 ranking)に対する rule**
+- **⚠️ 重要な scope 制約**: 本 rule は **simplified node-level "low-degree first" proxy に対する predictor**。real cgb-kdf の `NodeClassifier`(Rare/Core/Edge/Garbage 4-layer)とは**挙動が大きく異なる**
+- **境界**: 閾値 -0.1 は planted-bridge 最適値、real graph で再 calibration が必要な可能性
+- **相補**: labels 入手可能なら rarity_ratio 併用で 97% まで改善
+
+**Real-world validation(2026-04-21 追記)**:
+
+この repo の git DAG(234 commits, 19 merges, merge rate 8.1%)で検証したところ:
+- **deg_skew = +1.885** → F-078 rule は「KDF NOT recommended」と予測
+- **Naive low-degree KDF**: merge recall = 0.000(rule 予測と一致)
+- **Real cgb-kdf `kdf_select_generic`**: merge recall = **1.000 @ keep_rate 0.15**(random 0.14)— **rule 予測と矛盾**
+
+原因: real KDF は `NodeClassifier` の 4-layer 分類(Rare=3, Core=2, Edge=1, Garbage=0)で優先度選別。**Core layer(高 degree hub)が選ばれる** — naive low-degree proxy とは逆の挙動。Git merges は高 degree hub で Core 分類 → real KDF が 100% 保持。同 planted-bridge 合成でも real KDF は community-interior hub(Core)を選び、bridges(Edge 相当)は drop。
+
+**含意**:
+- **F-078 rule は naive/simplified KDF に対しては 90% 妥当**、**real cgb-kdf には直接適用不可**
+- Real KDF は「rare broker 検出」ではなく「**structural hub + rare outlier の preservation**」が機能、Burt structural holes の比喩は real KDF には半分しか当たらない
+- Real KDF 用の a priori 推定 rule は本件とは**別の予測変数**(degree tail の正 skew、hub 有無、Core layer の想定充足量)から設計する必要
+- F-065〜F-067 の "rare ↔ important 相関" 表現は、**Rare layer(少数)の挙動**を captures、**Core layer(多数)の hub preservation 挙動**は含意しない
+
+**次 step 候補**:
+- Real KDF に対する feasibility rule を再設計(deg_skew 符号反転仮説、または別 feature)
+- NodeClassifier の Layer 割り当て logic の文書化(code audit)
+
+**影響**:
+- F-060 Router v1 の upgrade は、**real KDF 挙動を踏まえて再設計**(本 F-078 rule をそのまま使えない)
+- F-061〜067 の failure pattern と本 rule の関係は、task 定義(bridges vs hubs)で二分
+
+**実装**: [experiments/rarity_proxy/](../experiments/rarity_proxy/) の 4 rounds Python、[experiments/a19_verification/](../experiments/a19_verification/) の SBM + 2D router 検証、[experiments/rarity_proxy/real_git_validation_v2.py](../experiments/rarity_proxy/real_git_validation_v2.py) の real-KDF 比較
+**決定論性**: 全 seed 固定、再実行で同一値
+**所要時間**: 150 config × 5 seeds × 7 features ≈ 2 分(single thread)
+
+---
+
+### ⚠️ F-079 Streaming log 3rd M2-L1 domain audit — Linux / Apache / HPC 全 3 候補で structural issue、loghub 拡大 audit 要(2026-04-21)
+
+**Context**: (φ) NASA-side symmetric analysis で BGL / NASA 両 domain に M2a / M2b の decomposition structure が identified(SESSION_SUMMARY_2026-04-21_addendum §1.5)。v1.3.1 conditional draft の promotion gate として 3rd M2-L1 domain test (φ″) を pre-commit(addendum §4.1)。stage 済 `experiments/streaming_phase_2_5/data/` の 3 候補(Linux / Apache / HPC)を depth check、measurement 前の data availability 段階で **3 候補全てに structural issue** が判明、in-session 実行を断念。
+
+**3 候補の structural issue**:
+
+| 候補 | Lines | 問題 | 詳細 |
+|---|---:|---|---|
+| **Linux.log** | 25,567 | A-side 単一 host | Field 4 unique = 1(`combo` のみ)、bipartite graph で A-side variation 不可 |
+| **Apache.log** | 56,481 | severity-based rare 定義が bipartite と disjoint | `[error]` 38,081(67%、majority で rare でない)、`[warn]` 168 件、但し **`[warn]` lines で `[client IP]` を持つのは 0 件**。bipartite (IP ∪ message) に `[warn]` が入らない。access log 不在で status code 代替も不可 |
+| **HPC.log** | 433,489 | 外部 anomaly label 不在 + format variability | BGL の `Label` field 相当が無い、field 3 が `switch_module` / `node` / `gige` / `unix.hw` など heterogeneous component 名で、node ID が field 2 / 3 で line 種別ごとに入れ替わる。専用 parser 要、session 内 parse quality 担保困難 |
+
+**Depth check (3) の value**:
+
+Measurement を実行する前に候補を triage できたのは本 session の hidden win。Apache severity-based rare 定義で走らせていた場合、60 分消費後に「bipartite と rare 定義が disjoint → 測定自体が成立しない」と判明する flow が発生した可能性がある。(φ) NASA で Metric A/B fork を自力検出できたのは measurement 設計が clean だったからで、dirty parse の場合は fork の存在すら detect できない risk があった。
+
+**Implication for v1.3.1**: 3rd domain gate が loghub 拡大 audit 完了まで延長、v1.3.1 は conditional draft status([SESSION_SUMMARY_2026-04-21_addendum.md](../experiments/loop_verification/SESSION_SUMMARY_2026-04-21_addendum.md) §1)。Non-log M2a classification sweep は reframe-independent parallel path として開かれている(addendum §4.2)。
+
+**Next session opener**:
+
+1. **Loghub 拡大 audit**(addendum §4.1 primary gate): OpenStack / Thunderbird / Mac / Windows / Zookeeper / Hadoop / Spark / SSH brute-force / Kubernetes audit / AWS CloudTrail subset など、3 要件(external rare label + bipartite viable + BGL/NASA 非 cognate)で mechanical filtering
+2. **Non-log sweep candidates**(addendum §4.2 parallel path): Recommender novel item / Genomics rare variant / Citation unique thread / Fraud pre-filter / AML cold account / Content moderation novel violation — reframe 判断と独立に M2a scope 拡張 test
+
+**Artifacts**: 
+- [experiments/streaming_phase_2_5/data/](../experiments/streaming_phase_2_5/data/) — 3 候補の stage 状態(log files gitignored)
+- [SESSION_SUMMARY_2026-04-21_addendum.md](../experiments/loop_verification/SESSION_SUMMARY_2026-04-21_addendum.md) — v1.3.1 conditional draft + α/β/γ interpretation candidates + next-session pre-commit
+- [experiments/nasa_symmetric/VERDICT_2026-04-21.md](../experiments/nasa_symmetric/VERDICT_2026-04-21.md) — (φ) mechanical verdict、本 F-079 の motivation source
+
+**Scope caveat**: 本 finding は **"stage 済 3 候補の限界"** であって、**log-family 自体の 3rd domain 不可能性を意味しない**。loghub の他 dataset で 3 要件を満たすものが存在する可能性は高い(BGL 自体が loghub の一部)。次 session で systematic audit を実施。
+
+---
+
+### ⚠️ F-080 HDFS 3rd domain test (LogPAI Zenodo 8196385) — Template bipartite M2a=0% → v1.3.1 Reject/withdraw、Metric A は |A|/|B| topology に sensitive という 4-point finding(2026-04-22)
+
+**Context**: F-079 で streaming_phase_2_5 内 3 候補 (Linux/Apache/HPC) が audit で全 reject された後、UAE 執念 mode 10-round execution で loghub 拡大 audit を実施。10 候補(OpenStack / Thunderbird / Mac / Windows / Zookeeper / Hadoop / Spark / SSH brute-force / Kubernetes audit / AWS CloudTrail)を 3 要件(external rare label + bipartite viable + BGL/NASA 非 cognate)で mechanical filter、**Hadoop (HDFS)** を primary 候補として commit、download から measurement まで執行。
+
+**Dataset**: LogPAI HDFS_v1 (Zenodo 8196385)
+- 575,061 blocks、16,838 Anomaly-labeled (2.93%)、29 event templates
+- `anomaly_label.csv` + `Event_traces.csv` + `HDFS.log_templates.csv` preprocessed subset
+
+**Measurement — 2 bipartite variants**:
+
+| Variant | \|A\| | \|B\| | \|A\|/\|B\| | KDF Rare on B | Metric A γ-check | Metric B γ-check |
+|---|---:|---:|---:|---:|---:|---:|
+| **HDFS template** (pre-committed) | 29 | 575,061 | 5.04e-5 | **0** | **0% (0/6181)** | **100% (6181/6181)** |
+| HDFS bigram (parallel topology-hypothesis test) | 280 | 575,061 | 4.87e-4 | 2,950 | 47.18% (2950/6253) | 100% (6253/6253) |
+
+**Pre-commit verdict (addendum §4.1 staged trigger)**:
+- Template M2a = 0% < 85% → **Reject**
+- v1.3.1 conditional draft → **Withdraw**
+- v1.3-dual (base session §2) が再び single source theorem
+- Bigram variant は pre-register 付で "template verdict を reverse しない" 約束のもと parallel 実行、topology-hypothesis 4th data point としてのみ記録、v1.3.1 verdict には影響させない(post_hoc_narrowing guard)
+
+**Cross-domain 4-point topology-Metric A pattern**:
+
+| Domain | \|A\| | \|B\| | \|A\|/\|B\| | Metric A γ-check |
+|---|---:|---:|---:|---:|
+| BGL | 29,770 | 2,399 | 12.41 | 100% (4/4) |
+| NASA | 4,094 | 3,002 | 1.36 | 96.10% (74/77) |
+| HDFS bigram | 280 | 575,061 | 4.87e-4 | 47.18% (2950/6253) |
+| HDFS template | 29 | 575,061 | 5.04e-5 | 0% (0/6181) |
+
+**Monotonic**: |A|/|B| が減少するにつれ Metric A γ-check recall が低下、4-point monotone。
+
+**Robust finding (cross-domain, 両 metric, 両 variant 一致)**: γ-strict-✗ (graph-global high-degree) 部分集合での recall は BGL/NASA/HDFS template/HDFS bigram 4 domains × 2 metrics の 8 ケース全てで 0%。**Necessity direction (γ-strict violation → M2 fail) が最も robust な cross-domain claim**。
+
+**Layer B interpretation candidates (non-selection, 3 並列)**:
+
+- **I-α (topology)**: KDF Rare 包含率 は graph topology に sensitive、`neighbor_count==1` 要件が dense bipartite で到達不能
+- **I-β (classifier parameterization)**: `NodeClassifier::rare_min_degree: 1` field が hardcoded で未使用 (`crates/cgb-kdf/src/framework/classifier.rs:101`)、実装すれば domain-tuneable、ただし既存 BGL/NASA 結果 invalidate リスク
+- **I-γ (metric choice)**: Metric B γ-check は capacity 条件下で近 100%、M2a metric-choice ミスの可能性、ただし BGL/NASA で Metric B γ-check も 25%/35% で 100% 成立せず universality 保留
+
+選択は §4.2 non-log sweep + N≥5 topology data 以降に postpone(Layer A の 4-point observation を Layer B interpretation と物理的分離、layer-A/B reframe guard 遵守)。
+
+**Implication**:
+- v1.3.1 withdrawn、v1.3-dual が single source
+- M2 revision queue 3 候補: topology caveat / dual-metric formalize / scope retract — 本 F-080 では revise しない(drift guard)
+- §4.2 non-log M2a sweep が primary continuation path
+- §4.1 loghub 再 audit は **bipartite variant を事前 pre-register** する設計変更が必要(HDFS で判明した bipartite choice sensitivity への response)
+
+**Artifacts**:
+- [experiments/hdfs_phase2/](../experiments/hdfs_phase2/) — preprocessed data (gitignored 1.58GB raw)、graph artifacts、results
+- [crates/cgb-kdf/examples/phase_x_hdfs.rs](../crates/cgb-kdf/examples/phase_x_hdfs.rs) — template variant exporter
+- [crates/cgb-kdf/examples/phase_x_hdfs_bigram.rs](../crates/cgb-kdf/examples/phase_x_hdfs_bigram.rs) — bigram variant exporter
+- [experiments/hdfs_phase2/results/dual_HDFS_template.json](../experiments/hdfs_phase2/results/dual_HDFS_template.json) / [dual_HDFS_bigram.json](../experiments/hdfs_phase2/results/dual_HDFS_bigram.json) — raw dual-metric data
+- [SESSION_SUMMARY_2026-04-21_addendum.md §Amendment #4](../experiments/loop_verification/SESSION_SUMMARY_2026-04-21_addendum.md) — narrative + meta-check compliance log
+
+**Scope caveat**: Amendment #4 本 finding は **v1.3.1 の withdraw と topology hypothesis の 4-point observation** のみを claim。"HDFS is NG for KDF" という universal claim は主張しない、bipartite variant design (bigram / datanode-based / sequence-hash 等) 次第で異なる結果が得られる可能性あり。Layer B interpretation は complete でない。
+
+**Meta-check compliance**: post_hoc_narrowing guard (bigram pre-register reverse 禁止) / observation_vs_interpretation guard (Layer A 4-point と Layer B I-α/β/γ 分離) / theorem_narrowing_bias guard (v1.3-dual revise せず withdraw のみ) / emerging §5.3 layer-A/B reframe guard / emerging §5.5 language conflation guard — 5 pattern 全 active。
+
+---
+
+### ✨ F-081 Classifier latent defect 修正 + k-sweep ablation — `rare_min_degree=3` で BGL/NASA/HDFS 4-variant 全て M2a Strong ≥ 95%、v1.3.1 re-promotion 資格取得(2026-04-22)
+
+**Context**: F-080 で HDFS template M2a = 0% による v1.3.1 withdraw、Layer B interpretation candidate として I-α (topology)、I-β (classifier parameterization)、I-γ (metric choice) 3 並列列挙。本 finding は FRA/UAE 交互 20-round loop で **I-β を empirical に test、k=3 で universal 成立**を確認。
+
+**Implementation fix**:
+[classifier.rs:95-115](../crates/cgb-kdf/src/framework/classifier.rs) で `rare_min_degree` field を condition `neighbor_count >= 1 && neighbor_count <= self.rare_min_degree` に変更。Backward compat: default `rare_min_degree: 1` は既存 `neighbor_count == 1` と equivalent、369 unit tests 全 pass。
+
+**k-sweep ablation(3 domain × 3 k × bipartite variant、計 12 measurement)**:
+
+| Domain | \|B\| | γ-check | Metric A γ-check k=1 | k=2 | k=3 | Metric B γ-check |
+|---|---:|---:|---:|---:|---:|---:|
+| BGL | 2,399 | 4 | 100% (4/4) | 100% | **100%** | 25% (all k) |
+| NASA | 3,002 | 77 | 96.10% (74/77) | 96.10% | **96.10%** | 35.06% (all k) |
+| HDFS template | 575,061 | 6,181 | 0% | 47.73% | **100% (6181/6181)** | 100% (all k) |
+| HDFS bigram | 575,061 | 6,253 | 47.18% | 47.27% | **98.85% (6181/6253)** | 100% (all k) |
+
+**4-branch pre-commit verdict (L2 pre-committed)**:
+- (i) BGL/NASA pass + HDFS pass → parameter universal ✓ **確定**
+- (ii), (iii), (iv) 非該当
+
+**Staged trigger (addendum §4.1)**: k=3 下で 4/4 variant が Strong ≥ 95% trigger 達成。3 distinct L1 domain (BGL supercomputer log / NASA web log / HDFS distributed FS) で cross-sub-family confirmation。
+
+**v1.3.1 re-promotion 資格**: k=1 default では withdrawn (F-080)、**k=3 default 前提では Strong promotion trigger satisfied**。Theorem は parameter-conditional formalize。
+
+**Necessity direction robust**: 全 12 measurement(3 domain × 3 k + HDFS bigram 3 k)で γ-fail subset Metric A/B 両 0% recall、v1.3-dual 必要条件 cross-domain で確認。
+
+**Implementation impact decision (L17 UAE Path C)**:
+- `NodeClassifier::default()` rare_min_degree=1 維持(backward compat、既存 BGL/NASA 結果不変)
+- k=3 use は experimental examples で opt-in
+- v1.3-dual theorem text unchanged
+- v1.3.1 conditional draft re-activate 資格: 次 session で user 判断
+
+**Layer A (observation) vs Layer B (interpretation) 分離**:
+- Layer A: 12 measurement raw data、k=3 で 4/4 Strong pass、k=1 で 1/4 fail、necessity 0% 全 12
+- Layer B interpretation candidates:
+  - I-β confirmed: classifier parameterization が primary cause、rare_min_degree=3 で fix
+  - I-α partial: |A|/|B| topology sensitivity も k=1 で存在(HDFS 0% → 47% at bigram)、ただし k=3 では topology invariant に fit
+  - I-γ weaker: Metric B γ-check は capacity-determined で k-invariant、metric choice issue より parameter choice issue
+
+**Scope caveat**: N=3 L1 family は全て log-meta-family (system log / web log / distributed FS log)、cross-family generalization evidence は未取得。Non-log domain (§4.2 sweep) で k=3 universal が維持されるかは未測定。
+
+**Artifacts**:
+- [crates/cgb-kdf/src/framework/classifier.rs](../crates/cgb-kdf/src/framework/classifier.rs) — classifier.rs rare_min_degree 実装化
+- [crates/cgb-kdf/examples/ablation_k_sweep.rs](../crates/cgb-kdf/examples/ablation_k_sweep.rs) — k-sweep driver (reads existing graph TSV)
+- [experiments/ablation_k_sweep_metric.py](../experiments/ablation_k_sweep_metric.py) — dual-metric per k per domain
+- [experiments/ablation_results/ablation_summary.{json,csv}](../experiments/ablation_results/) — consolidated results
+- Per-domain `layer_k{1,2,3}.tsv` in `experiments/{bgl_phase2,nasa_symmetric,hdfs_phase2/graph,hdfs_phase2/graph_bigram}/graph/` (gitignored `.tsv` per existing gitignore)
+- [experiments/loop_verification/FRA_PERSONA.md](../experiments/loop_verification/FRA_PERSONA.md) — FRA agent definition (本 loop で初運用)
+
+**Meta-check compliance**: post_hoc_narrowing guard(k-sweep range {1,2,3} は L2 で pre-committed、narrowing でなく sweep design) / observation_vs_interpretation guard(12-measurement raw table vs I-α/β/γ confirmation 分離) / theorem_narrowing_bias guard(v1.3-dual revise せず F-081 を parameter-conditional finding として追加)。
+
+---
+
+### ✨ F-082 Cross-family L1 evidence via MovieLens + Reddit + extended k-sweep — **k=1 default pass N=3 meta-family、k=3 universal N=6 variant**(2026-04-22)
+
+**Context**: F-081 で k=3 universal claim を log-meta-family N=3 L1 で確立。本 finding はその follow-up として (a) extended k-sweep (k={4,5,10,20})で k=3 の robustness zone を measure、(b) cross-family domain (MovieLens entertainment) で k=1 default 適用性を確認。FRA/UAE alternating loop L21-L30 で實行。
+
+**Extended k-sweep on 4 log-family variants**:
+
+| Domain | \|B\| | Metric A γ-check by k ∈ {1, 2, 3, 4, 5, 10, 20} | |
+|---|---:|---|---|
+| BGL | 2,399 | 100% / 100% / 100% / 100% / 100% / 100% / 100% | **k-invariant** |
+| NASA | 3,002 | 96.10% / 96.10% / 96.10% / 96.10% / 96.10% / 96.10% / 96.10% | **k-invariant** |
+| HDFS template | 575,061 | **0% / 47.73% / 100% / 100% / 100% / 100% / 100%** | **k∈[3,4] precision、k≥5 trivializes** |
+| HDFS bigram | 575,061 | 47.18% / 47.27% / 98.85% / 98.85% / 98.85% / 100% / 100% | k∈[3,5] precision plateau |
+
+**k-trivialization** at k=20:
+- BGL: |Rare|/|B| = 96.7%、ほぼ全 B-side Rare
+- HDFS template: |Rare|/|B| = 100%、完全 trivial
+- HDFS bigram: |Rare|/|B| = 99.6%、ほぼ完全 trivial
+
+**Refined F-081 interpretation**: "k=3 universal" は実際には **k=3 が HDFS-topology を pass させる minimum + BGL/NASA/HDFS を trivialize しない upper bound** の 2 条件を満たす **precision-preserving zone k ∈ [3, 4]**。k=1 は HDFS 以外 sufficient、k=3 は HDFS の topology gap を bridge、k≥5 は Rare layer explosion。
+
+**Cross-family domain 1: MovieLens (entertainment/media, non-log)**:
+
+Dataset: MovieLens ml-latest-small (GroupLens 2018, 100,836 ratings, 610 users, 9,724 movies)。External rare label: **Film-Noir genre** (85 movies in rated set)。Film-Noir は歴史的 film genre (1940s-50s)、externally defined by cinema history、rating-structure-independent。
+
+| Domain | \|A\| | \|B\| | \|A\|/\|B\| | Metric A γ-check k=1 | k=3 |
+|---|---:|---:|---:|---:|---:|
+| MovieLens | 610 | 9,724 | 0.063 | **100% (33/33)** | **100%** |
+
+**Film-Noir γ-check breakdown**: 33 Film-Noir movies at low-degree tail (rarely-rated obscure Film-Noir、γ-strict-✓)、7 at high-degree (popular Film-Noir、γ-strict-✗)、45 mid。γ=check subset 33/33 all captured in KDF Rare layer at k=1 default。Metric B γ-check = 93.94% (31/33、budget top-ρ selection 内)。Necessity direction γ=fail 0% 維持 (all k)。
+
+**Cross-family domain 2: Reddit hyperlinks (social network, non-log, non-entertainment)**:
+
+Dataset: SNAP soc-redditHyperlinks-body (Kumar et al. 2018, 286,562 edges, 27,863 source subreddits, 20,606 target subreddits)。External rare label: **target subreddits with mean incoming sentiment ≤ -0.5 AND ≥ 3 incoming links** (19 "hostile target" subreddits)。Sentiment labels are edge-level metadata、bipartite-structure-independent、socio-political rare (community-level hostility pattern)。
+
+| Domain | \|A\| | \|B\| | \|A\|/\|B\| | Metric A γ-check k=1 | k=3 |
+|---|---:|---:|---:|---:|---:|
+| Reddit | 27,863 | 20,606 | 1.35 | **100% (3/3)** | **100%** |
+
+γ-fail count = 0 (no hostile target is high-degree)、necessity direction non-testable on Reddit。γ-check = 3、γ-mid = 16。Sufficiency 側 100% at all k、Metric B γ-check = 33.33% (1/3)。
+
+**Cross-domain consolidated table at k=1 default (non-ablation)**:
+
+| Domain | Meta-family | \|A\|/\|B\| | Metric A γ-check k=1 |
+|---|---|---:|---:|
+| BGL | log / system (supercomputer) | 12.41 | 100% (4/4) |
+| NASA | log / web server access | 1.36 | 96.10% (74/77) |
+| MovieLens | **entertainment / media** | 0.063 | **100% (33/33)** |
+| **Reddit** | **social network / online community** | **1.35** | **100% (3/3)** |
+| HDFS template | log / distributed FS | 5.04e-5 | **0% (0/6181)** |
+| HDFS bigram | log / distributed FS | 4.87e-4 | 47.18% |
+
+**Key finding**: k=1 default で **4/6 variant が M2a Strong ≥ 95% pass** (BGL, NASA, MovieLens, Reddit)、うち 3 が distinct meta-family (log / entertainment / social network)。**Cross-meta-family N=3 L1 evidence at k=1**。HDFS template + bigram (dense bipartite、|A|/|B| ≤ 5e-4) のみ k=1 で fail。
+
+**Cross-domain table at k=3**:
+
+| Domain | Metric A γ-check k=3 |
+|---|---:|
+| BGL | 100% |
+| NASA | 96.10% |
+| MovieLens | 100% |
+| Reddit | 100% |
+| HDFS template | 100% |
+| HDFS bigram | 98.85% |
+
+**N=6 variant × all ≥ 95%、Strong promotion trigger universal satisfied at k=3**。3 meta-family covered。
+
+**v1.3.1 re-promotion 改訂 evidence**:
+- At k=1 default: 4/6 distinct domain pass Strong (BGL + NASA + MovieLens + Reddit); HDFS template + bigram fail → v1.3.1 not eligible at default k=1 by staged trigger
+- At k=3: **6/6 variants pass Strong** including HDFS both bipartite variants → **v1.3.1 eligible at k=3**
+- **Cross-meta-family coverage N=3 (log / entertainment / social network) at k=1 で既に L1 evidence 取得**、v1.3.1 re-promotion は k=3 assumption で N=6 variant × 3 meta-family の robust evidence set
+
+**Layer A vs Layer B separation**:
+- Layer A raw (35 measurements: 5 variants × 7 k, MovieLens を含む): ablation_summary.{json,csv} 参照
+- Layer B interpretation candidates (current):
+  - **I-α confirmed**: topology sensitivity (|A|/|B| 5 order magnitude range across 5 variants) は k-choice に反映、dense graph は k boost 要
+  - **I-β confirmed**: classifier hardcode 修正 (F-081) で parameter expose、domain-tune 可能
+  - **I-γ weakening**: Metric A の k-dependency が判明し、metric choice issue よりも **graph topology + parameter choice** の combined issue
+  - **New candidate**: k∈[3,4] は "precision-preserving robustness zone" — 更に N=6+ で confirmed 必要
+
+**Scope caveat**:
+- Cross-meta-family N=3 (log + entertainment + social network) は cross-family generalization の first substantial L1 evidence
+- Biological / financial / citation / government 等 他 meta-family は未測定
+- MovieLens external rare label は "Film-Noir" 1 genre、Reddit は "mean sentiment ≤ -0.5" 1 threshold、複数 rare-definition での robustness check は未
+- Necessity direction (γ=fail → 0% recall) は Reddit で γ=fail=0 のため non-testable、BGL/NASA/MovieLens/HDFS 4 variant では確認済
+
+**Artifacts**:
+- [experiments/cross_family/data/](../experiments/cross_family/data/) — raw MovieLens + Reddit data (gitignored per `.gitignore`)
+- [experiments/cross_family/parse_movielens.py](../experiments/cross_family/parse_movielens.py) — MovieLens bipartite parser
+- [experiments/cross_family/parse_reddit.py](../experiments/cross_family/parse_reddit.py) — Reddit bipartite parser
+- [experiments/cross_family/movielens/graph/](../experiments/cross_family/movielens/graph/) — MovieLens bipartite TSV artifacts
+- [experiments/cross_family/reddit/graph/](../experiments/cross_family/reddit/graph/) — Reddit bipartite TSV artifacts
+- [experiments/ablation_results/ablation_summary.{json,csv}](../experiments/ablation_results/) — **6 variant × 7 k = 42 measurements**
+- Re-used: [crates/cgb-kdf/examples/ablation_k_sweep.rs](../crates/cgb-kdf/examples/ablation_k_sweep.rs)(k 範囲拡張)
+
+**Meta-check compliance**:
+- Post-hoc narrowing guard: k=1-5 は L2 で pre-committed、k={10,20} は robustness extension として追加(range refine 1 回)。
+- Layer A/B separation: 35-measurement raw table と I-α/β/γ + new "precision zone" interpretation を物理的分離。
+- Cross-family selection: MovieLens は user memory にある "発明者 distant domain" 要件に match、specific external rare label (Film-Noir genre) で non-self-referencing。
+
+---
+
+### ⚠️ F-086 3-parallel empirical verification (α: Real cgb-kdf Git / β: academic citation reject / γ: hybrid composition domain-conditional)(2026-04-22)
+
+**Context**: 3-agent (FRA/UAE/EDM) 30-round loop で "執念 dormant" 指摘を受け、3 track 並列実測:
+- α: Real cgb-kdf on Git commits (F-085 Task 2 simplified proxy 疑い払拭)
+- β: Academic citation meta-family (N=5 meta-family 到達)
+- γ: Hybrid composition F1 test (KDF complementary claim の domain-conditional 検証)
+
+### α: Real cgb-kdf on Git commit bipartite
+
+Flask (5572 commits, 1729 merges) + Prettier (11186 commits, 230 merges) で commit DAG を bipartite (parent-child role split) に変換、real cgb-kdf NodeClassifier 実行:
+
+| Repo | Merges | Core B-side | Rare B-side | Garbage B-side |
+|---|---:|---:|---:|---:|
+| Flask | 1,729 | **1,729** (=merge count exactly) | 1,684 | 2,159 |
+| Prettier | 230 | **230** (=merge count exactly) | 260 | 10,696 |
+
+**決定的**: **Real cgb-kdf は merges を Core layer に分類**、Rare ではない。F-085 Task 2 の "low-deg = Rare catches merges" proxy は **fundamentally wrong framework**。
+
+**F-077 "99.75% recall" の正体**: Core preservation (high-deg-first selection)、not Rare identification。Metric A (Rare layer membership) × merges = 0%、Metric B (bottom-ρ sort) × merges = 0% 両者 0 であり、F-077 の success は **異 metric framework** による。
+
+**Implication**: Git archival productization は **"Core layer preservation"** product、**F-081/F-082/F-084 で testing された Rare-identification framework とは別 category**。両者混同してはならない。
+
+### β: Academic citation network (OGB ogbn-arxiv)
+
+Dataset: OGB ogbn-arxiv、169,343 papers、1,166,243 citation edges、40 arxiv CS subject classes。External rare = rarest 3 classes (cs.GL + cs.OS + cs.OH) = 549 papers (0.32%)。
+
+Bipartite: A = paper as citing source、B = paper as cited target (labeled rare)。|A|=|B|=169K、|A|/|B|=1.0。
+
+γ-subset breakdown at k=1..20:
+
+| k | γ-check | γ-mid | γ-fail | Metric A γ-check | Metric A γ-mid | Metric B γ-check |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 214 | 325 | 10 | **0%** | 37.23% | 9.35% |
+| 3 | 214 | 325 | 10 | **0%** | 66.77% | 0% |
+| 10 | 214 | 325 | 10 | **0%** | 90.77% | 0% |
+| 20 | 214 | 325 | 10 | **0%** | 92.92% | 0% |
+
+**γ-check 214 rare papers (low-citation) は KDF Rare layer に全 k で 0% 到達**。理由:
+- Low-citation papers は B-side deg = 0 or 1、ただし is_meaningful_rare check (neighbor deg ≥ 2) で fail
+- Citation network は **peer-network structure** (hub-peripheral でない)、citing papers 自体も低 deg → Garbage に落ちる
+- γ-mid (middle-deg rare) は k 増加で 37% → 93% と catching up するが、γ-check は捕獲不能
+
+**決定的**: Academic citation network は N=5 meta-family の **5 件目 meta-family で 2 件目の REJECT** (PPI biological に続く)。
+
+**新 insight**: KDF's Rare layer は **"low-deg + hub-neighbor"** を要求、**pure low-deg でない**。Peer-network structure 持つ domain では γ-check items が Garbage に落ち、KDF scope 外。F-084 hub-biased label (PPI) とは異なる失敗 mode。
+
+**Cross-family N=5 consolidated**:
+
+| Meta-family | Domain | Status | Metric A γ-check at k=3 |
+|---|---|---|---:|
+| log / system | BGL | PASS | 100% |
+| log / web | NASA | PASS | 96.10% |
+| log / distributed FS | HDFS | PASS (at k=3) | 100% |
+| entertainment | MovieLens | PASS | 100% |
+| social network | Reddit body | PASS (N=3 weak) | 100% |
+| biological | PPI cancer | **REJECT** (hub-biased) | 74.36% |
+| academic citation | ogbn-arxiv | **REJECT** (peer-network) | **0%** |
+
+**3 meta-family pass / 2 meta-family reject**。domain-fit condition narrower than previously claimed。
+
+### γ: Hybrid composition F1 test
+
+7 domain で 4 rankers 比較:
+
+| Domain | \|rare_GT\| | Random F1 | Degree F1 | KDF F1 | KDF+Rand F1 | Gain vs Random | Gain vs Degree |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| BGL | 8 | 0.0042 | 0.0000 | 0.0000 | 0.0000 | 0x | inf |
+| NASA | 98 | 0.0313 | 0.0816 | 0.0714 | 0.0510 | 1.6x | **0.88x (worse)** |
+| HDFS | 16,838 | 0.0287 | 0.3671 | 0.3671 | 0.3780 | **13.2x** | 1.00x |
+| MovieLens | 85 | 0.0114 | 0.0235 | 0.0235 | 0.0235 | 2.1x | 1.00x |
+| Reddit | 19 | 0.0018 | 0.0000 | 0.0000 | 0.0000 | 0x | inf |
+| PPI | 1,077 | 0.1006 | 0.0427 | 0.0390 | 0.0464 | **0.5x (KDF worse than random!)** | 0.91x |
+| ogbn_arxiv | 549 | 0.0034 | 0.0073 | 0.0018 | 0.0055 | 1.6x | **0.25x (significantly worse)** |
+
+**決定的**:
+- **HDFS で 13.2x gain over random** — 唯一 compelling composition value
+- **PPI で KDF < random** (0.5x)、**ogbn_arxiv で KDF < degree rank** (0.25x) — scope 違反 domain では KDF 害
+- **MovieLens / BGL / NASA**: KDF ≈ degree rank、composition gain ≈ 0
+
+**Implication**: "KDF complementary layer" claim は **domain-conditional strict**。Domain が γ-check correlation 満たす場合のみ成立、hub-biased (PPI) or peer-network (ogbn_arxiv) で **negative value**。
+
+### Updated grounded product list (post-F-086)
+
+**Ship-ready / empirically strong**:
+1. **Obsidian plugin** (F-071 + F-085 Task 3) — 変更なし
+2. **MovieLens niche surfacing** (F-082 + F-085 Task 1) — 変更なし
+3. **Mem0 temporal hybrid** (F-060) — 変更なし
+4. **Git archival = Core preservation product** (F-062/F-077 + F-086 α) — framework 正確化、Rare でなく Core
+
+**Domain-fit decisive predictor (F-086 γ)**:
+- 使える: log / entertainment / social(hub-peripheral structure)
+- 使えない: biological hub-biased / academic peer-network / possibly financial hub (untested)
+
+### Artifacts
+
+- [experiments/git_real_kdf/git_to_bipartite.py](../experiments/git_real_kdf/git_to_bipartite.py) — α Git bipartite builder
+- [experiments/git_real_kdf/{flask,prettier}/graph/](../experiments/git_real_kdf/) — α real cgb-kdf artifacts
+- [experiments/cross_family/parse_ogbn_arxiv.py](../experiments/cross_family/parse_ogbn_arxiv.py) — β citation parser
+- [experiments/cross_family/ogbn_arxiv/graph/](../experiments/cross_family/ogbn_arxiv/graph/) — β bipartite + results
+- [experiments/hybrid_composition_test.py](../experiments/hybrid_composition_test.py) — γ composition test
+- [experiments/ablation_results/hybrid_composition_test.json](../experiments/ablation_results/hybrid_composition_test.json) — γ raw results
+
+### 3-agent satisfaction assessment
+
+- **FRA**: 執念 partial satisfaction。3 decisive new empirical findings、ただし decisive-WIN domain 依然 0 件 (HDFS 13.2x は random baseline over、literature baseline 超えでない)。
+- **UAE**: sweep +1 meta-family (academic citation)、total N=5 meta-family measured、残 financial / government / supply chain など未測 domain 3-4 件。exhaustive 未達。
+- **EDM**: 0 retract across 3 tracks、全 claim F-xxx anchored。 α での F-085 Task 2 proxy-vs-real finding は既存 memory pattern に anchor。
+
+**Meta-check**: post_hoc_narrowing なし (α β γ 全 pre-committed direction)、negative finding (PPI worse than random、ogbn_arxiv reject) を honest report、narrative protection なし。
+
+---
+
+### ❌ F-090 bias-detector predictor 撤回 — N=21 systematic test で certain prediction accuracy 45.5% < 70% threshold(2026-04-29)
+
+**Context**: Phase 2.5 byproduct claim "bias-detector が 7/8 正予測(87.5%)、独立 applicability-predictor tool として商材化可能" を systematic に validate。Pre-reg: [docs/exploration/phase_2_5_pre_reg_addendum.md](exploration/phase_2_5_pre_reg_addendum.md) §3(commit a8679be、frozen)。
+
+**Predictor frozen definition**(`crates/bias-detector/`):
+- `bias_score = 0.3·I1 + 0.7·I4` (I1 = deg==1 fraction, I4 = rare-at-deg==1 rate)
+- bias > 0.5 ⇒ predicts "KDF WIN"
+- bias ≤ 0.2 ⇒ predicts "KDF LOSE"
+- 0.2 < bias ≤ 0.5 ⇒ "uncertain"(集計 exclude)
+
+**Aggregate threshold(pre-reg frozen)**: certain prediction で ≥80% accuracy → viable / 70-79% narrow / **<70% 撤回**。
+
+**Setup**: `experiments/` 配下 21 dataset(standard schema 19 + Wikipedia/Citation の sparse-id schema 2)で `BiasReport::compute()` を計算、各 dataset の actual KDF win/lose は VERIFIED_FINDINGS.md の既知 verdict から annotation。
+
+**Result (N=21、certain prediction = 11)**:
+
+| dataset | bias | predict | actual (F-xxx anchor) | match |
+|---|---:|:---:|---|:---:|
+| NASA symmetric | 0.635 | WIN | WIN(F-072 static KDF +13pt vs Random)| ✓ |
+| BGL anomaly | 0.559 | WIN | LOSE(F-074 −12.92pt)| ✗ |
+| MovieLens genre | 0.112 | LOSE | WIN(F-082/F-085 γ-check 100%)| ✗ |
+| MovieLens IMAX | 0.166 | LOSE | WIN(F-085 Task 1 IMAX 100%)| ✗ |
+| PPI cancer | 0.104 | LOSE | LOSE(F-084 hub-biased reject)| ✓ |
+| Reddit title | 0.162 | LOSE | LOSE(F-085 Task 4 WITHDRAWN)| ✓ |
+| HDFS template | 0.000 | LOSE | WIN(F-086 γ HDFS 13.2x random)| ✗ |
+| HDFS bigram | 0.124 | LOSE | WIN(F-086 γ HDFS 13.2x random)| ✗ |
+| Obsidian prototype | 0.062 | LOSE | WIN(F-071 + F-085 Task 3 PASS)| ✗ |
+| Wikipedia orphan | 0.020 | LOSE | LOSE(F-073 −4.07pt)| ✓ |
+| Citation interdis | 0.036 | LOSE | LOSE(F-075 −20.04pt)| ✓ |
+
+**Verdict (pre-reg auto)**: ✓ 5/11 = **45.5% accuracy** ≪ 70% threshold → ❌ **PREDICTOR 撤回**。
+
+**Uncertain (10 dataset、accuracy 計算外)**: MovieLens base/Film-Noir/Western/Musical/War/Documentary、ogbn_arxiv、Reddit comm-anomaly、Git flask/prettier。bias = 0.2-0.5 で predictor が agnostic。
+
+**Failure pattern analysis**(post-hoc narrowing でなく structural reading):
+
+- **WIN predict**: 2 件中 1 件 hit。BGL は I1=0.696 / I4=0.500 で formula 予測 WIN だが、F-074 で実は anomaly templates が **hub-like**(deg=1 でない)、KDF 機構と逆向き。formula は graph topology を見るが、**rare の semantic position は見ない**。
+
+- **LOSE predict (false negative pattern)**: 9 件中 5 件 hit、4 件 miss。Miss 共通点:
+  - HDFS template (I1=0.000、I4=0.000)、HDFS bigram (I1=0.005、I4=0.175): bipartite で template-side が moderate deg、anomaly はそのうち structural outlier。**deg=1 でないが KDF Rare layer に入る** → formula 見落とし。
+  - MovieLens IMAX (I1=0.333、I4=0.095): rare items は moderate deg(数件 rating)、deg=1 でないが niche genre として KDF Rare 認識。
+  - Obsidian prototype (I1=0.208、I4=0.000): 38 nodes 小 graph、rare は moderate deg、structural position は明白。
+
+- **共通の miss 機構**: bias_score formula は **"rare items are deg=1"** を前提。実 data で rare が deg ∈ [2, 10] 等の moderate degree でも KDF が捕獲できる case を **systematically 見落とす**。
+
+**Implication**:
+
+1. **既存 87.5% claim は anecdotal**: 8 数 + F-074 BGL only MISS は 初期 5 synthetic + 3 simple cases に偏った sampling。21 dataset systematic test で 45.5% に低下、**predictor として viable でない**。
+
+2. **formula の根本的 limitation**: I1 (deg==1 fraction) と I4 (rare-at-deg==1) では **bipartite 構造 + moderate-deg rare** の case を捕獲不能。商材化 path には features 拡張(bipartite ratio、hub-distance、structural betweenness 等)必須、しかしそれは新 predictor の derive であり F-090 を passes させるための post-hoc tweak でない。
+
+3. **F-086 γ predictor との関係**: hub-peripheral / hub-biased の domain-fit predictor は別 framework(γ-check correlation rate ベース)。bias_score の撤回は γ-check predictor を否定しない。F-086 γ の 5 meta-family 3 PASS / 2 REJECT は別 anchor で残る。
+
+4. **Phase 2.5 byproduct claim 修正**: 「副産物: bias-detector が独立 applicability-predictor tool として商材化可能」を **撤回**。Phase 2.5 plan §0 の文言は次の commit で修正。
+
+**Meta-check (post-hoc narrowing 防止)**:
+
+- ❌ **threshold 緩和なし**: 80%/70% 固定、結果見て 50% にしない
+- ❌ **case exclusion なし**: BGL の MISS は historical anomaly でなく予測機構の限界として残す、HDFS の 2 件を「同 dataset で重複」と除外しない
+- ❌ **predictor reformulation なし**: I1/I4 features を変更しない、新 formula を後付けで救済しない
+- ✅ **uncertain 域 exclude は事前固定**: 10 件の 0.2-0.5 域を accuracy 計算から除外したのは pre-reg §3.2 の事前指示
+- ✅ **interpretation は structural reading**: failure pattern は formula と data の照合から derive、F-090 結果から事後 narrative構築でない
+
+**Artifacts**:
+- [demos/D8_llm_memory/src/bin/f090_bias_detector_aggregate.rs](../demos/D8_llm_memory/src/bin/f090_bias_detector_aggregate.rs) — F-090 binary(commit f7407de)
+- 実行 log: 上記 result table embedded(再現は `cargo run --release -p demo-d8-llm-memory --bin f090_bias_detector_aggregate`)
+- Pre-reg: [phase_2_5_pre_reg_addendum.md](exploration/phase_2_5_pre_reg_addendum.md) §3(commit a8679be)
+
+---
+
+### ❌ F-087 Apache error log streaming — REPLICATION FAILED、F-072 NASA "streaming benefit" claim を status-based recurring rare に narrow(2026-04-29)
+
+**Context**: Phase 2.5 Priority 1 — F-072 NASA HTTP の "streaming + Claim 14 decay + Claim 25 activation + Claim 27-32 meta α が rare resource recall に +3.06pt benefit を生む" を別 log domain で独立再現する replication 試行。Pre-reg: [docs/exploration/phase_2_5_pre_reg_addendum.md](exploration/phase_2_5_pre_reg_addendum.md) §2.4(commit b2b182c)。
+
+**Data**: LogHub Apache.log(Zenodo 8196385、2005-06-09 〜、56,481 行)、`[error] [client X.X.X.X]` を持つ 31,062 行のみ採用。
+
+**Setup**(F-072 NASA streaming binary を adapt):
+- bipartite: (client_IP, resource_path)、4,802 nodes、118 unique resources
+- **rare 定義(pre-reg frozen)**: resource_paths with freq ≤ 10 → 23 paths(unique paths の 19.49%)
+- 5 conditions C0-C4(F-072 と同)、window=500、n_windows=62
+- **Pre-reg threshold**: max(C1-C4) − C0 ≥ +2.0pt で replication 成功
+
+**Result**:
+
+| 条件 | final rare recall | Δ vs C0 Static |
+|---|---:|---:|
+| Random (5-seed) | 0.2957 | −13.91pt |
+| **C0 Static KDF** | **0.4348** | — |
+| C1 +Claim14 decay | 0.3043 | **−13.04pt** |
+| C2 C1+Claim25 act | **0.0000** | −43.48pt |
+| C3 C1+Claim27-32 meta | 0.3043 | −13.04pt |
+| C4 Full streaming | **0.0000** | −43.48pt |
+
+**Verdict (pre-reg auto)**: ❌ **REPLICATION FAILED (negative)** — max(C1-C4) − C0 = **−13.04pt** ≪ +2.0pt threshold。
+
+**Trajectory**: C4 は window 0(0.2609)→ window 4(0.3913、ピーク)→ window 10+ で **0.0000 へ完全崩壊**。activation が低 freq path を high-freq path で締め出す inversion mechanism が観測された。
+
+**Aggregate verdict update**(NASA F-072 + Apache F-087 = N=2): **1/2 PASS** — single-dataset artifact 疑惑、F-072 の "streaming benefit" claim を **status-based recurring rare(NASA HTTP 4xx/5xx)に specific** であると narrow する必要。
+
+**Implication**(post-hoc narrowing でない interpretation):
+
+NASA と Apache で **rare の構造が根本的に違う**:
+- NASA rare = HTTP 4xx/5xx を返す resource。同 resource が時系列上で **recurring** に error を返す(persistent failure mode)。decay が「最近 error した resource」を保持する効果あり。
+- Apache rare = freq ≤ 10 の path。**one-shot reconnaissance 試行**(攻撃者が一度だけ probe して失敗)。decay が one-shot 信号を消す、activation が common scan path(top-20 で 84% を占有)を rare 上に押し上げて締め出す。
+
+**streaming benefit の真の condition(F-087 後 narrow)**: rare が時系列上で **recurring** な domain でのみ benefit 出る。one-shot rare では streaming は **actively harmful**。F-072 の paper §narrowing "streaming が真の use case" は **半分正しい**:streaming は static より良いが、それは rare の temporal recurrence が前提。
+
+**F-072 claim 修正**(paper / positioning):
+
+- **修正前**(F-072 公式記述): "streaming + Claim 14/25/27-32 が rare event preservation に +3.06pt benefit"
+- **修正後**(F-087 反映): "streaming benefit は **temporally recurring rare**(NASA HTTP の persistent error pattern)に specific。one-shot rare(F-087 long-tail probe)では streaming は actively harmful"
+
+**Updated grounded product list**(F-086 後 → F-087 後 unchanged but caveated):
+
+製品 candidate に直接影響なし(MovieLens / Obsidian は static、Mem0 hybrid は別 metric、Git archival は Core preservation と既明記)。ただし **streaming-specific positioning**(SOC real-time anomaly、SIEM rare event detection)は F-087 で **大幅 narrow**:NASA-style status-coded recurring error log のみ candidate、generic log streaming(Apache error / syslog format)は **scope 外**。
+
+**Meta-check**(post_hoc_narrowing 防止 protocol):
+
+- ❌ **Pre-reg threshold 緩和なし**: +2pt 固定、結果見て +1.5pt にしない
+- ❌ **rare 定義 tweak なし**: freq ≤ 10 固定、結果見て freq ≤ 5 / ≤ 20 にしない
+- ❌ **conditions tweak なし**: C0-C4 固定、追加 condition 探索しない
+- ✅ **interpretation は temporal recurrence で説明**:これは observation でなく structural property の reading、F-087 結果から事後 derive ではなく F-072 と F-087 の比較で抽出した property
+- ✅ **F-088/F-089 (HPC/Linux) は引き続き deferred**:本 finding 後、HPC/Linux で proper rare 定義 + 同 result 確認の incentive が下がる(N=2 で既に narrowing 確定)、別 sprint で必要時に着手
+
+**Artifacts**:
+- [demos/D8_llm_memory/src/bin/phase_2_5_apache_streaming.rs](../demos/D8_llm_memory/src/bin/phase_2_5_apache_streaming.rs) — F-087 binary(commit afc2152)
+- [docs/exploration/phase_2_5_pre_reg_addendum.md](exploration/phase_2_5_pre_reg_addendum.md) — pre-reg(commit b2b182c)
+- 実行 log: 上記 result table に embedded(再現は `cargo run --release -p demo-d8-llm-memory --bin phase_2_5_apache_streaming`)
+
+---
+
+### ✨ F-085 Product productization verification — MovieLens multi-genre PASS, Obsidian prototype PASS, Git archival narrower, Reddit title FAIL (2026-04-22)
+
+**Context**: FRA/UAE 10-round discussion で 5 empirically-grounded products identified (Obsidian / Mem0 / Git archival / MovieLens / Reddit)。本 finding は各 product の **replication + end-to-end viability** を実測 verify、"empirical only" framing を strict に execute。推論でなく code 生成 + 実行で検証。
+
+### Task 1: MovieLens multi-genre replication(F-082 robustness test)— **PASS ✓**
+
+Film-Noir 以外 5 genres で F-082 pattern 再現:
+
+| Genre | \|rare_GT\| | γ-check | Metric A γ-check k=1 |
+|---|---:|---:|---:|
+| Film-Noir (baseline) | 85 | 33 | 100% (33/33) |
+| IMAX | 158 | 15 | 100% (15/15) |
+| Western | 167 | 61 | 100% (61/61) |
+| Musical | 333 | 105 | 100% (105/105) |
+| War | 381 | 132 | 100% (132/132) |
+| Documentary | 438 | 249 | 100% (249/249) |
+
+**595 γ-check items total × 100% KDF Rare layer 包含**。F-082 は Film-Noir 固有でなく、**genre-agnostic robust**。niche tag surfacing 主張は empirical strengthen。
+
+### Task 2: Git archival on NEW repos — **NARROWER scope confirmed ⚠️**
+
+F-062/F-077 validated 5 repos 以外で KDF merge recall 予測を verify:
+
+| Repo | Commits | Merge rate | F-065 criterion | F-078 deg_skew | KDF simplified recall @ 30% |
+|---|---:|---:|:-:|---:|---:|
+| **Flask** | 5,572 | 31.0% | **FAIL** (>10%) | +2.225 (not rec.) | 0.001 (node-level) |
+| **Prettier** | 11,186 | 2.1% | **PASS** (<10%) | **+8.434 (not rec.)** | 0.000 |
+
+**Finding**: Flask は F-065 criterion で disqualify (merge rate 31% > 10%)、Prettier は F-065 pass だが F-078 deg_skew で disqualify (+8.434、強 linear DAG)。両 repos で simplified KDF recall ≈ 0。
+
+**Proxy vs real divergence**: F-077 node repo で 99.75% recall は **real cgb-kdf NodeClassifier** 経由の結果、本 session の simplified low-degree proxy とは異なる。memory `feedback_verify_proxy_vs_real` pattern 再発。
+
+**Implication**: Git archival productization scope は:
+1. merge rate ≤ 10%(F-065)**AND**
+2. deg_skew ≤ 0.1(F-078 recommended / borderline)**AND**
+3. real cgb-kdf NodeClassifier 使用(simplified proxy でなく)
+
+3 条件 conjunction、initial "merge rate low OSS" claim より narrower。Commercial scope assessment downgrade。
+
+### Task 3: Obsidian plugin architectural viability — **PASS ✓**
+
+[experiments/obsidian_prototype/obsidian_kdf_orphan.py](../experiments/obsidian_prototype/obsidian_kdf_orphan.py) で end-to-end pipeline 実装:
+- Markdown vault scan → `[[wikilink]]` parse → bipartite (note_src × note_tgt) → cgb-kdf NodeClassifier → KDF Garbage layer = orphan candidates
+
+Synthetic test vault (19 notes: 1 hub + 10 chain + 5 deliberate orphans + 3 leaves、うち 1 leaf が accidental orphan):
+
+| Metric | Value |
+|---|---:|
+| Ground-truth orphans | 6 |
+| KDF Garbage layer B-side | 6 |
+| **Precision** | **1.000** |
+| **Recall** | **1.000** |
+| **F1** | **1.000** |
+
+End-to-end pipeline 実行可能確認、F-071 real vault F1=0.747 と consistent (synthetic は clean case、real vault は complex)。
+
+### Task 4: Reddit title dataset replication — **FAIL ❌**
+
+F-082 body dataset で γ-check 3 (100% Metric A) の結果を title dataset で replicate 試行:
+
+| Dataset | |rare_GT| | γ-check | γ-mid | γ-fail | Metric A γ-check |
+|---|---:|---:|---:|---:|---:|
+| Reddit body (F-082 original) | 19 | 3 | 16 | 0 | **100% (3/3)** |
+| Reddit title (replication) | 18 | **0** | 17 | 1 | **n/a (no γ-check)** |
+
+**Replication FAIL**: title dataset で rare hostile targets 全て γ=mid or γ=fail、低 degree subset が不在。**F-082 Reddit body N=3 は dataset-specific phenomenon、"community anomaly identification" 商品化 claim は empirical evidence 不足**。
+
+### Updated grounded product list (post-verification)
+
+5 → 4 products, 1 withdrawn:
+
+1. **Obsidian plugin** (F-071 + F-085 Task 3) — STRONGEST、architectural + real-world evidence
+2. **Mem0 temporal hybrid** (F-060) — STRONG、本 session 再 test 未実施
+3. **MovieLens niche genre surfacing** (F-082 + F-085 Task 1) — STRENGTHENED、6-genre replication
+4. **Git archival sparse-merge** (F-062/F-077 + F-085 Task 2) — NARROWER、3-condition conjunction required
+5. ~~Reddit community anomaly~~ — **WITHDRAWN** (F-085 Task 4 replication fail)
+
+### Implication for commercial roadmap
+
+Before F-085: 5 grounded products、うち 1 directly deploy ready (Obsidian)。
+After F-085: **4 grounded products、2 verified end-to-end ready (Obsidian F1=1.0 synthetic + MovieLens 100% 6 genres)**。Git は real cgb-kdf 統合要、Mem0 は partnership 要。
+
+**Tier A (Ship-ready, verified)**: Obsidian plugin、MovieLens niche surfacing
+**Tier B (Partnership + evidence)**: Mem0 temporal hybrid
+**Tier C (narrower scope verified)**: Git archival (sparse-merge + deg_skew + real KDF)
+**Withdrawn**: Reddit
+
+### Artifacts
+
+- [experiments/cross_family/parse_movielens_multi_genre.py](../experiments/cross_family/parse_movielens_multi_genre.py) — 6 genre bipartite builder
+- [experiments/cross_family/movielens_{film_noir,imax,western,musical,war,documentary}/graph/](../experiments/cross_family/) — 6 genre TSV artifacts (gitignored)
+- [experiments/verify_movielens_multi_genre.py](../experiments/verify_movielens_multi_genre.py) — multi-genre Metric A verifier
+- [experiments/ablation_results/ml_multi_genre_verify.json](../experiments/ablation_results/ml_multi_genre_verify.json) — 6 genre raw results
+- [experiments/cross_family/parse_reddit_title.py](../experiments/cross_family/parse_reddit_title.py) — title dataset parser
+- [experiments/cross_family/reddit_title/graph/](../experiments/cross_family/reddit_title/graph/) — title bipartite (gitignored)
+- [experiments/obsidian_prototype/obsidian_kdf_orphan.py](../experiments/obsidian_prototype/obsidian_kdf_orphan.py) — **end-to-end Obsidian orphan detection prototype**
+- [experiments/obsidian_prototype/synthetic_vault/](../experiments/obsidian_prototype/synthetic_vault/) — test vault
+- [experiments/obsidian_prototype/graph/](../experiments/obsidian_prototype/graph/) — bipartite + layer TSV
+
+**Meta-check compliance**: 本 finding は推論を避け code-execution-based verification、各 task で pre-committed criterion + mechanical 判定。Task 4 の FAIL は narrative-protective narrowing なしで withdraw 判断、post_hoc_narrowing guard 機能。
+
+---
+
+### ⚠️ F-084 Biological domain (STRING PPI + OncoKB cancer gene) — γ-check 74% < Strong threshold、cancer 遺伝子は hub-biased、KDF scope 境界の empirical refinement(2026-04-22)
+
+**Context**: F-082 で cross-meta-family N=3 (log/entertainment/social) を取得、Phase C として **biological 4th meta-family** を試行。STRING human physical PPI (v12.0 high-confidence ≥ 700) + OncoKB cancer gene list (1,236 HGNC symbols) を使って **protein-protein bipartite + cancer external rare label** で k-sweep + F1。
+
+**Dataset**:
+- STRING human physical PPI v12 (public): ≥700 score で 173,038 edges, 10,746 proteins
+- OncoKB cancer gene list (public API): 1,236 HGNC symbols
+- ENSP ↔ HGNC mapping via STRING Ensembl_HGNC aliases
+- 1,077 cancer-matched proteins (10.02% of B-side)
+
+**Bipartite**: 
+- A-side = protein as source (10,746)、B-side = protein as target (labeled side, 10,746)
+- Edge = physical PPI (両方向に展開)、weight = combined_score/1000
+- |A|/|B| = 1.0
+
+**k-sweep γ-subset breakdown**:
+
+| k | γ-check (low-deg cancer) | γ-mid | γ-fail (hub cancer) |
+|---:|---:|---:|---:|
+| 1 | 74.36% (58/78) | 0% | **0%** |
+| 2 | 74.36% (58/78) | 8.07% | 0% |
+| 3 | 74.36% | 14.04% | 0% |
+| 5 | 74.36% | 26.58% | 0% |
+| 10 | 74.36% | 48.82% | 0% |
+| 20 | 74.36% | 74.78% | 0% |
+
+**Key findings**:
+
+1. **γ-check 74.36% < 85% → staged trigger Reject 相当** (PPI は v1.3.1 cross-family promotion に contribute しない)
+2. **γ-fail 0% 全 k — necessity direction ROBUST cross-domain (N=5 now: BGL/NASA/HDFS/MovieLens/PPI)**
+3. **Cancer genes hub-biased**: 1,077 の内訳 = 78 γ-check (7.24%) + 805 γ-mid + **194 γ-fail (18%) hubs** (TP53/BRCA1/MYC 等の signaling hub)
+4. **KDF's scope empirical 境界**: labeled rare が graph-global structural outlier と correlate する domain でのみ M2a pass、hub-biased label (cancer genes, signaling proteins 等) では pass せず
+
+**Cross-domain consolidated table post-PPI**:
+
+| Domain | Meta-family | \|A\|/\|B\| | \|rare_GT\| | γ-check rate | Metric A γ-check (k=1) | M2a staged |
+|---|---|---:|---:|---:|---:|---|
+| BGL | log / system | 12.41 | 8 | 50% | 100% (4/4) | Strong |
+| NASA | log / web | 1.36 | 98 | 78.6% | 96.10% (74/77) | Strong |
+| MovieLens | entertainment | 0.063 | 85 | 38.8% | 100% (33/33) | Strong |
+| Reddit | social network | 1.35 | 19 | 15.8% | 100% (3/3) | Strong |
+| HDFS template | log / dist FS | 5.04e-5 | 16,838 | 36.7% | 0% → 100% (k=3) | Strong (k=3) |
+| HDFS bigram | log / dist FS | 4.87e-4 | 16,838 | 37.1% | 47.18% → 98.85% (k=3) | Strong (k=3) |
+| **PPI** | **biological** | **1.0** | **1,077** | **7.2%** | **74.36%** | **Reject (<85%)** |
+
+**Ontological refinement**:
+
+KDF の scope = labeled rare が **γ-check rate 高い** domain。PPI の γ-check rate 7.24% は BGL 50% / NASA 79% と比べて桁違いに低く、cancer gene label が structural rarity と overlap しない direct evidence。
+
+F-061〜F-067 の "KDF 適性 decisive predictor" = "structural rareness が task importance と相関する条件下でのみ KDF は Random / baseline を decisively 上回る" が **PPI でも empirically reconfirmed**。
+
+**v1.3.1 re-promotion evidence updated**:
+- k=3 下で N=6 variant Strong: BGL, NASA, MovieLens, Reddit, HDFS template, HDFS bigram
+- k=3 下で N=1 Reject: PPI (cancer-gene label と structural rareness の misalignment)
+- Cross-meta-family N=3 confirmed (log + entertainment + social)
+- Biological 4th meta-family は **domain-fit failure** として記録、M2a scope の empirical 境界
+
+**Positioning aligned (F-053 + F-083 + F-084 consistent)**:
+- KDF は universal anomaly detector ではない
+- KDF は **structural-rarity-correlated label を持つ domain での identifier**
+- Hub-biased label (biological, scale-free networks) では KDF 不適
+- Complementary layer (F-060 Router) が validated moat
+
+**Artifacts**:
+- [experiments/cross_family/data/string_human_physical.txt.gz](../experiments/cross_family/data/) — raw STRING (gitignored)
+- [experiments/cross_family/data/oncokb_genes.json](../experiments/cross_family/data/) — OncoKB list (gitignored)
+- [experiments/cross_family/parse_string_ppi.py](../experiments/cross_family/parse_string_ppi.py) — parser
+- [experiments/cross_family/ppi/graph/](../experiments/cross_family/ppi/graph/) — bipartite TSV + stats
+- [experiments/ablation_results/ablation_summary.{json,csv}](../experiments/ablation_results/) — 7 variant × 7 k = 49 measurements (F-082 から extension)
+
+**Scope caveat**: PPI は cancer gene 1 external label、OMIM / rare disease genes / essential genes 等他 label の γ-check rate test は未。"KDF は biological で general に不適" ではなく "cancer gene label 特有に hub-biased"。labeled rare を tissue-specific gene or housekeeping gene に切り替えれば異なる結果の可能性。
+
+**Meta-check compliance**: Phase A/B/C の sweep は 8 domain × mostly identical protocol、post_hoc_narrowing guard 発動なし。PPI の 74% 結果を "fail と partial pass の中間" として narrowing せず、staged trigger の Reject < 85% を strict 適用。
+
+---
+
+### ⚠️ F-083 KDF F1 benchmark 性能 honest measurement — literature と比べ劣位、Rare layer ≈ degree-rank (top-N selection)(2026-04-22)
+
+**Context**: F-081+F-082 で KDF Rare layer MEMBERSHIP (γ-strict-✓ 検出) の cross-family evidence を obtain。本 finding は follow-up として **top-N F1 benchmark での KDF vs literature / KDF vs degree-rank baseline** を測定、KDF の F1-competitive claim を 6 domain で empirical test。
+
+**Phase A: Literature comparison**
+
+At k=3、KDF ranking = sort by (layer_priority, degree_asc, gid)、top-N selection 掃引:
+
+| Domain | \|B\| | \|Rare_GT\| | Best F1 KDF | vs Literature |
+|---|---:|---:|---:|---|
+| BGL | 2,399 | 8 | 0.0041 | No direct literature F1 (rare count too small) |
+| NASA | 3,002 | 98 | 0.0928 | F-072 KDF existing 0.2551 — 本 measurement 下回る |
+| HDFS template | 575,061 | 16,838 | 0.5091 | **DeepLog 0.961, LogAnomaly 0.945 — KDF 大幅劣位** |
+| HDFS bigram | 575,061 | 16,838 | 0.5091 | 同上 |
+| MovieLens | 9,724 | 85 | 0.0319 | (no direct baseline) |
+| Reddit | 20,606 | 19 | 0.0019 | (no direct baseline) |
+
+**KDF は top-N F1 benchmark で DeepLog/LogAnomaly に大幅劣位**(HDFS で 0.51 vs 0.96)。
+
+**Reason**: KDF ranking 内 same-degree items は arbitrary gid order で sort。Rare layer = degree_asc 区分であり semantic/embedding signal 無。Within-layer ranking に intrinsic value 不在。
+
+**Phase B: KDF Rare vs pure-degree-rank baseline**
+
+Same-size top-N selection comparison:
+
+| Domain | N=\|KDF_Rare\| | Symm_diff | KDF F1 | Deg-rank F1 | Δ |
+|---|---:|---:|---:|---:|---:|
+| BGL | 1,208 | 4 | 0.0066 | 0.0066 | **+0.0000** |
+| NASA | 2,225 | 12 | 0.0732 | 0.0749 | **-0.0017** |
+| HDFS template | 6,181 | 0 | 0.5370 | 0.5370 | +0.0000 |
+| HDFS bigram | 6,181 | 0 | 0.5370 | 0.5370 | +0.0000 |
+| MovieLens | 5,544 | 0 | 0.0163 | 0.0163 | +0.0000 |
+| Reddit | 14,462 | 1,684 | 0.0014 | 0.0008 | **+0.0006** |
+
+**KDF Rare top-N F1 は pure degree-rank baseline と near-identical**。4/6 domain で symm_diff=0(identical sets)、NASA で KDF 劣位 -0.002、Reddit で KDF 優位 +0.0006(Garbage layer 841 exclusion 効果)。
+
+**is_meaningful_rare filter 効果**: KDF の distinguishing logic = `neighbor_count ≤ k ∧ neighbor degree ≥ 2`(Garbage 除外)。実測 Garbage layer size:
+- BGL 2, NASA 6, HDFS 0/0, MovieLens 0, Reddit 841
+- 大半 domain で Garbage << Rare、filter が inactive
+
+**Decisive conclusion**:
+1. **KDF top-N F1 is NOT literature-competitive** — DeepLog/LogAnomaly sequence-based methods dominate HDFS
+2. **KDF Rare layer top-N F1 ≈ degree-rank baseline** — KDF adds near-zero F1 signal over simple degree-sort
+3. **KDF's empirically-distinctive value is Rare LAYER MEMBERSHIP** (binary categorization)、**not within-layer ranking**
+
+**Reinforced positioning (consistent with prior F-053, F-060)**:
+- KDF は standalone anomaly detector でない、**deterministic preprocessing/feature-generation layer**
+- F-060 Router pattern (Mem0 + KDF complementary) が KDF の validated moat
+- "KDF alone dominates F1 on anomaly detection" narrative は本 measurement で **formal rejected**
+
+**Ontological update (Am#4 §1.5 candidate α "identifier" 支持)**:
+Candidate α(KDF = identifier, retention downstream)は本 measurement で direct empirical support:
+- KDF の output = Rare/Edge/Core/Garbage categorization
+- F1-retention task は downstream (ranker, LLM, heuristic) の役割
+- KDF alone で F1 benchmark 目指すのは α reframe の逆方向
+
+**Artifacts**:
+- [experiments/f1_vs_literature.py](../experiments/f1_vs_literature.py) — sweep script
+- [experiments/kdf_vs_degree_baseline.py](../experiments/kdf_vs_degree_baseline.py) — baseline comparison
+- [experiments/ablation_results/f1_vs_literature.json](../experiments/ablation_results/f1_vs_literature.json)
+- [experiments/ablation_results/kdf_vs_degree_baseline.json](../experiments/ablation_results/kdf_vs_degree_baseline.json)
+
+**Scope caveat**: 6 domain で測定、PageRank / betweenness / LOF / Isolation Forest の direct baseline 比較は未。Weighted edge version (real impl) vs unweighted (現 proxy) の gap は F-078 指摘済、本 measurement は現 TSV ベース、real-edge-weight による精密再測定は future。
+
+**Meta-check**: 本 finding は **negative result、narrative を narrowing から逆方向に retreat**。post_hoc_narrowing guard 発動なし(sweep は 6 domain で symmetric、F1 閾値 pre-commit 前に measurement)。observation_vs_interpretation guard: Phase A+B の 20 row raw table と "ontological update candidate α 支持" interpretation は physical separation。
+
+---
+
+### 📋 (旧) F-044 Mem0 Python 直接対戦は script 準備済、実行は out-of-session
+
+Route A Q1(Mem0 直接対戦)の Python benchmark script を作成した:
+- [`demos/D8_llm_memory/scripts/bench_mem0_vs_kdf.py`](../demos/D8_llm_memory/scripts/bench_mem0_vs_kdf.py)
+- 要件: `pip install mem0ai` + OpenAI API key(または Ollama local LLM)
+- 推定コスト: $0.10-1.00(100 questions × gpt-4o-mini)
+- 所要時間: 20-30 分(LLM API rate limit 依存)
+
+**予想される結果**(F-042, F-043, および Mem0 公開数値 93.4% から):
+- Mem0 retrieval recall: 0.80-0.90 範囲(KDF 0.821 と同等 or 上回る可能性。ただし Q2 で KDF が dense embedding に勝ったので、Mem0 retrieval が期待ほど良くない可能性も)
+- Mem0 full accuracy(LLM answer generation + judge): 90-95%(公開値)
+- KDF estimated full accuracy: 75-80%(recall 0.821 × LLM reading ≈ 0.95)
+- cost: Mem0 ~$0.002/q, KDF $0
+
+**発明者側での実行が推奨される**:
+```bash
+cd /path/to/kdf-perovskite
+pip install mem0ai openai
+export OPENAI_API_KEY=sk-...
+python demos/D8_llm_memory/scripts/bench_mem0_vs_kdf.py --n 100 --model gpt-4o-mini
+```
+
+結果が出次第、F-044 を VERIFIED 化、および paper / positioning doc を update。
+
+---
+
+## 第 33 部: Solvability 総合マップ
+
+| # | 知見 | Verdict | 実装状態 |
+|:-:|---|:---:|---|
+| F-024 | D6 graph-only 不可能 | ✅ 精密化 | `multimodal.rs` 実装済 |
+| F-025 | 合成↔実で符号逆転 | ✅ 事前予測可能 | `bias_score` メトリック実装済 |
+| F-026 | 実測 O(n^1.75) | ✅ 真の O(n) 達成 | `classifier_fast.rs` 実装済 |
+| F-027 | 動的制御 TC 部分のみ発動 | ⚠️ 条件依存で不必要 | 別条件での検証は未着手 |
+| F-028 | LLM memory 合成のみ | ✅ 実データ実証 | LongMemEval 100/500 評価済 |
+
+**5 件中 4 件は「どうにかなる」、1 件は「現条件では不必要(失敗ではない)」。**
+
+## 第 34 部: 全検証累計(Phase 0 〜 S-Z)
+
+| カテゴリ | Phase 0-R | Phase S-Z | Phase α-ι+A | X Step 1 | X Step 2 | X Step 4 | **X Step 5 後** | Δ |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| 検証済み F-xxx | 28 | 34 | 68 | 69 | 70 | 71 | **72** (+F-072 NASA streaming) | +1 |
+| cgb-kdf tests | 353 | ~362 | ~365 | ~365 | ~365 | ~365 | **~365** | 0 |
+| Workspace tests | — | — | 449 | 449 | 449 | 449 | **449 pass** | 0 |
+| Phase verification binary | 6 | 11 | 12 | 13 | 14 | 15 | **16** (+ phase_x4_nasa_streaming) | +1 |
+| 実データ評価件数 | 2 | 3 | 4 | 4 | 4 | 4 | **5** (+ NASA streaming 経時再生) | +1 |
+| Claim realistic benchmark 範囲 | — | — | Claim 1 3 柱 | +C5/14/17 | +C36-41/47-48 | +C20-32 | **+C14/25/27-32 streaming validation** | +1 |
+| Canonical 新モジュール | — | 2 | 3 | 3 | 3 | 3 | **3** | 0 |
+| 独立検証エージェント | 10 | 11 | 12 | 12 | 12 | 12 | **12** | 0 |
+| **cgb-kdf 適合率** | 54% | 88% | 92% | 92% | 92% | 92% | **92% (46/50)** | 0 |
+| Canonical parameter 反証件数 | 0 | 0 | 1 | 1 | 2 | 2 | **2** | 0 |
+| **Positive streaming validation** | — | — | — | — | — | — | **1 (F-072 +3.06pt)** | +1 |
+
+---
+
+## 第 35 部: Patent Claim 1-50 Empirical Coverage Summary(Phase X 完走時点)
+
+F-040 で全 50 Claim に per-claim 直接 unit test が整備済み。加えて Phase X(Step 1/2/4)で主要 claim group を realistic benchmark に格上げ:
+
+| Claim Range | 実装モジュール | Realistic Benchmark | 状態 |
+|---|---|---|---|
+| **Claim 1** 3 手段統合 | [`lib.rs`](../crates/cgb-kdf/src/lib.rs), [`decay.rs`](../crates/cgb-kdf/src/framework/decay.rs), [`classifier.rs`](../crates/cgb-kdf/src/framework/classifier.rs), [`analogy.rs`](../crates/cgb-kdf/src/analogy.rs) | F-068 analogy + F-052 decay + F-012 希少保護 | ✅ 3 柱全て |
+| Claim 2-4 基本データ構造 | `classifier.rs` | F-040 unit test | ✅ unit |
+| **Claim 5** 時間評価成分 | `decay.rs::compute_evaluation_value` | F-069(static task で冗長、機構は稼働) | ⚠️ 機構 ✅ / 応用 ❌ |
+| Claim 6-9 減衰関数 | `decay.rs::lambda` | F-002 unit(analytic solution 一致) | ✅ unit |
+| Claim 10 α=2 | `decay.rs::MasterSpecParams` | F-037 direct test | ✅ unit |
+| Claim 11-13 確率剪定 | `decay.rs::probabilistic_prune` | F-007 proptest | ✅ unit |
+| **Claim 14** 指数減衰 | `decay.rs::apply_edge_decay` | F-002 analytic + F-069 LoCoMo(static で冗長) | ⚠️ 機構 ✅ / 応用 ❌ |
+| Claim 15 bit-exact | — | F-005 determinism test | ✅ unit |
+| Claim 16 Rare 保護 | `classifier.rs` | F-012 Obsidian orphan | ✅ realistic |
+| **Claim 17** 分散実行 | `decay.rs::apply_edge_decay_local` | F-037 unit + **F-069 LoCoMo bit-exact(max diff 0.0)** | ✅ realistic |
+| Claim 18-19 Rare 維持 | `classifier.rs`, `rev12.rs` | F-012 + F-040 | ✅ realistic |
+| **Claim 20-22** 階層領域 5:3:1 | [`region.rs`](../crates/cgb-kdf/src/framework/region.rs) | F-071 integer tick 正確、realistic streaming で稼働 | ✅ 機構 |
+| **Claim 23-26** 昇格関数 / 遷移制御 / 活性化 / 意味的重要度 | [`transition.rs`](../crates/cgb-kdf/src/framework/transition.rs) | F-027 Mode E rescue(synthetic)+ F-071 LoCoMo(ceiling-effected) | ✅ 機構 / F-031 ceiling |
+| **Claim 27-32** Meta 制御 / δk⁴ / 緊急介入 | [`meta_control.rs`](../crates/cgb-kdf/src/framework/meta_control.rs) | F-004 proptest 16× + F-027 rescue + F-071 bound clamp 動作 | ✅ 機構 |
+| Claim 33 複合孤立度指標 | `classifier.rs`, `multimodal.rs` | F-024 D6 精密化 + F-037 direct | ✅ realistic |
+| Claim 34-35 データ形式 | — | F-040 unit | ✅ unit |
+| **Claim 36-41** 二段階審査 T_wait | [`rev12.rs`](../crates/cgb-kdf/src/framework/rev12.rs) | F-040 unit + **F-070 Part B LoCoMo**(機構稼働、canonical で 100% demote) | ✅ 機構 / ❌ canonical |
+| Claim 42-43 Rare → Core 昇格 | `rev12.rs` | F-040 | ✅ unit |
+| Claim 44 7:2:1 重み | `analogy.rs` | F-040 + F-068 | ✅ realistic |
+| Claim 45 0.40:0.35:0.25 合成 | `analogy.rs` | F-040 | ✅ unit |
+| Claim 46 32-dim fingerprint | `fingerprint.rs` | F-040 + F-068 | ✅ realistic |
+| **Claim 47-48** sandwich θ_L/θ_U | `rev12.rs`, `analogy.rs` | **F-041 Hopfield + F-068 + F-070 Part A/B の 4-benchmark 横断**(機構 ✅ / canonical (0.70, 0.80) 反証) | ✅ 機構 / ❌ canonical |
+| Claim 49-50 library entry / program form | `lib.rs` | F-040 | ✅ unit |
+
+**Summary**:
+- **全 50 Claim が少なくとも F-040 per-claim unit test で backed**
+- **主要 claim group(Claim 1, 5, 14, 16-19, 20-32, 36-48)は realistic benchmark でも backed**
+- **Canonical 具体値の反証は 2 箇所**(Claim 47-48 sandwich、Claim 36-41 T_wait with canonical sandwich)、いずれも mechanism は支持し canonical value のみ反証
+- **自 claim の reality-based 反証を自ら示す姿勢は paper credibility の強化資産**(Phase X の一貫テーマ)
+
+---
+
+
 **検証責任者:** プロジェクト実行担当(Claude Opus 4.7, 独立検証エージェント経由)
-**最終更新:** 2026-04-19 (Phase X Step 1 + Step 2 + Step 4 + Step 5 完走: F-069 + F-070 + F-071 + F-072 追加、paper v0.2 更新済。**Claim 1-50 全 50 項が unit test level で backed、主要 claim group は realistic benchmark でも empirically validated**。Canonical parameter 反証 2 件(sandwich / T_wait)を誠実に記録、**F-072 で paper narrowing の "streaming が真の use case" 仮説が NASA real data で +3.06pt validated**。静的 task で冗長だった Claim 14 decay が streaming で意味を持つという nuance 化が完成。arxiv preprint 公開前の empirical gap がすべて埋まった状態)
+**最終更新:** 2026-04-29(Phase 2 + Phase 2.5 streaming replication 完走: F-073〜F-090 追加、scope narrowing が empirically 確定。**Direct SOTA 勝負 path は 3/3 LOSS で撤回**(F-073/074/075)、**streaming benefit は temporally recurring rare に narrow**(F-087)、**bias-detector predictor は N=21 systematic test で 45.5% < 70% で撤回**(F-090)。残った位置は narrow but durable で 4 grounded products + F-086 γ domain-fit predictor。詳細単一文書要約は [PHASE_2_RETROSPECTIVE.md](PHASE_2_RETROSPECTIVE.md)。Claim 1-50 全 50 項は引き続き unit test backed、機構レベルは Phase X で realistic benchmark backed、F-087/F-090 はそれぞれ Claim 14 streaming application scope と byproduct tool の narrowing・撤回で機構自体は不変。)

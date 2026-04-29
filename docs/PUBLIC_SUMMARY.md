@@ -2,8 +2,9 @@
 
 **特許:** 2026-027032(日本、2026-02-24 出願)
 **参照実装:** Rust (PolyForm Noncommercial 1.0.0)、[`crates/cgb-kdf`](../crates/cgb-kdf/)
-**検証レポート:** [VERIFIED_FINDINGS.md](VERIFIED_FINDINGS.md)(34 件の検証済み知見)
-**生成日:** 2026-04-17
+**検証レポート:** [VERIFIED_FINDINGS.md](VERIFIED_FINDINGS.md)(90 件超の検証済み知見、F-073〜F-090 で scope narrowing が確定)
+**Phase 2 振り返り:** [PHASE_2_RETROSPECTIVE.md](PHASE_2_RETROSPECTIVE.md)(2026-04-29、現在の正味 position の単一文書要約)
+**生成日:** 2026-04-17(本文)/ 2026-04-29 P7 撤回マーカー追加
 
 ---
 
@@ -23,7 +24,7 @@
 | **P4** | [AI 公平性 / 少数言語保全](world_problems/P4_ai_fairness_minority_language.md) | 2 | ❓ **未検証** | 類似実験で marginal 予測 | Wikipedia 多言語実験 |
 | **P5** | [論文再発見 / 科学再現性](world_problems/P5_research_paper_rediscovery.md) | 2 | ❌ **検証失敗** | OpenAlex で KDF/Random = **×0.83**(D5 型予測的中)| 別 graph 表現で再試行は可能 |
 | **P6** | [OSS メンテナンス](world_problems/P6_oss_maintenance.md) | 2 | ❌ **一般化失敗** | 3 repo 平均 **×1.00**(rust-lang のみ +15%、golang は -15%)| 一般主張を撤回 |
-| **P7** | [ML 再現性危機(メタ)](world_problems/P7_ml_reproducibility.md) | 3 | ✅ **検証済** | 5件中4件完全予測一致 | `bias-detector` crate 公開 |
+| **P7** | [ML 再現性危機(メタ)](world_problems/P7_ml_reproducibility.md) | 3 | ❌ **2026-04-29 撤回**(F-090) | N=21 systematic test で 45.5% < 70% threshold | `bias-detector` crate は code として残るが商材化 path は閉じた |
 | **P8** | 記憶・忘却の形式化(学術) | 3 | ❓ **論文案** | Lyapunov 100k 実証 | arxiv preprint |
 
 **適用外(out-of-scope として誠実に記録):**
@@ -74,15 +75,17 @@
 
 ---
 
-### P7. ML 再現性危機 — bias-detector(副産物)
+### P7. ML 再現性危機 — bias-detector(副産物)— **❌ 2026-04-29 撤回**
 
-> KDF プロジェクトから副産物として生まれた `bias-detector` crate。**どんな graph benchmark が "synthetic data で手法に偏って有利" か**を**事前に検知**する zero-dependency tool。
+> ~~KDF プロジェクトから副産物として生まれた `bias-detector` crate。**どんな graph benchmark が "synthetic data で手法に偏って有利" か**を**事前に検知**する zero-dependency tool。~~
 
-**テスト結果:** 5 dataset 中 4 件で完全予測一致、1 件は別経路で一致(B_isolated)。
+> ~~**テスト結果:** 5 dataset 中 4 件で完全予測一致、1 件は別経路で一致(B_isolated)。~~
 
-**インパクト:** KDF とは独立して ML 研究全般で利用可能。
+> ~~**インパクト:** KDF とは独立して ML 研究全般で利用可能。~~
 
-詳細: [P7_ml_reproducibility.md](world_problems/P7_ml_reproducibility.md)
+**2026-04-29 撤回**(F-090): N=21 systematic test で certain prediction accuracy = **5/11 = 45.5%** ≪ 70% threshold。87.5% は初期 5 synthetic + 3 simple cases の sampling bias artifact。`bias-detector` crate は code として残るが、商材化 path は閉じた。詳細は [VERIFIED_FINDINGS.md F-090](VERIFIED_FINDINGS.md) と [PHASE_2_RETROSPECTIVE.md §5](PHASE_2_RETROSPECTIVE.md) 参照。
+
+別 framework(F-086 γ domain-fit predictor、hub-peripheral / hub-biased / peer-network 判別)は独立に有効、撤回の影響を受けない。
 
 ---
 
