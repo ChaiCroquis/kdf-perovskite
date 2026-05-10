@@ -24,8 +24,8 @@ for arg in "$@"; do
     esac
 done
 
-echo "[1/4] Extracting body from paper.md..."
-sed -n '/^## 1\. Introduction/,$p' paper.md > _body.md
+echo "[1/4] Extracting body from paper.md (v2.7: includes Version 2 Addendum + §1 onward)..."
+sed -n '/^## Version 2 Addendum/,$p' paper.md > _body.md
 
 echo "[2/4] Running pandoc (--natbib, heading-shift -1)..."
 "$PANDOC" _body.md -o paper_body.tex \

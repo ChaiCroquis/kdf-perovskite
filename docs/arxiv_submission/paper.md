@@ -5,6 +5,7 @@
 **Affiliation:** Independent researcher, Japan  
 **Patent:** JP 2026-027032 (filed 2026-02-24)  
 **Code:** [github.com/ChaiCroquis/kdf-perovskite](https://github.com/ChaiCroquis/kdf-perovskite) (PolyForm Noncommercial 1.0.0; commercial license separate)  
+**Reproducibility:** [`docs/REPRODUCIBILITY.md`](../REPRODUCIBILITY.md) — F-001〜F-100 finding を再現する code path / run command / data 取得手順を single-index で提供。Quick Start (F-072 / F-087 / F-097) で paper の epistemic stance(streaming positive + narrowing + cross-family positive)が体感できる。  
 **Draft version:** v0.3, 2026-04-19
 
 ---
@@ -17,7 +18,7 @@ Empirically, KDF delivers 7.7× gain over industry-standard TTL on LongMemEval (
 
 However, we also transparently report refutations of our own prior claims. The sandwich 2-threshold *mechanism* is supported, but **our patent's canonical values (θ_L, θ_U) = (0.70, 0.80) are empirically refuted across four benchmarks** (Hopfield mixture, direct analogy, synthetic pairs, LoCoMo streaming): specific values require domain-specific calibration. Additional honest negatives include OSS issue generalization ×1.00 across three repositories, paper rediscovery ×0.83, and Gaussian-Process inducing-point selection failures. Applicability is predictable a priori via a zero-dependency bias-detector metric **[v2: bias-detector predictor withdrawn per F-090 systematic test (45.5% < 70% threshold); F-086 γ domain-fit framework replaces it; see Version 2 Addendum below]**.
 
-**v2 update (2026-04-29):** Phase 2 / Phase 2.5 testing narrows the streaming benefit to *temporally recurring rare events* (F-087 Apache replication: $-13.04$ pt sign reversal) and withdraws the bias-detector commercial path (F-090). Direct SOTA-beating positioning is also empirically retracted (F-073 / F-074 / F-075 LOSS). The v2 grounded position is four product candidates (Obsidian / MovieLens niche / Mem0 hybrid Router / Git Core preservation) plus the F-086 γ domain-fit predictor. See Version 2 Addendum directly below for the changelog.
+**v2 update (2026-04-29 -- 2026-04-30):** Phase 2 / Phase 2.5 systematic testing produced a **7-pattern empirical arc** (5 narrowing findings + 2 positive cross-domain replications): the streaming benefit is narrowed to *temporally recurring rare events* (F-087 Apache replication: $-13.04$ pt sign reversal), the bias-detector commercial path is withdrawn (F-090), direct SOTA-beating positioning is retracted (F-073 / F-074 / F-075 LOSS), the canonical $\alpha=2.0$ is narrowed to NASA-recurring-rare-specific (F-091), Claim 31 functional rare protection is narrowed to non-adversarial settings (F-092), and the recurring-rare benefit is empirically replicated cross-domain on **N=3** datasets (NASA HTTP + Apache error + BGL HW kernel; F-094 / F-097, both PASS) but FAILS on distributed file system log (F-100 HDFS, both H_R+_literal and H_anomaly) — narrowing cross-domain coverage to **web access log family + HW kernel log family** specific. The v2 grounded position is four product candidates (Obsidian / MovieLens niche / Mem0 hybrid Router / Git Core preservation) plus the F-086 γ domain-fit predictor. See Version 2 Addendum directly below for the full changelog.
 
 **Keywords:** information preservation, graph metabolism, rarity protection, analogy discovery, Laplacian fingerprint, Ginzburg-Landau, Hopfield attractor, Equitable Coreset Selection, complementary learning systems, memory consolidation
 
@@ -28,13 +29,14 @@ However, we also transparently report refutations of our own prior claims. The s
 This is **version 2** of the paper. Version 1 was deposited on Zenodo
 (DOI: [10.5281/zenodo.19651035](https://doi.org/10.5281/zenodo.19651035))
 on 2026-04-19, anchored on F-072 NASA HTTP streaming. Phase 2 + Phase 2.5
-(2026-04-20 -- 2026-04-29) added 18 systematic findings (F-073 -- F-090)
-that **sharpen** rather than overturn v1 claims. We summarize the
-substantive changes here; the v1 body below is unmodified except for
-short `[v2: ...]` caveats inline at the relevant claims, and a Phase 2 /
-Phase 2.5 subsection appended to §5 Empirical Evaluation. The
-comprehensive single-document retrospective lives at
-[`docs/PHASE_2_RETROSPECTIVE.md`](../PHASE_2_RETROSPECTIVE.md).
+(2026-04-20 -- 2026-04-30) added 23 systematic findings (F-073 -- F-100)
+that **sharpen** rather than overturn v1 claims, producing a **7-pattern
+empirical arc** (5 narrowing + 2 positive cross-domain replications). We
+summarize the substantive changes here; the v1 body below is unmodified
+except for short `[v2: ...]` -- `[v2.7: ...]` caveats inline at the
+relevant claims, and a Phase 2 / Phase 2.5 subsection appended to §5
+Empirical Evaluation. The comprehensive single-document retrospective
+lives at [`docs/PHASE_2_RETROSPECTIVE.md`](../PHASE_2_RETROSPECTIVE.md).
 
 **Substantive narrowing**:
 
@@ -136,9 +138,12 @@ empirical boundary at the cost of two specific commercial positionings.
   is empirically replicated cross-domain (N=2: NASA $+3.06$ pt + Apache
   recurring $+3.67$ pt). 4-pattern self-refutation arc (F-070 / F-087 /
   F-091 / F-092, narrowing direction) is supplemented with **1 positive
-  replication (F-094)** for arc completion: 5 patterns total = 4 narrow
-  + 1 positive. Scope of Claim 14 streaming benefit: recurring rare
-  structure $\times \alpha=2.0 \times $ NASA-Apache-homotype log dataset
+  replication (F-094)** for arc completion (subsequently expanded to
+  **7 patterns total = 5 narrow + 2 positive** by F-097 BGL HW kernel
+  log positive replication and F-100 HDFS distributed file system log
+  narrowing per v2.5 / v2.7 entries below). Scope of Claim 14 streaming
+  benefit: recurring rare structure $\times \alpha=2.0 \times $
+  web access log family + HW kernel log family
 - 2026-04-29 (v2.3): Foreign baseline anchor (Mem0 family, N=3 empirical
   cells: F-048 local proxy / F-053 paid alone / F-060 paid hybrid Router)
   added to §5 — setting-dependent position formalized, KDF as Mem0
@@ -161,24 +166,24 @@ empirical boundary at the cost of two specific commercial positionings.
   $0.000$ -- $0.006$ on 8B 5-Q + 3B 479-Q both), sharpening F-048
   caveat from "weak LLM degrades retrieval" to "framework compression
   itself does not preserve substrings independent of LLM size"
-- 2026-04-30 (v2.7): F-100 HDFS empirical verification — cross-domain
-  N=4 attempt FAILED on Loghub HDFS_v1 distributed file system log
-  (100,000-BlockId subsample, 2.35M edges, 26 templates, 4.90% anomaly).
-  H_R+_literal Δ=$-23.08$ pt FAIL (recurring rare benefit narrowing
-  refuted on HDFS), H_anomaly Δ=$-4.30$ pt FAIL (HDFS-native anomaly
-  preservation FAIL), Sanity inconsistent (one-shot disposal absent,
-  reinforcing F-097 small-alphabet caveat). Cross-domain durability
-  arc narrowed to **web access log family + HW kernel log family**
-  specific (NASA HTTP + Apache error log + BGL Blue Gene/L), distributed
-  file system log NOT covered. 6-pattern arc → **7-pattern arc**
-  (5 narrow + 2 positive). Pre-reg `_template_pre_reg.md` second
-  high-severity test case: §0.1 anchor constraint predicted small-
-  alphabet caveat would re-confirm → empirically borne out (sanity
-  +0 pt, identical to F-097 BGL pattern); §0.3 observation/interpretation
-  separation prevented narrative drift; protocol §5 explicit禁止
-  "literal FAIL but H_anomaly PASS as N=4" not triggered (both FAIL).
-  ONE_PAGER.md Path A SIEM PoC scope adjusted: HDFS-style distributed
-  file system log out of scope, web/HW kernel log domain remains valid
+- 2026-04-29 (v2.5): F-097 BGL recurring-rare cross-domain N=3 expansion
+  of F-094 — H_R+ PASS ($\Delta_{\text{recurring}} = +33.33$ pt
+  $> +1.0$ pt threshold) on BGL Blue Gene/L HW kernel failure log
+  (300,000-line subsample, anomaly subgraph 79,641 records, 8 unique
+  content templates). recurring-rare benefit replicated cross-domain
+  in N=3 settings (NASA HTTP + Apache error log + BGL HW kernel log),
+  expanding the durable axis from web log family to HW kernel log
+  family. **Sanity inconsistent** (V_one-shot $\Delta = +0.00$ pt,
+  expected negative direction per F-087 / F-094 anchor): one-shot
+  disposal mechanism narrowed to web log family with rich resource
+  alphabet — BGL alphabet is small (8 anomaly templates total) so
+  top-30% selection captures most one-shots regardless of streaming.
+  4-pattern self-refutation arc + 1-positive arc (F-094 v2.2) is now
+  **6-pattern arc** (4 narrow F-070/F-087/F-091/F-092 + 2 positive
+  F-094 web + F-097 HW): cross-domain durability of recurring direction
+  empirically anchored across web access logs and HW kernel logs.
+  Caveat: $n_{\text{rare}} = 3$ in BGL recurring set, recall granularity
+  $\{0, 1/3, 2/3, 1\}$ only; direction unambiguous, low-N power
 - 2026-04-29 (v2.6): F-099 v1 router (precision-only, no length filter)
   characterization across 5 cells × 3 variants — H_v1_paid PASS_negative
   on both LongMemEval paid cells (F-053 $\Delta_{v1}=-11.60$ pt
@@ -209,32 +214,33 @@ empirical boundary at the cost of two specific commercial positionings.
   5 awaits a higher-severity F-100+ second test case** (LLM bench /
   wall-clock estimation / framework behavior comparison). Independent
   v1 verification on fresh paid data is also deferred to F-100+
-- 2026-04-29 (v2.5): F-097 BGL recurring-rare cross-domain N=3 expansion
-  of F-094 — H_R+ PASS ($\Delta_{\text{recurring}} = +33.33$ pt
-  $> +1.0$ pt threshold) on BGL Blue Gene/L HW kernel failure log
-  (300,000-line subsample, anomaly subgraph 79,641 records, 8 unique
-  content templates). recurring-rare benefit replicated cross-domain
-  in N=3 settings (NASA HTTP + Apache error log + BGL HW kernel log),
-  expanding the durable axis from web log family to HW kernel log
-  family. **Sanity inconsistent** (V_one-shot $\Delta = +0.00$ pt,
-  expected negative direction per F-087 / F-094 anchor): one-shot
-  disposal mechanism narrowed to web log family with rich resource
-  alphabet — BGL alphabet is small (8 anomaly templates total) so
-  top-30% selection captures most one-shots regardless of streaming.
-  4-pattern self-refutation arc + 1-positive arc (F-094 v2.2) is now
-  **6-pattern arc** (4 narrow F-070/F-087/F-091/F-092 + 2 positive
-  F-094 web + F-097 HW): cross-domain durability of recurring direction
-  empirically anchored across web access logs and HW kernel logs.
-  Caveat: $n_{\text{rare}} = 3$ in BGL recurring set, recall granularity
-  $\{0, 1/3, 2/3, 1\}$ only; direction unambiguous, low-N power
+- 2026-04-30 (v2.7): F-100 HDFS empirical verification — cross-domain
+  N=4 attempt FAILED on Loghub HDFS_v1 distributed file system log
+  (100,000-BlockId subsample, 2.35M edges, 26 templates, 4.90% anomaly).
+  H_R+_literal Δ=$-23.08$ pt FAIL (recurring rare benefit narrowing
+  refuted on HDFS), H_anomaly Δ=$-4.30$ pt FAIL (HDFS-native anomaly
+  preservation FAIL), Sanity inconsistent (one-shot disposal absent,
+  reinforcing F-097 small-alphabet caveat). Cross-domain durability
+  arc narrowed to **web access log family + HW kernel log family**
+  specific (NASA HTTP + Apache error log + BGL Blue Gene/L), distributed
+  file system log NOT covered. 6-pattern arc → **7-pattern arc**
+  (5 narrow + 2 positive). Pre-reg `_template_pre_reg.md` second
+  high-severity test case: §0.1 anchor constraint predicted small-
+  alphabet caveat would re-confirm → empirically borne out (sanity
+  +0 pt, identical to F-097 BGL pattern); §0.3 observation/interpretation
+  separation prevented narrative drift; protocol §5 explicit禁止
+  "literal FAIL but H_anomaly PASS as N=4" not triggered (both FAIL).
+  ONE_PAGER.md Path A SIEM PoC scope adjusted: HDFS-style distributed
+  file system log out of scope, web/HW kernel log domain remains valid
 - v1 body otherwise unmodified; inline `[v2: ...]` / `[v2.1: ...]` /
   `[v2.2: ...]` / `[v2.3: ...]` / `[v2.4: ...]` / `[v2.5: ...]` markers
   indicate caveat insertion points
-- **4 self-refutation patterns + 1 positive replication anchor the
-  paper's honesty-first epistemic stance** (F-070 / F-087 / F-091 /
-  F-092 narrowing direction; F-094 positive direction): mechanism
-  supported, specific application robustness narrowed but cross-domain
-  durable on the recurring-rare axis
+- **7-pattern arc anchors the paper's honesty-first epistemic stance**
+  (5 narrowing: F-070 / F-087 / F-091 / F-092 / F-100; 2 positive
+  cross-domain replication: F-094 web + F-097 HW): mechanism supported,
+  specific application robustness narrowed, cross-domain durable on the
+  recurring-rare axis across web access log family + HW kernel log
+  family but NOT distributed file system log family
 - **F-093 adds anchor sharpening category** (distinct from
   self-refutation): empirical anchor's true scope identified at higher
   resolution by dataset structural investigation
@@ -544,7 +550,7 @@ What this structural correspondence suggests is the following — **directions f
 | P3 Large-scale log observability (static baseline) | NASA HTTP log, 50k real records | Recall $= 0.237$ (keep $10\%$, $4xx/5xx$ retention) | Random $= 0.102$ (**$\times 2.3$**), without labels |
 | P7 ML reproducibility meta (by-product) | 5 benchmarks × 5 scenarios | 4/5 exact predictions + 1 via alternate route | Released independently as the `bias-detector` crate |
 | **P8 Distributed-execution bit-exactness (Claim 17)** | **LoCoMo 10 real graph (600+ nodes, 400+ edges)** | **max edge-weight diff $= 0.000 \text{e}0$** | `apply_edge_decay` (global) and `apply_edge_decay_local` (distributed) are completely bit-exact, F-069 |
-| **P11 NASA streaming: Claim 14 decay benefit** | **NASA HTTP log 50k real records, replayed in time order (500 rec / 100 window)** | **C1 decay rare_recall $= 0.4898$ at keep $30\%$ (C0 static $0.4592$ → $+3.06$ pt)** | **First empirical anchor for the streaming-benefit thesis [v2: scoped to *temporally recurring rare* per F-087; see §5.x Phase 2/2.5 subsection] [v2.1: F-093 で本 dataset の rare = 4xx/5xx は実質 404-pattern driven、5xx response は本 dataset に不在のため generalization 未測定] [v2.2: F-094 で Apache 別 dataset を recurring rare 定義 (freq $\ge 5$) で再 test、$+3.67$ pt 再現、cross-domain N=2 で recurring-rare 軸が durable], F-072** |
+| **P11 NASA streaming: Claim 14 decay benefit** | **NASA HTTP log 50k real records, replayed in time order (500 rec / 100 window)** | **C1 decay rare_recall $= 0.4898$ at keep $30\%$ (C0 static $0.4592$ → $+3.06$ pt)** | **First empirical anchor for the streaming-benefit thesis [v2: scoped to *temporally recurring rare* per F-087; see §5.x Phase 2/2.5 subsection] [v2.1: F-093 で本 dataset の rare = 4xx/5xx は実質 404-pattern driven、5xx response は本 dataset に不在のため generalization 未測定] [v2.2: F-094 で Apache 別 dataset を recurring rare 定義 (freq $\ge 5$) で再 test、$+3.67$ pt 再現、cross-domain N=2 で recurring-rare 軸が durable] [v2.5: F-097 で BGL HW kernel log を recurring rare で再 test、$+33.33$ pt 再現、cross-domain N=3 (web + HW family) で軸 durable、ただし small-alphabet domain (8 templates) では sanity V_one-shot inconsistent] [v2.7: F-100 で HDFS distributed file system log を H_R+_literal で test、$-23.08$ pt FAIL、H_anomaly も $-4.30$ pt FAIL、N=4 cross-family 不能、durability arc を web + HW kernel log family specific に narrow], F-072** |
 
 As additional verification in Phase X Step 1, all three mechanisms of Claim 1—metabolic control, rarity protection, and integrity discovery—are now empirically backed on realistic benchmarks (integrity discovery via F-068: $100\%$ on Gentner classics, $100\%$ on cross-domain git↔paper, $0\%$ false positives on the negative control). In Phase X Step 5 (F-072), Claim 14 exponential decay is confirmed to yield a $+3.06$-point benefit in a realistic streaming scenario, giving **empirical anchor to the narrowed thesis that "streaming is the true use case"**. **[v2]** F-087 Apache error log replication ($-13.04$ pt vs. C0 static, sign reversal) further restricts this anchor to **temporally recurring rare events** (e.g., the persistent failure pattern of NASA HTTP 4xx/5xx). For one-shot rare events (e.g., reconnaissance probes), streaming with decay is actively harmful — see §5 Phase 2/2.5 subsection.
 
@@ -620,7 +626,7 @@ The implementation code is available under PolyForm Noncommercial 1.0.0 (researc
 
 - **The "domain-invariant architecture" hypothesis itself is untested.** The ten-domain correspondence is merely a qualitative observation; a formal theorem of "necessary convergence" has not been proved. §6.1's hypothesis should be read **as a hypothesis, not a conclusion**.
 - **Canonical values $(\theta_L, \theta_U) = (0.70, 0.80)$ are refuted across four benchmarks** (F-041 Hopfield / F-068 analogy / F-070 Part A synthetic / F-070 Part B LoCoMo streaming). The sandwich mechanism itself is supported, but universality of specific values is not claimed (§4.2 / §5.2 P10).
-- **Claim 5 / 14 time-evaluation components and exponential decay are task-structure-dependent**: redundant on static query tasks (F-069 LoCoMo); $+3.06$-pt benefit on streaming scenarios (F-072 NASA 50 k records, time-ordered replay). When structural rarity already subsumes temporal rarity, the time signals are redundant; when stale traffic must be discarded under continuous operation, they are effective. **[v2]** F-087 Apache error log replication ($-13.04$ pt) further narrows the streaming benefit to *temporally recurring rare events* (persistent failure modes); for *one-shot rare events* (e.g., reconnaissance probes), decay actively erodes recall and ActivationScore amplifies common-path dominance.
+- **Claim 5 / 14 time-evaluation components and exponential decay are task-structure-dependent**: redundant on static query tasks (F-069 LoCoMo); $+3.06$-pt benefit on streaming scenarios (F-072 NASA 50 k records, time-ordered replay). When structural rarity already subsumes temporal rarity, the time signals are redundant; when stale traffic must be discarded under continuous operation, they are effective. **[v2]** F-087 Apache error log replication ($-13.04$ pt) further narrows the streaming benefit to *temporally recurring rare events* (persistent failure modes); for *one-shot rare events* (e.g., reconnaissance probes), decay actively erodes recall and ActivationScore amplifies common-path dominance. **[v2.5]** F-097 BGL HW kernel log replication ($+33.33$ pt on recurring-rare) extends the durable axis to N=3 cross-family (NASA HTTP + Apache error + BGL HW kernel), but the sanity inconsistency ($+0$ pt on V_one-shot vs. F-087 / F-094 negative direction) narrows the *one-shot disposal mechanism* to web log family with rich resource alphabet — small-alphabet domains lack streaming discrimination room. **[v2.7]** F-100 HDFS distributed file system log replication FAILED both hypotheses (H_R+_literal $\Delta = -23.08$ pt FAIL, H_anomaly $\Delta = -4.30$ pt FAIL): cross-domain durability of the recurring-rare benefit is narrowed to **web access log family + HW kernel log family** specific; **distributed file system log domain is out of scope** of current empirical claims, and N=4 cross-family expansion is not achieved.
 - **Claim 25 ActivationScore depends on the temporal distribution of rare events**: $100\%$ rescue for temporally clustered rare events (F-027 Mode E drift scenario); hurts or neutralizes on evenly distributed rare events (F-072 NASA; F-069 LoCoMo) due to recency bias. At application time, discrimination of the rare-event temporal pattern is required. **[v2]** F-087 Apache error log replication quantifies this further: with one-shot rare items (freq $\le 10$ resource paths), full streaming (decay + activation + meta α) reaches recall $0.000$ vs. C0 static $0.4348$ ($-43.48$ pt). ActivationScore *inverts* the desired ordering when rare items lack temporal recurrence.
 - **The ten-domain correspondences are at the level of structural similarity.** Proof as mathematical isomorphism (structure-preserving bijection) has not been carried out for any of the disciplines.
 - **The §4.3 Markov correspondence is a motivating analogy.** Strict CTMC equivalence does not hold (non-stationary generator, weights are not probability mass, etc.).
@@ -729,11 +735,12 @@ These Phase X findings both strengthen paper credibility by "self-refuting our o
 **Phase 2 / Phase 2.5 — Scope refinement after v1 release (2026-04-20 -- 2026-04-29)**:
 
 Following Zenodo v1 publication, we systematically tested the v1 claims
-against new domains. The 18 findings (F-073 -- F-090) **sharpen** rather
+against new domains. The 23 findings (F-073 -- F-100) **sharpen** rather
 than overturn the v1 narrative: they confirm that the "decisive
 predictor" framework articulated in §6.1 (does structural rareness
 correlate with task importance?) is the right level of abstraction, and
-they delineate three concrete narrowings.
+they delineate the resulting **7-pattern empirical arc** (5 narrowing
+findings + 2 positive cross-domain replications).
 
 | Finding | Task | Result | Implication |
 |---|---|---|---|
@@ -753,6 +760,9 @@ they delineate three concrete narrowings.
 | **F-092** | Claim 31 Lyapunov stability under real-data adversarial burst perturbation (NASA HTTP w50 + 1000 rare-target events) | Boundedness PASS ($\alpha_{\text{edge}} \in [1.0, 2.5]$ all 100 windows); Recovery PASS (diff $0.0043$ at w55); Functional FAIL (recall_perturbed $/$ recall_baseline $= 0.000 / 0.4592$) | **H_L PARTIAL (2/3)**: Controller mechanism robust, but adversarial degree inflation demotes natural rare resources from Rare to Core layer. **4th self-refutation pattern** (F-070 / F-087 / F-091 sister); production deploy needs upstream rate-limit / provenance defense layer |
 | **F-093** | NASA F-072 anchor robustness to rare code subset; 5 variants × 5 conditions = 25 runs at $\alpha_{\text{core}}=2.0$ canonical | V1 (4xx+5xx) $\Delta = +3.06$ pt; V2 (4xx only) and V4 (404 only) identical $+3.06$ pt; V3 (5xx only) and V5 (500 only) trivial (n_rare $= 0$, NASA log has zero 5xx responses) | **H_R PASS (3/5) + anchor sharpening category** (distinct from self-refutation): F-072 anchor is *substantively* "rare = 404 page-not-found pattern driven" on this dataset; KDF captures rare resource pattern, not rare code set. F-072 anchor specificity now sharpened on 3 axes (domain via F-087, $\alpha$ via F-091, rare type via F-093). Generalization to 5xx-containing logs is future work |
 | **F-094** | Apache recurring-rare positive replication of F-072 streaming benefit; same Apache dataset (LogHub Apache.log, 31,062 records) as F-087 with rare def flipped to recurring (freq $\ge 5$); 2 rare defs × 5 conditions = 10 runs at $\alpha_{\text{core}}=2.0$ canonical | Sanity (V_one-shot, F-087 reproduce): $\Delta = -13.04$ pt $\pm 0.0$ pt (preprocessing / build env consistent); Main (V_recurring): $\Delta = +3.67$ pt $> +1.0$ pt threshold | **H_R+ PASS** + **positive direction completion of the self-refutation arc**: F-072 anchor's true axis (recurring rare structure, hypothesized via F-093 structural reading) is empirically replicated cross-domain (NASA $+3.06$ + Apache recurring $+3.67$). 5 patterns now (4 narrow + 1 positive); scope of Claim 14 streaming benefit narrow but durable on recurring-rare axis $\times \alpha=2.0 \times $ NASA-Apache-homotype log dataset |
+| **F-097** | BGL HW kernel log recurring-rare cross-domain N=3 expansion of F-094; LogHub BGL Blue Gene/L (300,000-line subsample, anomaly subgraph 79,641 records, 8 unique content templates); recurring def freq $\ge 5$ at $\alpha_{\text{core}}=2.0$ canonical | Main (V_recurring): $\Delta_{\text{recurring}} = +33.33$ pt $\gg +1.0$ pt threshold (C0=0.0 → C2/C4=0.333, 1/3 rare templates retained); Sanity (V_one-shot): $\Delta = +0.00$ pt inconsistent with F-087 / F-094 negative direction | **H_R+ PASS** + **2nd positive replication, cross-family**: durable recurring-rare axis now N=3 (NASA HTTP + Apache error + BGL HW kernel), expanding from web access log family to HW kernel log family. **Sanity inconsistent narrows one-shot disposal mechanism to web log family with rich resource alphabet** — BGL alphabet of 8 anomaly templates is too small for streaming discrimination room. Caveat: $n_{\text{rare}} = 3$, recall granularity $\{0, 1/3, 2/3, 1\}$, direction unambiguous at low-N power |
+| **F-099** | v1 / v2 / v3 router design-space characterization across 5 cells × 3 variants (4 paid LongMemEval+LoCoMo + 1 local LongMemEval, deterministic post-hoc replay); v1 = precision-only, v2 = precision + length≥100, v3 = length-only | H_v1_paid PASS_negative (LongMemEval paid both models: F-053 $\Delta_{v1} = -11.60$ pt $p=10^{-7}$, F-059 $\Delta_{v1} = -13.00$ pt $p=10^{-10}$); H_v1_local REPRODUCED (F-096 LongMemEval local $\Delta_{v1} = +6.26$ pt deterministic); Sanity 4/4 paid v2 cells match F-060 published values within $\pm 0.0004$; v3 (length-only) matches v2 ($+9.66 / +22.43$ pt) on LoCoMo cells | **F-099 anchors v2's length≥100 component necessity** via indirect logic (v1 -11/-13 pt vs v2 0 pt on paid LongMemEval): without the length filter, routing precision queries to KDF in paid setting is actively harmful. **Important caveat: F-099 does NOT establish precision component's independent necessity** — v3 length-only matches v2 on LoCoMo, suggesting precision filter may be redundant once length filter holds. v1 is **not a product candidate**. First test case of pre-reg template `_template_pre_reg.md` |
+| **F-100** | HDFS distributed file system log empirical verification of recurring-rare cross-domain N=4 expansion; Loghub HDFS_v1 (100,000 BlockId subsample, 2.35M edges, 26 templates, 4.90% anomaly); 3 hypotheses (H_R+_literal recurring, H_anomaly HDFS-native, Sanity V_one-shot) at $\alpha_{\text{core}}=2.0$ canonical | H_R+_literal $\Delta = -23.08$ pt **FAIL** (recurring rare benefit refuted on HDFS); H_anomaly $\Delta = -4.30$ pt **FAIL** (HDFS-native anomaly preservation FAIL); Sanity $\Delta = +0$ pt inconsistent (one-shot disposal absent, reinforcing F-097 small-alphabet caveat) | **Both empirically FAILED** + **5th narrowing pattern**: cross-domain durability arc narrowed to **web access log family + HW kernel log family** specific (NASA HTTP + Apache error log + BGL HW kernel) — distributed file system log domain NOT covered by current claims. N=4 not achieved. 6-pattern arc → **7-pattern arc** (5 narrow + 2 positive). Pre-reg template second high-severity test case: §0.1 anchor constraint predicted small-alphabet caveat would re-confirm → empirically borne out; §0.3 observation/interpretation separation prevented narrative drift under both-FAIL outcome |
 
 The combined picture: KDF's empirically validated core is now **four
 product candidates** (Obsidian / MovieLens niche / Mem0 hybrid Router /
@@ -761,21 +771,28 @@ Git Core preservation) plus the F-086 γ domain-fit framework. The v1
 boundary at the cost of three specific positionings (direct
 SOTA-beating, `bias-detector` as commercial predictor, and Claim 10 /
 Claim 14 / Claim 31 universal value claims — all narrowed to
-domain-conditional or scope-conditional form via the **four-finding
-self-refutation pattern** F-070 / F-087 / F-091 / F-092). **F-093 (v2.1)
-adds an "anchor sharpening" category distinct from self-refutation**:
-the F-072 anchor is now resolved at higher resolution as
-"NASA-recurring-rare $\times \alpha=2.0 \times $ 404-pattern driven".
-**F-094 (v2.2) completes the arc on the positive direction**: the
-recurring-rare axis hypothesized via F-093 structural reading is
-empirically replicated cross-domain ($+3.67$ pt on Apache same dataset
-with rare def flipped to freq $\ge 5$, sanity F-087 reproduce $\pm 0.0$
-pt). Five patterns total (4 narrow + 1 positive); Claim 14 streaming
-benefit is now empirically supported on N=2 datasets (NASA + Apache)
-when restricted to recurring rare. Generalization to log domains
-beyond access logs remains future work. See
-[`docs/PHASE_2_RETROSPECTIVE.md`](../PHASE_2_RETROSPECTIVE.md) for
-the single-document retrospective.
+domain-conditional or scope-conditional form via the **five-finding
+self-refutation pattern** F-070 / F-087 / F-091 / F-092 / F-100). **F-093
+(v2.1) adds an "anchor sharpening" category distinct from
+self-refutation**: the F-072 anchor is now resolved at higher
+resolution as "NASA-recurring-rare $\times \alpha=2.0 \times $
+404-pattern driven". **F-094 (v2.2) opens the positive direction of
+the arc**: the recurring-rare axis hypothesized via F-093 structural
+reading is empirically replicated cross-domain ($+3.67$ pt on Apache
+same dataset with rare def flipped to freq $\ge 5$, sanity F-087
+reproduce $\pm 0.0$ pt). **F-097 (v2.5) extends positive replication to
+N=3 cross-family** (BGL HW kernel log $+33.33$ pt), and **F-100 (v2.7)
+attempts but fails the N=4 expansion** to distributed file system log
+(HDFS H_R+_literal $-23.08$ pt FAIL, H_anomaly $-4.30$ pt FAIL),
+narrowing cross-family durability to web access log family + HW kernel
+log family specific. The full arc is now **7 patterns total = 5
+narrowing + 2 positive**; Claim 14 streaming benefit is empirically
+supported on N=3 datasets (NASA HTTP + Apache error + BGL HW kernel)
+when restricted to recurring rare in those two log families.
+Generalization to distributed file system log family is empirically
+ruled out for current claims, and other log families remain future
+work. See [`docs/PHASE_2_RETROSPECTIVE.md`](../PHASE_2_RETROSPECTIVE.md)
+for the single-document retrospective.
 
 **Foreign baseline anchor (Mem0 family, N=3 empirical cells)**:
 
@@ -863,6 +880,8 @@ Result (v2 = precision + long context):
 *Note on precision: the columns "Mem0 alone" and "Router (v2)" are 3-decimal rounded for readability; the "gain" column is computed from the 4-decimal raw scores and may therefore differ from naive subtraction of the displayed values by ±0.001.*
 
 The Router is **greater than or equal to Mem0 alone across all four cells** (strictly-better property); on long-conversation precision queries, the improvement reaches $+22.4$ pt. LLM-API call count is reduced by $97\%$ on long conversations. This is the first quantitative validation of this paper's architectural thesis that KDF should be designed as **a complementary layer to Mem0, not a replacement**.
+
+**[v2.6]** F-099 router design-space characterization (5 cells × 3 variants, deterministic post-hoc replay) anchors the **necessity of v2's length≥100 component**: the v1 variant (precision-only, no length filter) is significantly worse on paid LongMemEval ($-11.6$ / $-13.0$ pt, $p < 10^{-7}$) because routing precision queries to KDF in the paid setting (where Mem0 $\gg$ KDF) is actively harmful without the length gate. The v3 variant (length-only, no precision filter) matches v2 ($+9.66 / +22.43$ pt) on LoCoMo cells, suggesting the precision filter may be redundant once the length filter holds on these cells; precision filter independent necessity remains evaluated by other anchors, not by F-099. v1 is **not a product candidate** (paid hurt significant, local help at sub-noise floor in F-096).
 
 - **KDF's benchmark-dependent behavior**: in long conversations (LoCoMo's 300–700 turns/conv, with date/time information scattered across raw turns), KDF's raw-turn retention is advantageous; in short dialogues (LongMemEval's 20–30 turns/Q), Mem0's fact extraction dominates.
 

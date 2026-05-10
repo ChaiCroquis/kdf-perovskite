@@ -81,11 +81,14 @@
 \affil{ORCID: \href{https://orcid.org/0009-0006-8943-9344}
                    {0009-0006-8943-9344}}
 
-\date{v0.3, 2026-04-19\\
+\date{v0.4 (v2.7 Phase 2 Retrospective integrated), 2026-05-10\\
       Patent JP 2026-027032 (filed 2026-02-24)\\
       Code: \href{https://github.com/ChaiCroquis/kdf-perovskite}
                  {github.com/ChaiCroquis/kdf-perovskite}
-      (PolyForm Noncommercial 1.0.0; commercial license separate)}
+      (PolyForm Noncommercial 1.0.0; commercial license separate)\\
+      Reproducibility: \href{https://github.com/ChaiCroquis/kdf-perovskite/blob/main/docs/REPRODUCIBILITY.md}
+                            {docs/REPRODUCIBILITY.md}
+      (F-001--F-100 reproducer index, Quick Start: F-072 / F-087 / F-097)}
 
 % ============================================================================
 % Document body
@@ -131,8 +134,27 @@ analogy, synthetic pairs, LoCoMo streaming): specific values require
 domain-specific calibration. Additional honest negatives include OSS issue
 generalization $\times 1.00$ across three repositories, paper rediscovery
 $\times 0.83$, and Gaussian-Process inducing-point selection failures.
-Applicability is predictable a priori via a zero-dependency
-\texttt{bias-detector} metric.
+
+\medskip
+\textbf{v2 update (2026-04-29 -- 2026-04-30, see Version 2 Addendum):}
+Phase 2 / Phase 2.5 systematic testing produced a \textbf{7-pattern
+empirical arc} (5 narrowing findings + 2 positive cross-domain
+replications): the streaming benefit is narrowed to \textit{temporally
+recurring rare events} (F-087 Apache replication: $-13.04$ pt sign
+reversal); the canonical $\alpha = 2.0$ is narrowed to NASA-recurring-rare
+specific (F-091); Claim 31 functional rare protection is narrowed to
+non-adversarial settings (F-092); the \texttt{bias-detector} commercial
+predictor path is withdrawn (F-090: $5/11 = 45.5\% \ll 70\%$ pre-registered
+threshold); direct SOTA-beating positioning is retracted (F-073 / F-074 /
+F-075 LOSS); and the recurring-rare benefit is empirically replicated
+cross-domain on $N = 3$ datasets (NASA HTTP $+3.06$ pt + Apache error
+$+3.67$ pt + BGL HW kernel $+33.33$ pt; F-094 / F-097 PASS) but
+\textbf{FAILS} on distributed file system log (F-100 HDFS:
+H\_R+\_literal $-23.08$ pt, H\_anomaly $-4.30$ pt) --- narrowing
+cross-domain coverage to \textbf{web access log family + HW kernel log
+family} specific. The v2 grounded position is four product candidates
+(Obsidian / MovieLens niche / Mem0 hybrid Router / Git Core
+preservation) plus the F-086 $\gamma$ domain-fit predictor.
 
 \medskip
 \noindent\textbf{Keywords:} information preservation, graph metabolism, rarity
