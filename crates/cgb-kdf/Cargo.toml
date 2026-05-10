@@ -20,7 +20,7 @@ rayon = { workspace = true }
 # stream from seed=0), which matters for Claim 12 (Bernoulli pruning) and
 # the KSG surrogate test.
 rand = { workspace = true }
-rand_chacha = "0.3"
+rand_chacha = "0.10"
 
 [dev-dependencies]
 proptest = "1.5"
