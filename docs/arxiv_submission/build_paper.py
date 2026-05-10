@@ -1,5 +1,35 @@
 #!/usr/bin/env python3
 """
+[DEPRECATED 2026-05-10] このスクリプトを実行すると paper.md が v1 状態に巻き戻る。
+
+paper.md は v2.7 (Phase 2 Retrospective integrated, Zenodo DOI 10.5281/zenodo.20104836,
+2026-05-10 publish) 以降、section_*_en.md を経由せず直接編集されている。section_*_en.md
+は v1 時点 (2026-04-19) で固定されており、本 script を実行すると v2.7 の Addendum / §5
+table F-097/F-099/F-100 行 / Abstract v2 update / §6.4 Limitations v2.5/v2.7 / §7
+Conclusion router F-099 段落 / Reproducibility cross-ref が **すべて消失** する。
+
+実行禁止条件:
+  - paper.md が現在 v2.7 以降 (head に "## Version 2 Addendum" がある)
+  - section_*_en.md が v1 時点のまま (date < 2026-04-30)
+
+回復用途のみ許可 (例: 万一 paper.md が破損した場合、v1 状態に戻して再 v2 作業を始める
+緊急 fallback): 明示確認後にのみ手動実行。
+
+正規 build pipeline (v2.7 以降):
+  1. paper.md は人手で直接編集 (section_*_en.md は触らない)
+  2. build_arxiv.sh で pandoc + xelatex 経由で paper.pdf 生成
+     (extraction 起点は "## Version 2 Addendum"、Abstract update + Addendum も PDF
+     にレンダされる)
+  3. arxiv_submission.tar.gz は build_arxiv.sh が paper.tex + paper_body.tex +
+     references.bib をまとめる
+
+deprecated 経緯: project_kdf_phases.md memory line "post-publish housekeeping" entry
+(2026-05-10) 参照。
+
+---
+
+(原文 docstring、historical reference として保持)
+
 Assemble the arxiv-ready paper.md by concatenating section_*_en.md files,
 stripping translator's notes and Japanese back-translation blocks.
 
@@ -115,6 +145,37 @@ def extract_title_and_abstract(path: Path) -> tuple[str, str]:
 
 
 def main() -> int:
+    # [DEPRECATED 2026-05-10] paper.md v2.7 状態を保護する Stop Gate
+    # 全文 scan でマーカ検出 (head[:N] だと multi-byte char + 3000 char 超の
+    # 位置に "## Version 2 Addendum" がある case を見逃す、2026-05-10 確認済 bug)
+    paper_md_path = BASE / "paper.md"
+    if paper_md_path.exists():
+        full = paper_md_path.read_text(encoding="utf-8")
+        v27_markers = [
+            "## Version 2 Addendum",
+            "v2 update (2026-04",
+            "7-pattern empirical arc",
+            "F-100",
+            "F-097",
+        ]
+        hits = [m for m in v27_markers if m in full]
+        if hits:
+            print("=" * 70, file=sys.stderr)
+            print("ABORT: build_paper.py is DEPRECATED as of 2026-05-10.", file=sys.stderr)
+            print(f"paper.md contains v2.x markers: {hits}", file=sys.stderr)
+            print("Running this script would OVERWRITE v2.x content with v1", file=sys.stderr)
+            print("content from section_*_en.md (which are frozen at 2026-04-19).", file=sys.stderr)
+            print("", file=sys.stderr)
+            print("If you really want to regenerate paper.md from sections (e.g. as an", file=sys.stderr)
+            print("emergency fallback after corruption), run with FORCE=1:", file=sys.stderr)
+            print("    FORCE=1 python build_paper.py", file=sys.stderr)
+            print("", file=sys.stderr)
+            print("See docstring at top of this file for deprecation rationale.", file=sys.stderr)
+            print("=" * 70, file=sys.stderr)
+            import os
+            if os.environ.get("FORCE") != "1":
+                return 2
+
     parts: list[str] = []
 
     title, abstract = extract_title_and_abstract(BASE / "title_and_abstract_v2.md")

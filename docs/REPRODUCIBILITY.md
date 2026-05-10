@@ -228,16 +228,19 @@ done
 # 期待: "OK" / "MISS" 混在、MISS は best-effort scope 外と認識して skip 可
 ```
 
-| F-xxx | 結果 | code path (best-effort) | run command (best-effort) |
+| F-xxx | 結果 | code path (実 path、reader 検証要) | entry point / 注 |
 |---|---|---|---|
-| F-061 | decisive predictor establishment (path-based wins, density-based fails) | `experiments/cross_domain_validation/` (4 synthetic graphs) | `python experiments/cross_domain_validation/run_4graphs.py` |
-| F-062 | Git commit pruning: tokio merge recall 99.5% | `experiments/git_commit_pruning/` | `python experiments/git_commit_pruning/run_tokio.py` |
-| F-063 | GP inducing points: KDF < Random < KMeans | `experiments/gp_inducing/` | `python experiments/gp_inducing/run.py` |
-| F-064 | Python call graph API preservation: KDF 16% vs Random 41% | `experiments/python_callgraph/` | `python experiments/python_callgraph/run_flask.py` |
-| F-065 | git pruning 3-repo replication (tokio/pytest/lodash) | `experiments/git_commit_pruning/` | `python experiments/git_commit_pruning/run_3repos.py` |
-| F-076, F-077 | Git archival cross-repo expansion N=9 | `experiments/git_archival_n9/` | `python experiments/git_archival_n9/run_all.py` |
-| F-083 | KDF F1 honest measurement (Rare layer ≈ degree-rank) | `experiments/f1_benchmark/` | `python experiments/f1_benchmark/run.py` |
-| F-084 | Biological PPI + OncoKB γ=74% < 95% threshold | `experiments/biological_ppi/` | `python experiments/biological_ppi/run_oncokb.py` |
+| F-061 | decisive predictor establishment (path-based wins, density-based fails) | (path 不明確、`experiments/` 内の合成 graph 検証 script を grep) | reader 独立構築 (4 synthetic graphs に直接 KDF select 適用) |
+| F-062, F-065, F-076/F-077 | Git commit pruning + cross-repo expansion | `experiments/git_real_kdf/` (実 path) | dir 内 README / scripts を確認、tokio / pytest / lodash の各 repo 上で merge recall 計測 |
+| F-063 | GP inducing points: KDF < Random < KMeans | (path MISS、reader 独立構築) | scikit-learn GaussianProcessRegressor + California housing dataset で Random / KMeans / KDF を比較 |
+| F-064 | Python call graph API preservation: KDF 16% vs Random 41% | (path MISS、reader 独立構築) | `flask` codebase の Python `ast` で call graph 構築 → KDF select |
+| F-073 | Wikipedia orphan article preservation (Phase 2 LOSS) | `experiments/wikipedia_phase2/evaluate.py` | data/ 配下に simplewiki dump 必要、`python evaluate.py` |
+| F-074 | BGL supercomputer anomaly templates (Phase 2 LOSS) | `experiments/bgl_phase2/evaluate.py` | data/ に LogHub BGL.log 必要 |
+| F-075 | Citation interdisciplinary bridge detection (Phase 2 LOSS) | `experiments/citation_phase2/evaluate.py` | data/ に arXiv citation graph 必要 |
+| F-082, F-085 | MovieLens niche genre γ-check 100% (6 genres) | `experiments/verify_movielens_multi_genre.py` (実 path、単一 file) | `python experiments/verify_movielens_multi_genre.py` |
+| F-083 | KDF F1 honest measurement (Rare layer ≈ degree-rank) | `experiments/f1_vs_literature.py` (実 path) | `python experiments/f1_vs_literature.py` |
+| F-084 | Biological PPI + OncoKB γ=74% < 95% threshold | (path MISS、reader 独立構築) | STRING PPI + OncoKB cancer gene list で γ-check |
+| F-086 cross-family | hub-peripheral / hub-biased / peer-network 判別 | `experiments/cross_family/` (実 path、dir) | dir 内 scripts を確認 |
 
 ---
 
