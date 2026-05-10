@@ -14,6 +14,16 @@ updates:
     labels:
       - "dependencies"
       - "rust"
+    ignore:
+      # Major version bumps with breaking API surface; declined 2026-05-10
+      # after empirical CI failure (cargo test/clippy across all OS targets).
+      # Re-evaluate when a dedicated migration sprint is scheduled.
+      - dependency-name: "criterion"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "rand"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "ureq"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions versions (e.g. dtolnay/rust-toolchain, EmbarkStudios/cargo-deny-action).
   - package-ecosystem: "github-actions"
