@@ -12,26 +12,35 @@ abstract: >
   technique for finite-resource information preservation. Selected nodes are
   preserved verbatim while unselected nodes are discarded, distinguishing KDF
   from content-transforming methods such as LLM-based fact extraction.
-  Cross-domain evidence from 67 verified findings; includes transparent
-  self-refutation of the patent's canonical values across four benchmarks.
+  Cross-domain evidence from 100+ verified findings (F-001 -- F-100) including
+  the Phase 2 / Phase 2.5 7-pattern empirical arc (5 narrowing findings + 2
+  positive cross-domain replications). Streaming benefit narrows to recurring
+  rare events on web access log + HW kernel log family; FAILS on distributed
+  file system log domain (F-100 HDFS). Includes transparent self-refutation of
+  the patent's canonical values across four benchmarks. A Reproducibility
+  Guide (REPRODUCIBILITY.md) provides single-index mapping of all F-xxx
+  findings to reproducer code, run commands, and expected output.
 authors:
   - family-names: Kuroki
     given-names: Yasuhiro
     orcid: https://orcid.org/0009-0006-8943-9344
     affiliation: Independent researcher, Japan
-version: v0.3
-date-released: "2026-04-19"
+version: v0.4
+date-released: "2026-05-10"
 license: LicenseRef-PolyForm-Noncommercial-1.0.0
 license-url: https://polyformproject.org/licenses/noncommercial/1.0.0/
 repository-code: https://github.com/ChaiCroquis/kdf-perovskite
-url: https://doi.org/10.5281/zenodo.19651035
+url: https://doi.org/10.5281/zenodo.19651034
 identifiers:
   - type: doi
-    value: 10.5281/zenodo.19651035
-    description: Zenodo preprint (v1)
-  - type: doi
     value: 10.5281/zenodo.19651034
-    description: Zenodo concept DOI (all versions)
+    description: Zenodo concept DOI (all versions, always resolves to latest)
+  - type: doi
+    value: 10.5281/zenodo.20104836
+    description: Zenodo preprint v2.7 (Phase 2 retrospective integrated, latest)
+  - type: doi
+    value: 10.5281/zenodo.19651035
+    description: Zenodo preprint v1 (frozen pre-Phase-2 snapshot)
   - type: other
     value: JP 2026-027032
     description: Japanese Patent Application (filed 2026-02-24)
@@ -47,6 +56,9 @@ keywords:
   - self-refutation
   - Knowledge Decay Framework
   - KDF
+  - LLM memory
+  - streaming log analysis
+  - patent reproducibility
 preferred-citation:
   type: article
   title: >
@@ -57,7 +69,10 @@ preferred-citation:
       given-names: Yasuhiro
       orcid: https://orcid.org/0009-0006-8943-9344
   year: 2026
-  month: 4
+  month: 5
   journal: Zenodo (preprint)
-  doi: 10.5281/zenodo.19651035
-  url: https://doi.org/10.5281/zenodo.19651035
+  doi: 10.5281/zenodo.19651034
+  url: https://doi.org/10.5281/zenodo.19651034
+  notes: >
+    Concept DOI; latest version is v2.7 (10.5281/zenodo.20104836). Patent:
+    JP 2026-027032 (filed 2026-02-24).

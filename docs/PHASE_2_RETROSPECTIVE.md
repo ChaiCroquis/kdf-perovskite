@@ -10,7 +10,7 @@
 
 > **Phase 1 の "broad applicability" 仮説は Phase 2 で empirical に narrow され、現在の KDF は「4 つの structural-niche 製品 + domain-fit predictor + 5 narrow + 2 positive epistemic anchor + F-072 anchor の 3 軸高解像 specificity + Foreign baseline N=3 + 1 honest infrastructure record + cross-domain durability boundary at web+HW family(N=4 attempt FAILED for distributed file system log)」という narrow but durable(durable 側は cross-family 物理証拠 N=3 で **boundary empirically established**)形に arc 完結した。**
 
-「狭くなった」と「弱くなった」は別。Phase 2 を経て **どこで効くか / どこで効かないか** が事前判別できる framework が手に入り、4 件の self-refutation(F-070 sandwich / F-087 streaming / F-091 α=2 / F-092 Claim 31 functional)が paper の honesty-first stance を支える epistemic anchor として揃い、F-093 で F-072 anchor の真の dependency が 3 軸(domain / α / rare type)で sharpen され、**F-094 で recurring rare 軸が cross-domain N=2(NASA + Apache)で positive replication、F-097 で N=3(BGL HW kernel log family)に拡張**されたので、商用 deploy の確実性は **上がった**。失った主張のうち、研究者として最も誠実に向き合うべきは ① F-072 streaming benefit の汎用性、② bias-detector 商材 path、③ Claim 10 / Claim 31 の universal claim form の 3 件。F-093 は別 category(narrowing でなく anchor 解像度向上)、F-094 / F-097 は更に別 category(narrowing でなく durable 側の cross-domain N=3 物理証拠 = positive direction)、F-095 / F-096 は **第 4 category infrastructure honest record**(F-060 paid finding の local replication 試行が 3B environment で sub-noise floor、stronger local LLM future work)。
+「狭くなった」と「弱くなった」は別。Phase 2 を経て **どこで効くか / どこで効かないか** が事前判別できる framework が手に入り、**5 件の self-refutation**(F-070 sandwich / F-087 streaming / F-091 α=2 / F-092 Claim 31 functional / **F-100 distributed FS log scope-out**)が paper の honesty-first stance を支える epistemic anchor として揃い、F-093 で F-072 anchor の真の dependency が 3 軸(domain / α / rare type)で sharpen され、**F-094 で recurring rare 軸が cross-domain N=2(NASA + Apache)で positive replication、F-097 で N=3(BGL HW kernel log family)に拡張、F-100 で N=4 拡張試行が distributed file system log で empirically FAILED し durability boundary を web+HW family specific に確定**されたので、商用 deploy の確実性は **上がった**。失った主張のうち、研究者として最も誠実に向き合うべきは ① F-072 streaming benefit の汎用性、② bias-detector 商材 path、③ Claim 10 / Claim 31 の universal claim form、④ cross-domain durability の distributed FS log domain への generalize の 4 件。F-093 は別 category(narrowing でなく anchor 解像度向上)、F-094 / F-097 は更に別 category(narrowing でなく durable 側の cross-domain N=3 物理証拠 = positive direction)、F-095 / F-096 は **第 4 category infrastructure honest record**(F-060 paid finding の local replication 試行が 3B environment で sub-noise floor、stronger local LLM future work)。詳細 7-pattern arc table は §16 F-100 maintenance log 参照。
 
 ---
 
@@ -106,9 +106,9 @@ NASA HTTP streaming に **window 50 で rare-target 1000 events** を adversaria
 
 ---
 
-## 4-pattern self-refutation 蓄積(本 retrospective の epistemic anchor)
+## 5-pattern self-refutation 蓄積(本 retrospective の epistemic anchor、F-100 で 5 件に拡張)
 
-F-087 + F-091 + F-092 の追加で、paper の "honesty-first" stance を支える self-refutation 例が **4 件 同型 pattern** で揃った:
+F-087 + F-091 + F-092 + **F-100** の追加で、paper の "honesty-first" stance を支える self-refutation 例が **5 件 同型 pattern** で揃った(positive 2 件 F-094/F-097 と合わせて 7-pattern arc を構成、§16 参照):
 
 | F-xxx | 機構 | specific value / application |
 |---|:---:|:---:|
@@ -210,10 +210,11 @@ KDF の position を 3 つの否定形 + 3 つの肯定形 で記述する:
 
 本 retrospective は以下の公開文書と整合する形で位置づけられる:
 
-- [VERIFIED_FINDINGS.md](VERIFIED_FINDINGS.md) — F-073〜F-090 の raw entry(本 retrospective が要約する詳細)
+- [VERIFIED_FINDINGS.md](VERIFIED_FINDINGS.md) — F-073〜F-100 の raw entry(本 retrospective が要約する詳細)
 - [paper_draft.md](paper_draft.md) — §1.4 "Universality と novelty の緊張" で同 narrowing が paper 形式で表現済
-- [arxiv_submission/paper.md](arxiv_submission/paper.md) — §F-072 paragraph(line 502-505)は **F-087 narrowing 反映が必要**、別 corrigendum / v2 upload で対応予定
-- [PUBLIC_SUMMARY.md](PUBLIC_SUMMARY.md) — 2026-04-17 時点 snapshot、P7 bias-detector 項目は F-090 で撤回反映が必要(別 commit で patch)
+- [arxiv_submission/paper.md](arxiv_submission/paper.md) — **v2.7 で F-087/F-091/F-092/F-100 narrowing + F-094/F-097 positive replication 全反映済**(Zenodo DOI: [10.5281/zenodo.20104836](https://doi.org/10.5281/zenodo.20104836)、2026-05-10 publish)
+- [REPRODUCIBILITY.md](REPRODUCIBILITY.md) — F-001〜F-100 reproducer index、Quick Start で F-072 / F-087 / F-097 を grep 機械判定付きで実行可
+- [PUBLIC_SUMMARY.md](PUBLIC_SUMMARY.md) — 2026-04-17 時点 snapshot、P7 bias-detector 項目は F-090 で撤回反映済
 - [kdf_characteristics.md](kdf_characteristics.md) — F-086 γ predictor を含む domain-fit framework は本 retrospective と整合
 - [extension_ideas.md](extension_ideas.md) — Selection predictor 5 質問 self-check は F-086 γ の sister tool として残る
 
@@ -225,10 +226,14 @@ KDF の position を 3 つの否定形 + 3 つの肯定形 で記述する:
 
 直近 next step 候補(優先度順):
 
-1. arxiv_submission/paper.md §F-072 段落の F-087 narrowing 反映(corrigendum or v2)
-2. PUBLIC_SUMMARY.md の P7 bias-detector 項目を「F-090 で撤回」マーカーに変更(完了)
-3. F-088 / F-089 streaming(別 sprint で proper rare 定義設計)
-4. Preprocessor thesis empirical demo(collaborator 確保時)
+1. ~~arxiv_submission/paper.md §F-072 段落の F-087 narrowing 反映~~ → **完了**(v2.7 publish 2026-05-10、DOI 10.5281/zenodo.20104836)
+2. ~~PUBLIC_SUMMARY.md の P7 bias-detector 項目「F-090 撤回」マーカー~~ → 完了
+3. ~~README.md / CITATION.cff の v1 → v2.7 DOI bump~~ → **完了**(2026-05-10)
+4. F-088 / F-089 streaming(別 sprint で proper rare 定義設計、HPC.log / Linux.log)
+5. F-045 BEIR SciFact reproducer 整備(paper §7 で direct cited、別 sprint 候補)
+6. Preprocessor thesis empirical demo(collaborator 確保時)
+7. arXiv initial submission(paper.tar.gz は ready、v2.7 anchor 取得済、user 操作領域)
+8. PCT 弁理士 consult(2027-02-24 デッドライン、Zenodo v2.7 を input として活用可)
 
 ## §10(2026-04-29 追記)F-091 + F-092 反映後の追加 maintenance log
 

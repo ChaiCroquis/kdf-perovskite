@@ -5,7 +5,7 @@
 [![Commercial](https://img.shields.io/badge/Commercial-Contact%20author-red.svg)](COMMERCIAL.md)
 [![Patent filed](https://img.shields.io/badge/Patent-2026--027032-informational)](docs/patent/SPEC.md)
 [![Spec frozen](https://img.shields.io/badge/Spec-FROZEN-brightgreen)](docs/patent/SPEC.md)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19651035.svg)](https://doi.org/10.5281/zenodo.19651035)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19651034.svg)](https://doi.org/10.5281/zenodo.19651034)
 
 > **Note on language / 言語について** — The author is a Japanese native speaker, so most in-repository documentation is originally written in Japanese. The English sections of this README (and the preprint paper) are either written in English first or translated from Japanese. If there is any discrepancy between the English translation and the Japanese original, the **Japanese text is authoritative** unless the document explicitly states it is English-first (the preprint paper on Zenodo is English-first).
 >
@@ -19,10 +19,11 @@
 
 **KDF (Knowledge Decay Framework)** is a Rust implementation of a **deterministic graph-compression technique for finite-resource information preservation**. Given a graph and a retention budget, selected nodes are preserved verbatim while unselected ones are discarded, **distinguishing KDF from content-transforming methods such as LLM-based fact extraction**.
 
-- **Preprint paper (Zenodo)**: https://doi.org/10.5281/zenodo.19651035 (31 pages, English)
+- **Preprint paper (Zenodo)**: https://doi.org/10.5281/zenodo.19651034 (concept DOI, always resolves to latest version; current latest = **v2.7**, 46 pages, English) — v1 frozen at https://doi.org/10.5281/zenodo.19651035 (31 pages)
 - **Patent**: JP 2026-027032 (filed 2026-02-24; JPO auto-publication expected ~2027-08-24)
 - **Reference implementation**: [`crates/cgb-kdf/`](crates/cgb-kdf/) — 50 patent claims, 56 dedicated tests
-- **Verified findings**: [`docs/VERIFIED_FINDINGS.md`](docs/VERIFIED_FINDINGS.md) — 67 F-xxx records, failures and self-refutations included
+- **Verified findings**: [`docs/VERIFIED_FINDINGS.md`](docs/VERIFIED_FINDINGS.md) — 100+ F-xxx records (F-001 -- F-100), failures and self-refutations included
+- **Reproducibility Guide**: [`docs/REPRODUCIBILITY.md`](docs/REPRODUCIBILITY.md) — single-index mapping of F-xxx findings to reproducer code, run commands, expected outputs; Quick Start covers F-072 / F-087 / F-097
 
 ### Three pillars
 
@@ -70,7 +71,7 @@ See the [日本語版](#日本語版) section below for the full Japanese docume
 
 ### Citation
 
-**For general citation, use the concept DOI** (`10.5281/zenodo.19651034`) which always resolves to the latest version. v1-specific citation (`10.5281/zenodo.19651035`) freezes a snapshot before Phase 2 narrowing — useful only if you specifically want to cite the v1 state.
+**For general citation, use the concept DOI** (`10.5281/zenodo.19651034`) which always resolves to the latest version (currently **v2.7**, `10.5281/zenodo.20104836`). Version-specific citations: v1 (`10.5281/zenodo.19651035`) freezes a snapshot before Phase 2 narrowing; v2.7 (`10.5281/zenodo.20104836`) integrates the Phase 2 / Phase 2.5 7-pattern empirical arc and adds the Reproducibility Guide.
 
 **General citation (concept DOI, recommended):**
 
@@ -88,7 +89,24 @@ See the [日本語版](#日本語版) section below for the full Japanese docume
 }
 ```
 
-**Version-specific citation (v1 only, frozen pre-Phase-2 state):**
+**Version-specific citation (v2.7, post Phase 2 retrospective):**
+
+```bibtex
+@misc{kuroki2026kdf-v2.7,
+  author       = {Kuroki, Yasuhiro},
+  title        = {{KDF: A Deterministic Architecture for Finite-Resource
+                   Information Preservation---Cross-Domain Evidence and
+                   Self-Refutation of Canonical Values}},
+  year         = {2026},
+  publisher    = {Zenodo},
+  version      = {v0.4 (v2.7)},
+  doi          = {10.5281/zenodo.20104836},
+  url          = {https://doi.org/10.5281/zenodo.20104836},
+  note         = {Preprint v2.7, integrates Phase 2 / Phase 2.5 7-pattern empirical arc (F-073--F-100) and Reproducibility Guide. Patent: JP 2026-027032 (filed 2026-02-24).}
+}
+```
+
+**Version-specific citation (v1, frozen pre-Phase-2 state):**
 
 ```bibtex
 @misc{kuroki2026kdf-v1,
@@ -125,8 +143,10 @@ A zero-dependency Rust crate [`crates/bias-detector/`](crates/bias-detector/) co
 
 ### Further reading
 
-- [Preprint paper (Zenodo, 31 pages)](https://doi.org/10.5281/zenodo.19651035)
-- [`docs/VERIFIED_FINDINGS.md`](docs/VERIFIED_FINDINGS.md) — 67 F-xxx verified findings (Japanese)
+- [Preprint paper (Zenodo, latest = v2.7, 46 pages)](https://doi.org/10.5281/zenodo.19651034) — concept DOI; latest version DOI is [`10.5281/zenodo.20104836`](https://doi.org/10.5281/zenodo.20104836)
+- [`docs/REPRODUCIBILITY.md`](docs/REPRODUCIBILITY.md) — F-001 -- F-100 reproducer index (Quick Start: F-072 / F-087 / F-097)
+- [`docs/PHASE_2_RETROSPECTIVE.md`](docs/PHASE_2_RETROSPECTIVE.md) — Phase 2 narrowing arc retrospective (English)
+- [`docs/VERIFIED_FINDINGS.md`](docs/VERIFIED_FINDINGS.md) — 100+ F-xxx verified findings (Japanese)
 - [`docs/PUBLIC_SUMMARY.md`](docs/PUBLIC_SUMMARY.md) — public summary (Japanese)
 - [`docs/patent/SPEC.md`](docs/patent/SPEC.md) — authoritative specification overview (Japanese)
 - [`docs/arxiv_submission/paper.md`](docs/arxiv_submission/paper.md) — paper source (English)
@@ -139,11 +159,11 @@ A zero-dependency Rust crate [`crates/bias-detector/`](crates/bias-detector/) co
 
 **KDF** は、長期運用される情報ネットワーク(知識グラフ、ログ、学習データ等)を、**代謝的に削減しつつ希少情報を構造的に保護**する Rust 実装フレームワークです。
 
-本実装は、特願 **2026-027032** の請求項1–50 を参照仕様として厳密に実装しています。特許出願書類 5 点(特許願 / 特許請求の範囲 / 明細書 / 要約書 / 図面)は **日本特許庁による自動公開(出願から 18 ヶ月、2027-08-24 頃)** まで本リポジトリには含めていません。それまでの間は、権威仕様の要約を [docs/patent/SPEC.md](docs/patent/SPEC.md)、請求項 × 実装の対応を [docs/patent/COMPLIANCE.md](docs/patent/COMPLIANCE.md) と [docs/patent/TRACEABILITY.md](docs/patent/TRACEABILITY.md) に記載しています。発明の理論・手法の詳細は **プレプリント論文(Zenodo DOI: [10.5281/zenodo.19651035](https://doi.org/10.5281/zenodo.19651035))** または [`docs/arxiv_submission/paper.pdf`](docs/arxiv_submission/paper.pdf) を参照してください。
+本実装は、特願 **2026-027032** の請求項1–50 を参照仕様として厳密に実装しています。特許出願書類 5 点(特許願 / 特許請求の範囲 / 明細書 / 要約書 / 図面)は **日本特許庁による自動公開(出願から 18 ヶ月、2027-08-24 頃)** まで本リポジトリには含めていません。それまでの間は、権威仕様の要約を [docs/patent/SPEC.md](docs/patent/SPEC.md)、請求項 × 実装の対応を [docs/patent/COMPLIANCE.md](docs/patent/COMPLIANCE.md) と [docs/patent/TRACEABILITY.md](docs/patent/TRACEABILITY.md) に記載しています。発明の理論・手法の詳細は **プレプリント論文(Zenodo concept DOI: [10.5281/zenodo.19651034](https://doi.org/10.5281/zenodo.19651034)、最新は v2.7 = [10.5281/zenodo.20104836](https://doi.org/10.5281/zenodo.20104836))** または [`docs/arxiv_submission/paper.pdf`](docs/arxiv_submission/paper.pdf) を参照してください。再現手順は [`docs/REPRODUCIBILITY.md`](docs/REPRODUCIBILITY.md) で F-001~F-100 全 finding に reproducer code / run command / 期待出力を index 化(Quick Start: F-072 / F-087 / F-097)。
 
 ### 引用(Citation)
 
-**一般引用には concept DOI(`10.5281/zenodo.19651034`)を推奨**:常に latest version に解決される。v1 specific DOI(`10.5281/zenodo.19651035`)は Phase 2 narrowing 反映前の snapshot を固定参照する場合のみ使用。
+**一般引用には concept DOI(`10.5281/zenodo.19651034`)を推奨**:常に latest version (現在 v2.7 = `10.5281/zenodo.20104836`) に解決される。Version specific:v1 (`10.5281/zenodo.19651035`) は Phase 2 narrowing 反映前 snapshot、v2.7 (`10.5281/zenodo.20104836`) は Phase 2 / Phase 2.5 7-pattern empirical arc + Reproducibility Guide 反映済。
 
 **一般引用(concept DOI、推奨):**
 
@@ -161,7 +181,24 @@ A zero-dependency Rust crate [`crates/bias-detector/`](crates/bias-detector/) co
 }
 ```
 
-**Version-specific 引用(v1 のみ、Phase 2 narrowing 反映前 frozen snapshot):**
+**Version-specific 引用(v2.7、Phase 2 retrospective 反映済):**
+
+```bibtex
+@misc{kuroki2026kdf-v2.7,
+  author       = {Kuroki, Yasuhiro},
+  title        = {{KDF: A Deterministic Architecture for Finite-Resource
+                   Information Preservation---Cross-Domain Evidence and
+                   Self-Refutation of Canonical Values}},
+  year         = {2026},
+  publisher    = {Zenodo},
+  version      = {v0.4 (v2.7)},
+  doi          = {10.5281/zenodo.20104836},
+  url          = {https://doi.org/10.5281/zenodo.20104836},
+  note         = {Preprint v2.7, integrates Phase 2 / Phase 2.5 7-pattern empirical arc (F-073--F-100) and Reproducibility Guide. Patent: JP 2026-027032 (filed 2026-02-24).}
+}
+```
+
+**Version-specific 引用(v1、Phase 2 narrowing 反映前 frozen snapshot):**
 
 ```bibtex
 @misc{kuroki2026kdf-v1,
