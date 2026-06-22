@@ -11,7 +11,7 @@ jobs:
     name: Verify docs/patent/ hash manifest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Verify patent document SHA-256 manifest
         run: |
           cd docs/patent
@@ -27,7 +27,7 @@ jobs:
     name: Verify compliance docs present
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Check required docs
         run: |
           for f in docs/patent/SPEC.md docs/patent/TRACEABILITY.md docs/patent/COMPLIANCE.md docs/patent/HASHES.sha256; do
