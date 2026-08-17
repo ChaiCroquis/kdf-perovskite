@@ -17,7 +17,7 @@ real-data-bench = { path = "../../benchmarks/real_data" }
 rand = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-ureq = "2.10"
+ureq = "3.4"
 urlencoding = "2.1"
 
 [lints]
